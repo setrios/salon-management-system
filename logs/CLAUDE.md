@@ -33,3 +33,10 @@ permission to commit or publish those changes to the repository.
 ## Audit and control
 No separate audit log of agent actions is kept. Change control is manual —
 the developer reviews via `git diff` / `git status` before committing.
+
+## Commit message convention
+
+SDD commit style (`spec:`, `test:`, `feat:`, `docs:`, `gate:`):
+format `<prefix>: <short imperative summary>` in English.
+Full specification: `../docs/commit-convention.md`.
+When asked for a commit message, follow that document.
