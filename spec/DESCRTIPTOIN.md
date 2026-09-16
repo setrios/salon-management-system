@@ -49,6 +49,7 @@ for a single location.
 - Receives two **SMS reminders** before the visit — 24 hours and 2 hours
   before the appointment (implementation simulated); no SMS is sent for
   booking confirmation or cancellation
+- Bookings made with less than 24h notice receive no SMS reminders at all.
 
 ### For the master
 - View their own appointment schedule
