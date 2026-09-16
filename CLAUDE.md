@@ -38,5 +38,5 @@ the developer reviews via `git diff` / `git status` before committing.
 
 SDD commit style (`spec:`, `test:`, `feat:`, `docs:`, `gate:`):
 format `<prefix>: <short imperative summary>` in English.
-Full specification: `../docs/commit-convention.md`.
+Full specification: `docs/commit-convention.md`.
 When asked for a commit message, follow that document.
