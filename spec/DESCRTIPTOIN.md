@@ -49,6 +49,11 @@ for a single location.
 - Receives two **SMS reminders** before the visit — 24 hours and 2 hours
   before the appointment (implementation simulated); no SMS is sent for
   booking confirmation or cancellation
+- Each reminder is sent only if its scheduled time is still in the future
+  at the moment of booking: a booking made less than 24 hours before the
+  appointment skips the 24-hour reminder, and a booking made less than
+  2 hours before skips both (a missed reminder is recorded as skipped,
+  never sent retroactively)
 
 ### For the master
 - View their own appointment schedule
@@ -79,9 +84,10 @@ for a single location.
 - **Material** — material (name, unit of measure — selected from a standard
   list with the option to add a custom one, stock level)
 - **MaterialTransaction** — material movement (receipt/issue, date, quantity)
-- **Notification** — two SMS reminders sent to the client before the
-  appointment (24 hours and 2 hours prior; send status; simulated
-  implementation)
+- **Notification** — up to two SMS reminders sent to the client before the
+  appointment (24 hours and 2 hours prior; send status — sent / skipped /
+  failed; simulated implementation). A reminder whose scheduled time has
+  already passed at booking creation is recorded as skipped.
 
 ## 7. Deliberately excluded from the initial scope
 - Client registration with an account/password
@@ -109,7 +115,8 @@ for a single location.
   option to add a custom unit.
 - The only SMS notification sent is a reminder before the visit — there is no
   SMS for booking confirmation or cancellation. Two reminders are sent: 24
-  hours and 2 hours before the appointment.
+  hours and 2 hours before the appointment. A reminder is skipped (not sent
+  retroactively) if the booking is created after its scheduled time.
 - The master/administrator do not receive a notification when a new booking
   is made or cancelled.
 - Payment is recorded only after the service has been completed — a booking
