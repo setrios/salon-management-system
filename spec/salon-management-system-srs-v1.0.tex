@@ -1,0 +1,531 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{listings}
+
+\geometry{margin=2.3cm}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\lstdefinestyle{gherkin}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false
+}
+\lstset{style=gherkin}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Salon Management System --- SRS}
+\rhead{Version 1.0}
+\cfoot{\thepage}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{Salon Management System\\
+\large Software Requirements Specification (SRS)}
+\author{Baseline specification, produced through a SKED dialogue \\ (Socratic Knowledge Elicitation \& Documentation)}
+\date{Version 1.0 --- Draft baseline, pending SPEC-GATE approval}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{tabularx}{0.9\textwidth}{@{}lX@{}}
+\toprule
+Field & Value \\
+\midrule
+System name & Salon Management System \\
+Document type & Software Requirements Specification (IEEE~830-informed) \\
+Document status & Baseline, produced via SKED (Lab~2) \\
+Predecessor document & \texttt{DESCRIPTION.md} (project concept note) \\
+Related artifact & \texttt{2026-09-16-sms-reminder-conflict.md} (Lab~1 conflict resolution) \\
+Methodology & Specification-Driven Development (SDD) with SKED elicitation \\
+Platform & Single web application (responsive), single location, single time zone \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Purpose}
+This document specifies the baseline requirements for the Salon Management
+System: an information system for client record-keeping and service booking
+for a single-location unisex beauty salon. It supersedes the informal
+concept note \texttt{DESCRIPTION.md} as the controlling requirements
+artifact once approved at SPEC-GATE (Section~\ref{sec:gate}).
+
+\subsection{Scope}
+The system automates client booking, master schedule management, material
+stock tracking (general accounting only), and basic financial reporting for
+one salon location. It does not include a client account system, a loyalty
+program, automatic payroll calculation, no-show tracking, recipe-based
+material deduction, or an online payment gateway (Section~\ref{sec:constraints}).
+
+\subsection{Actors}
+\begin{itemize}[leftmargin=1.2cm]
+  \item \textbf{Client} --- books a service without registration, using
+    name and phone number.
+  \item \textbf{Master} --- performs services; manages their own schedule
+    and sees their own appointment calendar; authenticates with login/password.
+  \item \textbf{Administrator} --- manages reference data, appointments,
+    materials, and reporting; single administrator account; authenticates
+    with login/password.
+\end{itemize}
+
+\subsection{Document Overview}
+Section~\ref{sec:general} gives the general description. Section~\ref{sec:glossary}
+is the domain glossary. Section~\ref{sec:functional} lists functional
+requirements. Section~\ref{sec:nonfunctional} lists non-functional
+requirements. Section~\ref{sec:bdd} gives BDD scenarios for key flows.
+Section~\ref{sec:traceability} is the traceability matrix.
+Section~\ref{sec:gate} records the SPEC-GATE decision.
+
+\section{General Description}
+\label{sec:general}
+
+\subsection{Superseded Decisions}
+\label{sec:superseded}
+Two decisions confirmed in \texttt{DESCRIPTION.md} \S8 are explicitly
+revised by this SRS, as a result of the SKED dialogue:
+
+\begin{enumerate}[leftmargin=1.2cm]
+  \item \emph{``The only SMS notification sent is a reminder before the
+    visit --- there is no SMS for booking confirmation or cancellation.''}
+    \textbf{Revised:} the system now sends a booking confirmation SMS and a
+    reschedule confirmation SMS (REQ-F-005, REQ-F-009). No additional SMS is
+    sent specifically for cancellation --- the client sees the updated
+    status on the confirmation page (REQ-F-004, REQ-F-006).
+  \item \emph{``The master/administrator do not receive a notification when
+    a new booking is made or cancelled.''}
+    \textbf{Revised:} masters and administrators now receive notifications
+    for new, rescheduled, and cancelled appointments, through independently
+    configurable channels (REQ-F-016, REQ-F-023, REQ-F-026).
+\end{enumerate}
+All other decisions in \texttt{DESCRIPTION.md} \S8 remain in force and are
+treated as constraints of this SRS (Section~\ref{sec:constraints}).
+
+\subsection{Product Functions}
+\begin{itemize}[leftmargin=1.2cm]
+  \item Client: multi-service booking, immediate confirmation, free
+    cancellation and reschedule via a link, SMS notifications.
+  \item Master: schedule view, own service/price list, availability
+    management, notifications.
+  \item Administrator: reference data management, appointment management,
+    material tracking, payment recording, reporting, notifications.
+\end{itemize}
+
+\subsection{Constraints}
+\label{sec:constraints}
+\begin{itemize}[leftmargin=1.2cm]
+  \item Single salon location, single time zone, no branch network.
+  \item 30-minute appointment slot granularity.
+  \item No client account/password; client identified by name and phone
+    number only.
+  \item No online payment gateway; only the fact of payment is recorded,
+    after service completion.
+  \item No automatic material deduction by service ``recipe''; materials
+    tracked as general receipt/issue accounting only.
+  \item No loyalty program, no automatic master payroll calculation, no
+    client no-show tracking.
+\end{itemize}
+
+\subsection{Assumptions and Dependencies}
+\begin{itemize}[leftmargin=1.2cm]
+  \item SMS sending is simulated (no real SMS gateway integration in this
+    version), consistent with \texttt{DESCRIPTION.md}.
+  \item Expected usage scale is not numerically fixed for this version; no
+    specific throughput or concurrency target is set as an NFR.
+\end{itemize}
+
+\section{Domain Glossary}
+\label{sec:glossary}
+
+\begin{longtable}{L{3.4cm}L{10.6cm}}
+\toprule
+Term & Definition \\
+\midrule
+\endhead
+Client & A person who books a service by providing name and phone number;
+  has no account in the system. \\
+Master & A staff member who performs services; has an individual login
+  account, own service/price list, and own availability schedule. \\
+Administrator & The single staff account with full management access to
+  reference data, appointments, materials, and reports. \\
+Service & A definition of a performable procedure: name, category, base
+  duration. Categories are free-form, created by the administrator (see
+  REQ-F-024); not a fixed enumeration. \\
+MasterService & The link between a master and a service, carrying that
+  master's individual price for that service. \\
+Appointment & A single client visit: client, master, date/time, status
+  (confirmed automatically on creation), and an unguessable access token
+  used for the confirmation page. \\
+AppointmentService & One of the services included in a single appointment;
+  an appointment may include several. \\
+Confirmation Page & The web page shown to the client immediately after
+  booking and reachable again via the link sent by SMS; shows appointment
+  details and the cancel/reschedule controls. \\
+Payment & A record of amount, status (paid/unpaid), and payment method for
+  an appointment; created only after the service is completed. \\
+Material & A stock item: name, unit of measure (from the standard list or a
+  custom unit), current stock level. \\
+MaterialTransaction & A recorded receipt or issue of a material: date,
+  quantity. \\
+Notification & An event-driven message (booking confirmation, reschedule
+  confirmation, 24-hour reminder, 2-hour reminder to the client; new /
+  reschedule / cancellation alert to master and administrator), each with a
+  channel and a send status (sent / skipped / failed). \\
+Reminder & The 24-hour or 2-hour client SMS before the appointment; skipped
+  (not sent retroactively) if its scheduled time has already passed at the
+  moment of booking or reschedule. \\
+Notification Preference & A master's or administrator's own on/off setting
+  for a given notification channel (SMS, in-app) and a given event type
+  (new, reschedule, cancellation). \\
+\bottomrule
+\end{longtable}
+
+\section{Functional Requirements}
+\label{sec:functional}
+
+Each requirement has a stable identifier \texttt{REQ-F-NNN}. Acceptance
+criteria are stated as observable conditions.
+
+\begin{longtable}{L{1.9cm}L{6.4cm}L{6.2cm}}
+\toprule
+ID & Requirement & Acceptance Criterion \\
+\midrule
+\endhead
+REQ-F-001 & The client can select one or more services for a single visit;
+  total duration and cost are the sum of the selected services. &
+  Booking with 2+ services shows a single duration and a single cost equal
+  to the sum of the individual services. \\
+REQ-F-002 & The client selects a master, date, and time from that master's
+  available 30-minute slots. & Only slots within the selected master's set
+  availability, and not already booked, are selectable. \\
+REQ-F-003 & The appointment is confirmed automatically on creation; no
+  manual approval step exists. & Immediately after booking, the appointment
+  status is ``confirmed'' with no pending/approval state observable. \\
+REQ-F-004 & After a successful booking, the system shows a confirmation
+  page with appointment details and cancel/reschedule links. & The page is
+  displayed right after booking and is reachable again later via the SMS
+  link (REQ-F-005). \\
+REQ-F-005 & The system sends the client a booking confirmation SMS
+  (simulated) with a link to the confirmation page. & Exactly one
+  confirmation SMS per successful booking is recorded, containing a valid
+  link to REQ-F-004's page. \\
+REQ-F-006 & The client can cancel the appointment via the link, free of
+  charge, with no restriction on notice period. & Cancelling at any time,
+  including minutes before the appointment, succeeds without a fee or
+  error. \\
+REQ-F-007 & The client can reschedule the appointment via the link, free of
+  charge, with no restriction on notice period or number of times. &
+  Rescheduling repeatedly, including shortly before the appointment,
+  succeeds each time without a fee or error. \\
+REQ-F-008 & On reschedule, the 24-hour and 2-hour reminder times are
+  recalculated from the new appointment time. & After a reschedule, the
+  stored reminder times equal new\_time~$-$~24h and new\_time~$-$~2h. \\
+REQ-F-009 & On reschedule, the system sends a new SMS with the updated
+  appointment details and a link to the (same) confirmation page. & Exactly
+  one reschedule SMS per successful reschedule is recorded. \\
+REQ-F-010 & The system sends a 24-hour reminder SMS, unless that time has
+  already passed at the moment of booking or reschedule, in which case it
+  is recorded as skipped. & A booking made $<$24h before the appointment
+  shows the 24h reminder with status ``skipped''; otherwise ``sent'' at the
+  correct time. \\
+REQ-F-011 & The system sends a 2-hour reminder SMS under the same rule as
+  REQ-F-010. & A booking made $<$2h before the appointment shows the 2h
+  reminder with status ``skipped''. \\
+REQ-F-012 & A master authenticates with login and password; the account is
+  created by the administrator. & A master cannot self-register; login
+  succeeds only for an account created by the administrator. \\
+REQ-F-013 & A master can view their own appointment calendar. & The
+  calendar shown to a logged-in master contains only that master's
+  appointments. \\
+REQ-F-014 & A master can view the services they perform and their own
+  prices. & The list shown matches exactly the MasterService records for
+  that master. \\
+REQ-F-015 & A master sets their availability using a recurring weekly
+  pattern, specific dates, or both. & Both a weekly-repeating slot and a
+  one-off date-specific slot can be created and take effect for booking. \\
+REQ-F-016 & A master receives a notification (SMS and/or in-app, per their
+  own preferences) when one of their own appointments is created,
+  rescheduled, or cancelled. & Disabling all channels for an event type
+  results in no notification of that type being sent to that master. \\
+REQ-F-017 & The administrator authenticates with login and password; the
+  system supports a single administrator account. & Only one administrator
+  account exists and can log in. \\
+REQ-F-018 & The administrator manages masters, services (with category),
+  MasterService price links, and materials (with unit of measure). & Create
+  / edit / deactivate operations are available for each of these reference
+  entities. \\
+REQ-F-019 & The administrator can create, edit, and cancel client
+  appointments. & An administrator-created or edited appointment is
+  reflected identically to a client-made one (subject to REQ-F-002,
+  REQ-F-003). \\
+REQ-F-020 & The administrator records material receipt and issue
+  transactions. & Each transaction updates the material's stock level by
+  the recorded quantity. \\
+REQ-F-021 & The administrator records payment (amount, status paid/unpaid,
+  method) only after the service has been completed. & Payment cannot be
+  recorded for an appointment whose service has not yet been marked
+  completed. \\
+REQ-F-022 & The administrator can view revenue reports for a fixed period
+  (day/week/month) or a custom date range, a popular-services report, and
+  current material stock levels. & Both a preset-period query and a custom
+  from/to date range return a revenue total for that window. \\
+REQ-F-023 & The administrator receives a notification (per their own
+  preferences) for every appointment created, rescheduled, or cancelled,
+  across all masters. & An event for any master's appointment produces a
+  notification to the administrator unless disabled. \\
+REQ-F-024 & The administrator creates services with a category of their own
+  choosing; the system provides seed example categories (Hair, Coloring,
+  Barbering) but does not restrict categories to a fixed list. & A new
+  service can be saved with a category value not present in the seed
+  examples. \\
+REQ-F-025 & The administrator selects a material's unit of measure from the
+  standard list (ml, l, g, kg, pcs) or adds a custom unit. & A material can
+  be saved with a unit outside the standard list. \\
+REQ-F-026 & A master or administrator can independently enable or disable
+  each notification channel (SMS, in-app) for each event type (new,
+  reschedule, cancellation). & Toggling one channel/event combination does
+  not change any other channel/event combination's setting. \\
+\bottomrule
+\end{longtable}
+
+\section{Non-Functional Requirements}
+\label{sec:nonfunctional}
+
+\begin{longtable}{L{1.9cm}L{2.6cm}L{9.9cm}}
+\toprule
+ID & Category & Requirement and Acceptance Criterion \\
+\midrule
+\endhead
+REQ-NF-001 & Security & Cancellation and reschedule links shall use a
+  non-sequential, non-guessable identifier (e.g., UUID) as the appointment
+  access token. \emph{AC:} incrementing or guessing a token value does not
+  grant access to another client's appointment. \\
+REQ-NF-002 & Usability & The client-facing booking web interface shall be
+  usable on mobile browsers via a responsive layout. \emph{AC:} all client
+  flows (booking, cancel, reschedule) are completable on a mobile-width
+  viewport without horizontal scrolling of core controls. \\
+REQ-NF-003 & Localization & The user interface language shall be English.
+  \emph{AC:} no interface text, label, or message is displayed in another
+  language. \\
+REQ-NF-004 & Localization & Monetary amounts shall be displayed in
+  Ukrainian hryvnia (UAH). \emph{AC:} all price and payment fields render
+  with a UAH indicator. \\
+REQ-NF-005 & Data retention & Appointment and payment history shall be
+  retained indefinitely; no automatic deletion or archiving is implemented.
+  \emph{AC:} a record created in this version is still retrievable after
+  an arbitrary elapsed time, with no purge job present. \\
+REQ-NF-006 & Privacy & Client personal data (name, phone number) shall be
+  handled under standard data-hygiene practice; no additional regulatory
+  compliance mechanism is required for this version. \emph{AC:} no
+  requirement beyond REQ-NF-001 (unguessable access) governs client data
+  exposure. \\
+REQ-NF-007 & Constraint (carried over) & The system shall operate for a
+  single salon location in a single time zone. \emph{AC:} no
+  location-selection or time-zone-selection control exists in the
+  interface. \\
+REQ-NF-008 & Constraint (carried over) & All appointment scheduling shall
+  use 30-minute time slots. \emph{AC:} no bookable start time falls outside
+  a 30-minute boundary. \\
+REQ-NF-009 & Constraint (carried over) & The system shall not integrate
+  with any online payment gateway. \emph{AC:} no payment-provider redirect
+  or API call exists in the booking or payment flow. \\
+\bottomrule
+\end{longtable}
+
+\section{External Interface Requirements}
+
+\subsection{User Interface}
+Client-facing interface: a responsive website (REQ-NF-002), English
+(REQ-NF-003), no login. Master and Administrator interfaces: a web
+dashboard behind login (REQ-F-012, REQ-F-017).
+
+\subsection{Communication Interfaces}
+SMS delivery is simulated for this version (Section~\ref{sec:general}); no
+real telecom gateway is integrated. In-app notifications (REQ-F-016,
+REQ-F-023, REQ-F-026) require no external interface.
+
+\section{BDD Scenarios}
+\label{sec:bdd}
+
+The following Gherkin-style scenarios cover the primary flows and the
+significant edge cases identified during the SKED dialogue. Each scenario
+lists the requirement IDs it exercises.
+
+\begin{lstlisting}
+# SCN-01 -- Successful multi-service booking
+# Covers: REQ-F-001, REQ-F-002, REQ-F-003, REQ-F-004, REQ-F-005
+Feature: Client books multiple services in one visit
+  Scenario: Booking two services with a single available master
+    Given a master "Olena" offers "Haircut" (30 min) and "Blow-dry" (30 min)
+    And "Olena" has an open 60-minute slot on 2026-10-01 at 14:00
+    When a client books "Haircut" and "Blow-dry" with "Olena" at that slot
+    Then the appointment is confirmed immediately
+    And the appointment duration is 60 minutes
+    And the appointment cost is the sum of both service prices
+    And a confirmation page is shown with cancel and reschedule links
+    And exactly one confirmation SMS is recorded for the client
+
+# SCN-02 -- Free cancellation with no restriction
+# Covers: REQ-F-006
+Feature: Client cancels an appointment
+  Scenario: Cancelling minutes before the appointment
+    Given a confirmed appointment starting in 10 minutes
+    When the client opens the cancellation link and confirms cancellation
+    Then the appointment status becomes "cancelled"
+    And no cancellation fee is applied
+
+# SCN-03 -- Free reschedule with reminder recalculation
+# Covers: REQ-F-007, REQ-F-008, REQ-F-009
+Feature: Client reschedules an appointment
+  Scenario: Rescheduling to a new available slot
+    Given a confirmed appointment on 2026-10-01 at 14:00
+    And a new open slot with the same master on 2026-10-03 at 10:00
+    When the client reschedules to the new slot via the link
+    Then the appointment time becomes 2026-10-03 10:00
+    And the 24-hour reminder is scheduled for 2026-10-02 10:00
+    And the 2-hour reminder is scheduled for 2026-10-03 08:00
+    And exactly one reschedule SMS is recorded for the client
+
+# SCN-04 -- 24-hour reminder skipped for a late booking
+# Covers: REQ-F-010
+Feature: Reminder suppression for late bookings
+  Scenario: Booking made less than 24 hours in advance
+    Given the current time is 2026-10-01 10:00
+    When a client books an appointment for 2026-10-02 08:00
+    Then the 24-hour reminder is recorded with status "skipped"
+    And the 2-hour reminder is scheduled normally for 2026-10-02 06:00
+
+# SCN-05 -- Both reminders skipped for a very late booking
+# Covers: REQ-F-010, REQ-F-011
+Feature: Reminder suppression for very late bookings
+  Scenario: Booking made less than 2 hours in advance
+    Given the current time is 2026-10-01 10:00
+    When a client books an appointment for 2026-10-01 11:00
+    Then the 24-hour reminder is recorded with status "skipped"
+    And the 2-hour reminder is recorded with status "skipped"
+
+# SCN-06 -- Master disables SMS but keeps in-app notifications
+# Covers: REQ-F-016, REQ-F-026
+Feature: Per-channel notification preferences
+  Scenario: Master receives only in-app notification for a new booking
+    Given master "Olena" has disabled SMS for "new appointment"
+    And master "Olena" has enabled in-app for "new appointment"
+    When a client books an appointment with "Olena"
+    Then "Olena" receives an in-app notification
+    And "Olena" receives no SMS notification
+
+# SCN-07 -- Payment recorded only after service completion
+# Covers: REQ-F-021
+Feature: Payment recording
+  Scenario: Administrator attempts to record payment before completion
+    Given an appointment that has not been marked as completed
+    When the administrator attempts to record a payment for it
+    Then the system rejects the payment recording
+
+  Scenario: Administrator records payment after completion
+    Given an appointment that has been marked as completed
+    When the administrator records a payment of 800 UAH, status "paid", method "cash"
+    Then the payment is saved and linked to that appointment
+
+# SCN-08 -- Administrator creates a service with a custom category
+# Covers: REQ-F-024
+Feature: Free-form service categories
+  Scenario: Creating a service outside the seed categories
+    Given the seed categories "Hair", "Coloring", "Barbering" exist
+    When the administrator creates a service "Eyebrow shaping" with category "Cosmetology"
+    Then the service is saved with category "Cosmetology"
+    And "Cosmetology" becomes selectable for future services
+\end{lstlisting}
+
+\section{Traceability Matrix}
+\label{sec:traceability}
+
+Columns for Ticket, Test, Code, and Documentation are intentionally left
+blank at this stage; they are populated in later SDD iterations.
+
+\begin{longtable}{L{1.7cm}L{2.3cm}L{1.6cm}L{1.4cm}L{1.4cm}L{1.4cm}L{1.4cm}}
+\toprule
+Req.\ ID & Acceptance Crit. & BDD & Ticket & Test & Code & Doc \\
+\midrule
+\endhead
+REQ-F-001 & \S\ref{sec:functional} & SCN-01 & & & & \\
+REQ-F-002 & \S\ref{sec:functional} & SCN-01 & & & & \\
+REQ-F-003 & \S\ref{sec:functional} & SCN-01 & & & & \\
+REQ-F-004 & \S\ref{sec:functional} & SCN-01 & & & & \\
+REQ-F-005 & \S\ref{sec:functional} & SCN-01 & & & & \\
+REQ-F-006 & \S\ref{sec:functional} & SCN-02 & & & & \\
+REQ-F-007 & \S\ref{sec:functional} & SCN-03 & & & & \\
+REQ-F-008 & \S\ref{sec:functional} & SCN-03 & & & & \\
+REQ-F-009 & \S\ref{sec:functional} & SCN-03 & & & & \\
+REQ-F-010 & \S\ref{sec:functional} & SCN-04, SCN-05 & & & & \\
+REQ-F-011 & \S\ref{sec:functional} & SCN-05 & & & & \\
+REQ-F-012 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-013 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-014 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-015 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-016 & \S\ref{sec:functional} & SCN-06 & & & & \\
+REQ-F-017 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-018 & \S\ref{sec:functional} & SCN-08 & & & & \\
+REQ-F-019 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-020 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-021 & \S\ref{sec:functional} & SCN-07 & & & & \\
+REQ-F-022 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-023 & \S\ref{sec:functional} & SCN-06 & & & & \\
+REQ-F-024 & \S\ref{sec:functional} & SCN-08 & & & & \\
+REQ-F-025 & \S\ref{sec:functional} & --- & & & & \\
+REQ-F-026 & \S\ref{sec:functional} & SCN-06 & & & & \\
+REQ-NF-001 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-002 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-003 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-004 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-005 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-006 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-007 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-008 & \S\ref{sec:nonfunctional} & --- & & & & \\
+REQ-NF-009 & \S\ref{sec:nonfunctional} & --- & & & & \\
+\bottomrule
+\end{longtable}
+
+\section{SPEC-GATE Decision}
+\label{sec:gate}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+Field & Value \\
+\midrule
+Gate & SPEC-GATE (baseline specification approval) \\
+Artifact under review & This document, \texttt{salon-management-system-srs-v1.0.tex} \\
+Input & \texttt{DESCRIPTION.md}, Lab~1 conflict log, this SKED dialogue \\
+Decision & \textbf{PENDING} --- awaiting explicit human approval before commit \\
+Superseded decisions & See Section~\ref{sec:superseded} \\
+Open items & None identified at baseline; further questions expected in
+  subsequent SDD iterations per project convention. \\
+\bottomrule
+\end{tabularx}
+
+\noindent This gate record is finalized (status changed from PENDING to
+APPROVED) once the human reviewer confirms the document, per
+Section~4.3 of \texttt{commit-convention.md} conventions for \texttt{gate:}
+artifacts.
+
+\end{document}
