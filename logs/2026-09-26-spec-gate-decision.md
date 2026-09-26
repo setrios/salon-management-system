@@ -28,7 +28,7 @@ agent). Does not itself authorize any implementation.
       log, "Decisions that reverse a prior confirmed decision").
 - [x] Document compiles cleanly with `pdflatex` (2-pass, no undefined
       references, no errors).
-- [ ] `DESCRIPTION.md` updated to reflect the two superseded decisions —
+- [x] `DESCRIPTION.md` updated to reflect the two superseded decisions —
       **outstanding**, not done automatically by the model.
 
 ## Decision
