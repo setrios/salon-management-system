@@ -65,14 +65,14 @@ Platform & Single web application (responsive), single location, single time zon
 Ver. & Date & Status & Change \\
 \midrule
 1.0 & 2026-09-26 & Approved & Baseline produced via SKED dialogue (Lab~2). \\
-1.1 & 2026-09-26 & Pending & Independent critical review closed all
+1.1 & 2026-09-26 & Approved & Independent critical review closed all
   Category~A (missing requirement) and Category~B (undefined term)
   findings: adds REQ-F-027, REQ-F-028; clarifies the Appointment status
   model, ``deactivate'' semantics, confirmation-page token lifecycle after
   cancellation, and the REQ-NF-002 acceptance criterion. Categories C
   (weak acceptance criteria), D (edge cases), E (BDD/traceability
-  coverage), and F (cosmetic) remain open for v1.2. \\
-1.2 & 2026-09-26 & Pending & Closes the remaining Categories C, D, E, F.
+  coverage), and F (cosmetic) remain open for v1.2. Approved 2026-09-27. \\
+1.2 & 2026-09-26 & Approved & Closes the remaining Categories C, D, E, F.
   C: rewrites the REQ-F-024 and REQ-NF-006 acceptance criteria to be fully
   observable. D: adds REQ-F-029 (reminder reactivation on reschedule),
   REQ-F-030 (no self-notification for the acting administrator), and
@@ -81,34 +81,41 @@ Ver. & Date & Status & Change \\
   traceability matrix's generic section references with a short paraphrase
   of each requirement's acceptance criterion. F: notes that
   \texttt{DESCRIPTION.md} has since been synchronized with
-  Section~\ref{sec:superseded} via a separate \texttt{docs:} commit. \\
+  Section~\ref{sec:superseded} via a separate \texttt{docs:} commit.
+  Approved 2026-09-27. \\
 \bottomrule
 \end{tabularx}
 
 \medskip
 \noindent\textbf{New assumptions introduced while closing these findings}
-(not previously confirmed via the SKED dialogue --- require review before
-this version is approved):
+(not part of the original SKED dialogue --- confirmed by the human
+reviewer on 2026-09-27):
 \begin{itemize}[leftmargin=1.2cm]
   \item REQ-F-027 assigns the ``mark appointment completed'' action to the
     Administrator, matching the existing allocation of payment recording,
-    rather than to the Master.
+    rather than to the Master. \textbf{Confirmed.}
   \item REQ-F-028 makes administrator-initiated date/time/master changes
     follow the same reminder-recalculation and client-SMS rules as a
     client-initiated reschedule, rather than being a silent edit.
+    \textbf{Confirmed.}
   \item The confirmation page and its access token remain valid
     (read-only) after cancellation, rather than being invalidated.
+    \textbf{Confirmed.}
   \item REQ-F-029 (v1.2): a reminder previously recorded as skipped can
     become active again if a reschedule moves it back into the future,
-    rather than staying permanently skipped.
+    rather than staying permanently skipped. \textbf{Confirmed.}
   \item REQ-F-030 (v1.2): only the acting administrator is exempted from
     notification of their own action; the assigned master is still
     notified. (Masters cannot currently trigger these events themselves,
-    so no equivalent master-side exemption was needed.)
+    so no equivalent master-side exemption was needed.) \textbf{Confirmed.}
   \item REQ-F-031 (v1.2): multi-service booking duration is rounded up to
     the next 30-minute boundary for slot-occupancy purposes, rather than
-    occupying an exact, unaligned duration.
+    occupying an exact, unaligned duration. \textbf{Confirmed.}
 \end{itemize}
+\emph{(Corrected in place 2026-09-27: both rows above, and \S\ref{sec:gate}
+below, originally still read Pending/PENDING after the actual approval, an
+oversight found during a cross-artifact consistency check; see
+\texttt{logs/2026-09-26-spec-gate-decision.md} for the full record.)}
 
 \tableofcontents
 \newpage
@@ -683,11 +690,13 @@ Field & Value \\
 \midrule
 Gate & SPEC-GATE (revision approval) \\
 Artifact under review & \texttt{salon-management-system-srs-v1.2.tex}
-  (supersedes the approved v1.0 and the pending v1.1) \\
+  (supersedes the approved v1.0 and the approved v1.1) \\
 Input & \texttt{DESCRIPTION.md}, Lab~1 conflict log, the SKED dialogue,
   and the independent critical review of v1.0 \\
-Decision & \textbf{PENDING} --- v1.0 was approved 2026-09-26; v1.1 and
-  v1.2 each require their own SPEC-GATE decision before commit \\
+Decision & \textbf{APPROVED --- 2026-09-27.} Approved by the human
+  reviewer, including the six new assumptions (three from v1.1, three from
+  v1.2) listed in the Revision History note on page~1. v1.0 was approved
+  2026-09-26 and v1.1 on 2026-09-27; each carries its own decision. \\
 Superseded decisions & See Section~\ref{sec:superseded} (DESCRIPTION.md
   \S8, unchanged since v1.0; DESCRIPTION.md itself has since been
   synchronized via a separate \texttt{docs:} commit) \\
@@ -711,9 +720,10 @@ Open items & None from the original review remain. Any further findings
 \bottomrule
 \end{tabularx}
 
-\noindent This gate record is finalized (status changed from PENDING to
-APPROVED or REJECTED) once the human reviewer confirms the document, per
+\noindent This gate record was finalized (status changed from PENDING to
+APPROVED, above) once the human reviewer confirmed the document, per
 Section~4.3 of \texttt{commit-convention.md} conventions for \texttt{gate:}
-artifacts.
+artifacts. \emph{(Corrected in place 2026-09-27 alongside the Decision
+field above; see \texttt{logs/2026-09-26-spec-gate-decision.md}.)}
 
 \end{document}
