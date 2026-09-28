@@ -204,20 +204,69 @@ spec: fix acceptance criteria and add edge-case requirements in SRS v1.2
 
 ---
 
+## v1.3 — Fixes REQ-F-022 AC coverage gap; reconciles gate-status recordkeeping
+
+Date: 2026-09-27
+Artifact under review: `spec/salon-management-system-srs-v1.3.tex`
+(supersedes v1.2; v1.0, v1.1, and v1.2 kept unchanged as historical versions)
+Inputs: follow-up cross-artifact consistency check performed after v1.2 was approved
+
+### Scope of this gate
+Approves (or rejects) v1.3 as the current baseline.
+
+### Checklist
+- [x] REQ-F-022 split into REQ-F-022 (revenue only), REQ-F-032 (popular
+      services), and REQ-F-033 (stock levels), each independently testable.
+- [x] BDD scenarios SCN-14 and SCN-15 added covering popular services and
+      material stock levels.
+- [x] Traceability matrix updated to reflect REQ-F-022, REQ-F-032, and
+      REQ-F-033.
+- [x] Policy on gate-status recordkeeping clarified in Revision History note
+      (Section 8 embedded status reflects state at commit time; Revision History
+      and `logs/2026-09-26-spec-gate-decision.md` are authoritative).
+- [x] Document compiles cleanly with `pdflatex` (multi-pass, no undefined
+      references, no errors).
+- [x] New assumptions introduced by this revision (below) reviewed and
+      explicitly confirmed by the human reviewer — confirmed 2026-09-27.
+
+### New assumptions introduced (confirmed by human reviewer, 2026-09-27)
+- REQ-F-032: the popular-services report ranks services by number of
+  bookings, not by revenue generated. **Confirmed.**
+- REQ-F-032: the popular-services report accepts the same period options as
+  REQ-F-022 (preset or custom range), while REQ-F-033 (stock levels)
+  accepts none, being a point-in-time snapshot. **Confirmed.**
+
+### Decision
+
+**STATUS: APPROVED — 2026-09-27.**
+
+Approved by the human reviewer, including the two new assumptions listed above.
+
+### Suggested commit message (per `commit-convention.md`)
+
+```
+spec: fix REQ-F-022 AC coverage gap and reconcile gate status in SRS v1.3
+
+- add spec/salon-management-system-srs-v1.3.tex and compiled PDF
+- split REQ-F-022 into REQ-F-022 (revenue), REQ-F-032 (popular
+  services), and REQ-F-033 (stock levels) so each is independently
+  testable
+- add BDD scenarios SCN-14, SCN-15
+- document gate-status recordkeeping policy in Revision History note
+```
+
+---
+
 ## Commit message for this gate record itself
 
 ```
-gate: approve SRS v1.1 and v1.2 revisions
+gate: approve SRS v1.1, v1.2, and v1.3 revisions
 
 - record SPEC-GATE decisions for v1.1 (completion/edit requirements,
-  glossary clarifications) and v1.2 (acceptance-criteria fixes,
-  edge-case requirements, BDD/traceability corrections)
-- both v1.1 and v1.2 are APPROVED as of 2026-09-27, including the six
+  glossary clarifications), v1.2 (acceptance-criteria fixes,
+  edge-case requirements, BDD/traceability corrections), and v1.3
+  (REQ-F-022 split, SCN-14/15, gate-status recordkeeping policy)
+- v1.1, v1.2, and v1.3 are APPROVED as of 2026-09-27, including all
   new assumptions listed in each version's section, confirmed by the
   human reviewer
-- v1.2 is the current baseline
-```
-
-This is the message to use when amending the `gate: approve SRS v1.1 and
-v1.2 revisions` commit, now that both decisions are actually APPROVED
-rather than PENDING as originally committed.
+- v1.3 is the current baseline
