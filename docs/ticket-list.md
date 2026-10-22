@@ -15,9 +15,9 @@ one-time setup script is `docs/github-issues-setup.sh`.
 
 | Plan ID | Title | Type | Source | Depends on (blocking) | Assignee role | Initial state |
 |---|---|---|---|---|---|---|
-| SMS-1 | Baseline specification reference (SRS v1.2 §1–3: scope, actors, glossary, constraints) | Specification | SRS v1.2 §1–3 | — | Human (Student) | Done (SRS already approved) |
-| SMS-2 | Populate traceability matrix Ticket column | Documentation | SRS v1.2 §8 (matrix) | SMS-1 | Joint | In Progress |
-| SMS-3 | PLAN-GATE: approve decomposition, dependencies, plan, risks | Gate | This plan §9 | SMS-1, SMS-2 | Human (Student) | In Review |
+| SMS-1 | Baseline specification reference (SRS v1.3 §1–3: scope, actors, glossary, constraints) | Specification | SRS v1.3 §1–3 | — | Human (Student) | Done (SRS already approved) |
+| SMS-2 | Populate traceability matrix Ticket column | Documentation | SRS v1.3 §8 (matrix) | SMS-1 | Joint | Done |
+| SMS-3 | PLAN-GATE: approve decomposition, dependencies, plan, risks | Gate | This plan §9 | SMS-1, SMS-2 | Human (Student) | Done (GO, 2026-10-22) |
 | SMS-4 | G1: approve stage S1 (foundations) exit | Gate | Plan §6 | SMS-3 | Human (Student) | Backlog |
 | SMS-5 | G2: approve stage S2 (client booking core) exit | Gate | Plan §6 | SMS-4 | Human (Student) | Backlog |
 | SMS-6 | G3: approve stages S3+S4 (reschedule/reminders, notifications) exit | Gate | Plan §6 | SMS-5 | Human (Student) | Backlog |
@@ -57,7 +57,7 @@ Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
 human only). They inherit the stage's ticket sources as their `Source` field.
 
-## Requirement → ticket coverage (all 40 REQ IDs)
+## Requirement → ticket coverage (all 42 REQ IDs: 33 REQ-F + 9 REQ-NF)
 
 | Requirement | Feature ticket(s) | Test ticket(s) |
 |---|---|---|

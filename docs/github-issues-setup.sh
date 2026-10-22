@@ -8,6 +8,7 @@
 # What it does:
 #   1. creates the workflow labels (statuses, 8 SDD types, roles)
 #   2. creates all 37 issues in docs/issue-import.csv order, so issue #N = SMS-N
+#   3. closes the issues whose CSV State is "Done" (closing = Done state; no label)
 #
 # Idempotent-ish: existing labels are skipped; issues are only created if
 # fewer than 37 open+closed issues exist. Re-running when issues already
@@ -72,8 +73,10 @@ for row in csv.reader(sys.stdin):
        Documentation) labels+=("type: documentation");; Gate) labels+=("type: gate");; esac
   case "$role" in "Coding Agent") labels+=("role: coding agent");;
        "Human (Student)") labels+=("role: human");; Joint) labels+=("role: joint");; esac
+  # Done = closed, carried by the issue state and therefore by no label
   case "$state" in Backlog) labels+=("status: backlog");; "In Progress") labels+=("status: in progress");;
-       "In Review") labels+=("status: in review");; Blocked) labels+=("status: blocked");; esac
+       "In Review") labels+=("status: in review");; Blocked) labels+=("status: blocked");;
+       Done) ;; esac
 
   body="Source: ${source}
 Blocked by: ${deps:-—}
@@ -92,7 +95,12 @@ label_args=()
          --title "SMS-${n}: ${summary}" \
          --body "$body" \
          "${label_args[@]}" >/dev/null
-  echo "created #${n} (SMS-${n}): ${summary}"
+  if [ "$state" = "Done" ]; then
+    gh issue close "$n" --repo "$REPO" --reason completed >/dev/null
+    echo "created #${n} (SMS-${n}): ${summary} — closed (Done)"
+  else
+    echo "created #${n} (SMS-${n}): ${summary}"
+  fi
 done
 
 echo "Done: 37 issues created. Verify with: gh issue list --repo $REPO --limit 40"
