@@ -624,8 +624,12 @@ Feature: Slot rounding for multi-service bookings
 \section{Traceability Matrix}
 \label{sec:traceability}
 
-Columns for Ticket, Test, Code, and Documentation are intentionally left
-blank at this stage; they are populated in later SDD iterations. The
+Columns for Ticket, Test, Code, and Documentation are populated in later SDD
+iterations. The \emph{Ticket} column is populated as of 2026-10-21 (Lab~3
+ticket decomposition, draft pending PLAN-GATE approval; ticket IDs
+\texttt{SMS-NN} per \texttt{logs/2026-10-21-sdd-plan.md} and
+\texttt{docs/ticket-list.md}). Columns for Test, Code, and
+Documentation remain blank at this stage. The
 ``Acceptance Crit.\ (short)'' column paraphrases each requirement's full
 acceptance criterion in a few words for at-a-glance scanning; the
 authoritative text is the corresponding row of Section~\ref{sec:functional}
@@ -638,46 +642,46 @@ specific.)}
 Req.\ ID & Acceptance Crit. (short) & BDD & Ticket & Test & Code & Doc \\
 \midrule
 \endhead
-REQ-F-001 & sum of durations/costs & SCN-01 & & & & \\
-REQ-F-002 & slot within availability, free & SCN-01 & & & & \\
-REQ-F-003 & no approval state & SCN-01 & & & & \\
-REQ-F-004 & page shown + reachable via link & SCN-01 & & & & \\
-REQ-F-005 & exactly one confirmation SMS & SCN-01 & & & & \\
-REQ-F-006 & cancel any time, no fee & SCN-02 & & & & \\
-REQ-F-007 & reschedule any time, no fee/limit & SCN-03 & & & & \\
-REQ-F-008 & reminder times = new time $\mp$ 24h/2h & SCN-03 & & & & \\
-REQ-F-009 & exactly one reschedule SMS & SCN-03 & & & & \\
-REQ-F-010 & skipped if $<$24h at booking/reschedule & SCN-04, SCN-05 & & & & \\
-REQ-F-011 & skipped if $<$2h at booking/reschedule & SCN-05 & & & & \\
-REQ-F-012 & no self-registration for master & --- & & & & \\
-REQ-F-013 & calendar shows only own appointments & --- & & & & \\
-REQ-F-014 & matches own MasterService records & --- & & & & \\
-REQ-F-015 & weekly + date-specific both work & SCN-09 & & & & \\
-REQ-F-016 & disabled channel $\Rightarrow$ no notification & SCN-06 & & & & \\
-REQ-F-017 & only one admin login exists & --- & & & & \\
-REQ-F-018 & CRUD/deactivate on reference data & --- & & & & \\
-REQ-F-019 & admin change mirrors booking rules & --- & & & & \\
-REQ-F-020 & transaction updates stock level & --- & & & & \\
-REQ-F-021 & no payment before \texttt{completed} & SCN-07 & & & & \\
-REQ-F-022 & preset + custom range both total & SCN-10 & & & & \\
-REQ-F-023 & event $\Rightarrow$ admin notification unless disabled & SCN-06 & & & & \\
-REQ-F-024 & custom category savable + seeds present & SCN-08 & & & & \\
-REQ-F-025 & unit outside standard list savable & --- & & & & \\
-REQ-F-026 & toggle one combo, others unaffected & SCN-06 & & & & \\
-REQ-F-027 & \texttt{completed} required before payment & SCN-07 & & & & \\
-REQ-F-028 & admin edit $\Rightarrow$ same recalculation + SMS & --- & & & & \\
-REQ-F-029 & skipped reminder reactivates if future & SCN-11 & & & & \\
-REQ-F-030 & acting admin not self-notified & SCN-12 & & & & \\
-REQ-F-031 & duration rounds up to 30-min block & SCN-13 & & & & \\
-REQ-NF-001 & unguessable token (UUID) & --- & & & & \\
-REQ-NF-002 & responsive, listed controls usable & --- & & & & \\
-REQ-NF-003 & English only, no other language & --- & & & & \\
-REQ-NF-004 & amounts shown in UAH & --- & & & & \\
-REQ-NF-005 & no automatic deletion & --- & & & & \\
-REQ-NF-006 & data visible only to authorized parties & --- & & & & \\
-REQ-NF-007 & no location/time-zone selector & --- & & & & \\
-REQ-NF-008 & no start time off 30-min boundary & --- & & & & \\
-REQ-NF-009 & no payment-gateway integration & --- & & & & \\
+REQ-F-001 & sum of durations/costs & SCN-01 & SMS-25 & & & \\
+REQ-F-002 & slot within availability, free & SCN-01 & SMS-25 & & & \\
+REQ-F-003 & no approval state & SCN-01 & SMS-25 & & & \\
+REQ-F-004 & page shown + reachable via link & SCN-01 & SMS-26 & & & \\
+REQ-F-005 & exactly one confirmation SMS & SCN-01 & SMS-26 & & & \\
+REQ-F-006 & cancel any time, no fee & SCN-02 & SMS-27 & & & \\
+REQ-F-007 & reschedule any time, no fee/limit & SCN-03 & SMS-28 & & & \\
+REQ-F-008 & reminder times = new time $\mp$ 24h/2h & SCN-03 & SMS-28 & & & \\
+REQ-F-009 & exactly one reschedule SMS & SCN-03 & SMS-28 & & & \\
+REQ-F-010 & skipped if $<$24h at booking/reschedule & SCN-04, SCN-05 & SMS-29 & & & \\
+REQ-F-011 & skipped if $<$2h at booking/reschedule & SCN-05 & SMS-29 & & & \\
+REQ-F-012 & no self-registration for master & --- & SMS-22 & & & \\
+REQ-F-013 & calendar shows only own appointments & --- & SMS-31 & & & \\
+REQ-F-014 & matches own MasterService records & --- & SMS-31 & & & \\
+REQ-F-015 & weekly + date-specific both work & SCN-09 & SMS-24 & & & \\
+REQ-F-016 & disabled channel $\Rightarrow$ no notification & SCN-06 & SMS-30 & & & \\
+REQ-F-017 & only one admin login exists & --- & SMS-22 & & & \\
+REQ-F-018 & CRUD/deactivate on reference data & --- & SMS-23 & & & \\
+REQ-F-019 & admin change mirrors booking rules & --- & SMS-32 & & & \\
+REQ-F-020 & transaction updates stock level & --- & SMS-33 & & & \\
+REQ-F-021 & no payment before \texttt{completed} & SCN-07 & SMS-34 & & & \\
+REQ-F-022 & preset + custom range both total & SCN-10 & SMS-35 & & & \\
+REQ-F-023 & event $\Rightarrow$ admin notification unless disabled & SCN-06 & SMS-30 & & & \\
+REQ-F-024 & custom category savable + seeds present & SCN-08 & SMS-23 & & & \\
+REQ-F-025 & unit outside standard list savable & --- & SMS-23 & & & \\
+REQ-F-026 & toggle one combo, others unaffected & SCN-06 & SMS-30 & & & \\
+REQ-F-027 & \texttt{completed} required before payment & SCN-07 & SMS-34 & & & \\
+REQ-F-028 & admin edit $\Rightarrow$ same recalculation + SMS & --- & SMS-32 & & & \\
+REQ-F-029 & skipped reminder reactivates if future & SCN-11 & SMS-29 & & & \\
+REQ-F-030 & acting admin not self-notified & SCN-12 & SMS-30 & & & \\
+REQ-F-031 & duration rounds up to 30-min block & SCN-13 & SMS-25 & & & \\
+REQ-NF-001 & unguessable token (UUID) & --- & SMS-26 & & & \\
+REQ-NF-002 & responsive, listed controls usable & --- & SMS-36 & & & \\
+REQ-NF-003 & English only, no other language & --- & SMS-36 & & & \\
+REQ-NF-004 & amounts shown in UAH & --- & SMS-36 & & & \\
+REQ-NF-005 & no automatic deletion & --- & SMS-37 & & & \\
+REQ-NF-006 & data visible only to authorized parties & --- & SMS-36 & & & \\
+REQ-NF-007 & no location/time-zone selector & --- & SMS-36 & & & \\
+REQ-NF-008 & no start time off 30-min boundary & --- & SMS-25 & & & \\
+REQ-NF-009 & no payment-gateway integration & --- & SMS-37 & & & \\
 \bottomrule
 \end{longtable}
 
