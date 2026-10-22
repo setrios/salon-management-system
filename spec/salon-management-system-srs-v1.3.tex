@@ -432,8 +432,6 @@ Booking with 2+ services shows a single duration and a single cost equal
 to the sum of the individual services. \\
 
 REQ-F-002 &
-The client selects a master, date, and time from that master's available
-30-minute slots. &
 Only slots within the selected master's set availability, and not already
 booked, are selectable. \\
 
@@ -441,7 +439,7 @@ REQ-F-003 &
 The appointment is confirmed automatically on creation; no manual
 approval step exists. &
 Immediately after booking, the appointment status is ``confirmed'' with
-no pending/approval state observable. \\
+no pending/approval state observable.  \\
 
 REQ-F-004 &
 After a successful booking, the system shows a confirmation page with
@@ -450,8 +448,6 @@ The page is displayed right after booking and is reachable again later
 via the SMS link (REQ-F-005). \\
 
 REQ-F-005 &
-The system sends the client a booking confirmation SMS (simulated) with a
-link to the confirmation page. &
 Exactly one confirmation SMS per successful booking is recorded,
 containing a valid link to REQ-F-004's page. \\
 
@@ -459,7 +455,7 @@ REQ-F-006 &
 The client can cancel the appointment via the link, free of charge, with
 no restriction on notice period. &
 Cancelling at any time, including minutes before the appointment, succeeds
-without a fee or error. \\
+without a fee or error.  \\
 
 REQ-F-007 &
 The client can reschedule the appointment via the link, free of charge,
@@ -468,15 +464,13 @@ Rescheduling repeatedly, including shortly before the appointment,
 succeeds each time without a fee or error. \\
 
 REQ-F-008 &
-On reschedule, the 24-hour and 2-hour reminder times are recalculated from
-the new appointment time. &
 After a reschedule, the stored reminder times equal
 new\_time $-$ 24h and new\_time $-$ 2h. \\
 
 REQ-F-009 &
 On reschedule, the system sends a new SMS with the updated appointment
 details and a link to the (same) confirmation page. &
-Exactly one reschedule SMS per successful reschedule is recorded. \\
+Exactly one reschedule SMS per successful reschedule is recorded.  \\
 
 REQ-F-010 &
 The system sends a 24-hour reminder SMS, unless that time has already
@@ -486,7 +480,6 @@ A booking made $<$24h before the appointment shows the 24h reminder with
 status ``skipped''; otherwise ``sent'' at the correct time. \\
 
 REQ-F-011 &
-The system sends a 2-hour reminder SMS under the same rule as REQ-F-010. &
 A booking made $<$2h before the appointment shows the 2h reminder with
 status ``skipped''. \\
 
@@ -494,7 +487,7 @@ REQ-F-012 &
 A master authenticates with login and password; the account is created by
 the administrator. &
 A master cannot self-register; login succeeds only for an account created
-by the administrator. \\
+by the administrator.  \\
 
 REQ-F-013 &
 A master can view their own appointment calendar. &
@@ -502,14 +495,13 @@ The calendar shown to a logged-in master contains only that master's
 appointments. \\
 
 REQ-F-014 &
-A master can view the services they perform and their own prices. &
 The list shown matches exactly the MasterService records for that master. \\
 
 REQ-F-015 &
 A master sets their availability using a recurring weekly pattern,
 specific dates, or both. &
 Both a weekly-repeating slot and a one-off date-specific slot can be
-created and take effect for booking. \\
+created and take effect for booking.  \\
 
 REQ-F-016 &
 A master receives a notification (SMS and/or in-app, per their own
@@ -519,8 +511,6 @@ Disabling all channels for an event type results in no notification of
 that type being sent to that master. \\
 
 REQ-F-017 &
-The administrator authenticates with login and password; the system
-supports a single administrator account. &
 Only one administrator account exists and can log in. \\
 
 REQ-F-018 &
@@ -530,7 +520,7 @@ Create/edit/deactivate operations are available for each of these
 reference entities. Deactivating a master, service, or material removes
 it from selection in new bookings or transactions but does not delete or
 hide it from existing appointment, payment, or transaction history
-(consistent with REQ-NF-005). \\
+(consistent with REQ-NF-005).  \\
 
 REQ-F-019 &
 The administrator can create, edit, and cancel client appointments. &
@@ -538,7 +528,6 @@ An administrator-created or edited appointment is reflected identically
 to a client-made one (subject to REQ-F-002, REQ-F-003). \\
 
 REQ-F-020 &
-The administrator records material receipt and issue transactions. &
 Each transaction updates the material's stock level by the recorded
 quantity. \\
 
@@ -546,7 +535,7 @@ REQ-F-021 &
 The administrator records payment (amount, status paid/unpaid, method)
 only after the service has been completed. &
 Payment cannot be recorded for an appointment whose service has not yet
-been marked completed. \\
+been marked completed.  \\
 
 REQ-F-022 &
 The administrator can view revenue reports for a fixed period
@@ -555,9 +544,6 @@ Both a preset-period query and a custom from/to date range return a
 revenue total for that window. \\
 
 REQ-F-023 &
-The administrator receives a notification (per their own preferences)
-for every appointment created, rescheduled, or cancelled, across all
-masters. &
 An event for any master's appointment produces a notification to the
 administrator unless disabled. \\
 
@@ -567,7 +553,7 @@ the system provides seed example categories (Hair, Coloring, Barbering)
 but does not restrict categories to a fixed list. &
 A fresh installation offers Hair, Coloring, and Barbering as selectable
 categories before any administrator action, and a new service can also be
-saved with a category value not present among them. \\
+saved with a category value not present among them.  \\
 
 REQ-F-025 &
 The administrator selects a material's unit of measure from the standard
@@ -575,9 +561,6 @@ list (ml, l, g, kg, pcs) or adds a custom unit. &
 A material can be saved with a unit outside the standard list. \\
 
 REQ-F-026 &
-A master or administrator can independently enable or disable each
-notification channel (SMS, in-app) for each event type (new, reschedule,
-cancellation). &
 Toggling one channel/event combination does not change any other
 channel/event combination's setting. \\
 
@@ -586,7 +569,7 @@ The administrator marks an appointment as completed once the service(s)
 have been performed; this is a precondition for payment (REQ-F-021).
 \emph{(Added in v1.1, closes review finding A1.)} &
 An appointment cannot have a payment recorded (REQ-F-021) until it has
-been marked completed; after marking, its status is \texttt{completed}. \\
+been marked completed; after marking, its status is \texttt{completed}.  \\
 
 REQ-F-028 &
 When the administrator changes an appointment's date, time, or master
@@ -599,10 +582,6 @@ reminder times match the new time, and one SMS with the updated details is
 recorded for the client. \\
 
 REQ-F-029 &
-When a reschedule (REQ-F-007, REQ-F-008) moves a reminder's recalculated
-time back into the future, that reminder is (re)scheduled even if it had
-previously been recorded as skipped.
-\emph{(Added in v1.2, closes review finding D1.)} &
 A reminder previously recorded as skipped, after a reschedule whose new
 time places it in the future, is recorded as scheduled and is sent
 normally at that new time. \\
@@ -615,7 +594,7 @@ notification (REQ-F-016) is unaffected.
 \emph{(Added in v1.2, closes review finding D2.)} &
 An administrator who creates, edits, or cancels an appointment receives no
 notification for that action, while the appointment's assigned master
-still receives their own configured notification for the same event. \\
+still receives their own configured notification for the same event.  \\
 
 REQ-F-031 &
 For slot-occupancy purposes, the total duration of a multi-service booking
@@ -626,11 +605,6 @@ A booking with a summed service duration of 75 minutes occupies a
 75-minute block. \\
 
 REQ-F-032 &
-The administrator can view a popular-services report ranking services by
-number of bookings, for the same period options as REQ-F-022 (a fixed
-period or a custom date range).
-\emph{(Added in v1.3; REQ-F-022 originally bundled this clause without a
-matching acceptance criterion.)} &
 A popular-services query for a given period returns services ordered by
 descending booking count among appointments within that period. \\
 
@@ -639,7 +613,7 @@ The administrator can view current material stock levels as a point-in-time
 snapshot; no period selection applies.
 \emph{(Added in v1.3, same finding as REQ-F-032.)} &
 A stock-levels query returns each material's current quantity, unaffected
-by any period parameter. \\
+by any period parameter.  \\
 
 \bottomrule
 \end{longtable}
@@ -659,7 +633,7 @@ non-guessable identifier (e.g., UUID) as the appointment access token.
 \emph{AC:} incrementing or guessing a token value does not grant access
 to another client's appointment. \\
 
-REQ-NF-002 & Usability &
+REQ-NF-002 &
 The client-facing booking web interface shall be usable on mobile
 browsers via a responsive layout.
 \emph{AC:} on a mobile-width viewport, the service/master/slot selection
@@ -669,13 +643,13 @@ fully usable without horizontal scrolling. \\
 REQ-NF-003 & Localization &
 The user interface language shall be English.
 \emph{AC:} no interface text, label, or message is displayed in another
-language. \\
+language.  \\
 
 REQ-NF-004 & Localization &
 Monetary amounts shall be displayed in Ukrainian hryvnia (UAH).
 \emph{AC:} all price and payment fields render with a UAH indicator. \\
 
-REQ-NF-005 & Data retention &
+REQ-NF-005 &
 Appointment and payment history shall be retained indefinitely; no
 automatic deletion or archiving is implemented.
 \emph{AC:} a record created in this version is still retrievable after an
@@ -690,7 +664,7 @@ authenticated master viewing their own appointments (REQ-F-013), the
 administrator, and the client themself via their own confirmation-page
 token (REQ-NF-001); the system transmits this data to no third-party
 service (there is no payment gateway or other external integration,
-REQ-NF-009). \\
+REQ-NF-009).  \\
 
 REQ-NF-007 & Constraint (carried over) &
 The system shall operate for a single salon location in a single time
@@ -698,14 +672,14 @@ zone.
 \emph{AC:} no location-selection or time-zone-selection control exists
 in the interface. \\
 
-REQ-NF-008 & Constraint (carried over) &
+REQ-NF-008 &
 All appointment scheduling shall use 30-minute time slots.
 \emph{AC:} no bookable start time falls outside a 30-minute boundary. \\
 
 REQ-NF-009 & Constraint (carried over) &
 The system shall not integrate with any online payment gateway.
 \emph{AC:} no payment-provider redirect or API call exists in the booking
-or payment flow. \\
+or payment flow.  \\
 
 \bottomrule
 \end{longtable}
@@ -901,8 +875,12 @@ And no period parameter is required or accepted
 \section{Traceability Matrix}
 \label{sec:traceability}
 
-Columns for Ticket, Test, Code, and Documentation are intentionally left
-blank at this stage; they are populated in later SDD iterations. The
+Columns for Ticket, Test, Code, and Documentation are populated in later SDD
+iterations. The \emph{Ticket} column is populated as of 2026-10-22 (Lab~3
+ticket decomposition, draft pending PLAN-GATE approval; ticket IDs
+\texttt{SMS-N} are GitHub issue numbers, \texttt{SMS-N} = issue \#N; see
+\texttt{logs/2026-10-21-sdd-plan.md} and \texttt{docs/ticket-list.md}).
+Columns for Test, Code, and Documentation remain blank at this stage. The
 ``Acceptance Crit.\ (short)'' column paraphrases each requirement's full
 acceptance criterion in a few words for at-a-glance scanning; the
 authoritative text is the corresponding row of Section~\ref{sec:functional}
@@ -916,48 +894,48 @@ Req.\ ID & Acceptance Crit.\ (short) & BDD & Ticket & Test & Code & Doc \\
 \midrule
 \endhead
 
-REQ-F-001 & sum of durations/costs & SCN-01 & & & & \\
-REQ-F-002 & slot within availability, free & SCN-01 & & & & \\
-REQ-F-003 & no approval state & SCN-01 & & & & \\
-REQ-F-004 & page shown + reachable via link & SCN-01 & & & & \\
-REQ-F-005 & exactly one confirmation SMS & SCN-01 & & & & \\
-REQ-F-006 & cancel any time, no fee & SCN-02 & & & & \\
-REQ-F-007 & reschedule any time, no fee/limit & SCN-03 & & & & \\
-REQ-F-008 & reminder times = new time $\mp$ 24h/2h & SCN-03 & & & & \\
-REQ-F-009 & exactly one reschedule SMS & SCN-03 & & & & \\
-REQ-F-010 & skipped if $<$24h at booking/reschedule & SCN-04, SCN-05 & & & & \\
-REQ-F-011 & skipped if $<$2h at booking/reschedule & SCN-05 & & & & \\
-REQ-F-012 & no self-registration for master & --- & & & & \\
-REQ-F-013 & calendar shows only own appointments & --- & & & & \\
-REQ-F-014 & matches own MasterService records & --- & & & & \\
-REQ-F-015 & weekly + date-specific both work & SCN-09 & & & & \\
-REQ-F-016 & disabled channel $\Rightarrow$ no notification & SCN-06 & & & & \\
-REQ-F-017 & only one admin login exists & --- & & & & \\
-REQ-F-018 & CRUD/deactivate on reference data & --- & & & & \\
-REQ-F-019 & admin change mirrors booking rules & --- & & & & \\
-REQ-F-020 & transaction updates stock level & --- & & & & \\
-REQ-F-021 & no payment before \texttt{completed} & SCN-07 & & & & \\
-REQ-F-022 & preset + custom range, revenue only & SCN-10 & & & & \\
-REQ-F-023 & event $\Rightarrow$ admin notification unless disabled & SCN-06 & & & & \\
-REQ-F-024 & custom category savable + seeds present & SCN-08 & & & & \\
-REQ-F-025 & unit outside standard list savable & --- & & & & \\
-REQ-F-026 & toggle one combo, others unaffected & SCN-06 & & & & \\
-REQ-F-027 & \texttt{completed} required before payment & SCN-07 & & & & \\
-REQ-F-028 & admin edit $\Rightarrow$ same recalculation + SMS & --- & & & & \\
-REQ-F-029 & skipped reminder reactivates if future & SCN-11 & & & & \\
-REQ-F-030 & acting admin not self-notified & SCN-12 & & & & \\
-REQ-F-031 & duration rounds up to 30-min block & SCN-13 & & & & \\
-REQ-F-032 & ranked by booking count, per period & SCN-14 & & & & \\
-REQ-F-033 & snapshot quantity, no period & SCN-15 & & & & \\
-REQ-NF-001 & unguessable token (UUID) & --- & & & & \\
-REQ-NF-002 & responsive, listed controls usable & --- & & & & \\
-REQ-NF-003 & English only, no other language & --- & & & & \\
-REQ-NF-004 & amounts shown in UAH & --- & & & & \\
-REQ-NF-005 & no automatic deletion & --- & & & & \\
-REQ-NF-006 & data visible only to authorized parties & --- & & & & \\
-REQ-NF-007 & no location/time-zone selector & --- & & & & \\
-REQ-NF-008 & no start time off 30-min boundary & --- & & & & \\
-REQ-NF-009 & no payment-gateway integration & --- & & & & \\
+REQ-F-001 & sum of durations/costs & SCN-01 & SMS-25 & & &  \\
+REQ-F-002 & slot within availability, free & SCN-01 & SMS-25 & & &  \\
+REQ-F-003 & no approval state & SCN-01 & SMS-25 & & &  \\
+REQ-F-004 & page shown + reachable via link & SCN-01 & SMS-26 & & &  \\
+REQ-F-005 & exactly one confirmation SMS & SCN-01 & SMS-26 & & &  \\
+REQ-F-006 & cancel any time, no fee & SCN-02 & SMS-27 & & &  \\
+REQ-F-007 & reschedule any time, no fee/limit & SCN-03 & SMS-28 & & &  \\
+REQ-F-008 & reminder times = new time $\mp$ 24h/2h & SCN-03 & SMS-28 & & &  \\
+REQ-F-009 & exactly one reschedule SMS & SCN-03 & SMS-28 & & &  \\
+REQ-F-010 & skipped if $<$24h at booking/reschedule & SCN-04, SCN-05 & SMS-29 & & &  \\
+REQ-F-011 & skipped if $<$2h at booking/reschedule & SCN-05 & SMS-29 & & &  \\
+REQ-F-012 & no self-registration for master & --- & SMS-22 & & &  \\
+REQ-F-013 & calendar shows only own appointments & --- & SMS-31 & & &  \\
+REQ-F-014 & matches own MasterService records & --- & SMS-31 & & &  \\
+REQ-F-015 & weekly + date-specific both work & SCN-09 & SMS-24 & & &  \\
+REQ-F-016 & disabled channel $\Rightarrow$ no notification & SCN-06 & SMS-30 & & &  \\
+REQ-F-017 & only one admin login exists & --- & SMS-22 & & &  \\
+REQ-F-018 & CRUD/deactivate on reference data & --- & SMS-23 & & &  \\
+REQ-F-019 & admin change mirrors booking rules & --- & SMS-32 & & &  \\
+REQ-F-020 & transaction updates stock level & --- & SMS-33 & & &  \\
+REQ-F-021 & no payment before \texttt{completed} & SCN-07 & SMS-34 & & &  \\
+REQ-F-022 & preset + custom range, revenue only & SCN-10 & SMS-35 & & &  \\
+REQ-F-023 & event $\Rightarrow$ admin notification unless disabled & SCN-06 & SMS-30 & & &  \\
+REQ-F-024 & custom category savable + seeds present & SCN-08 & SMS-23 & & &  \\
+REQ-F-025 & unit outside standard list savable & --- & SMS-23 & & &  \\
+REQ-F-026 & toggle one combo, others unaffected & SCN-06 & SMS-30 & & &  \\
+REQ-F-027 & \texttt{completed} required before payment & SCN-07 & SMS-34 & & &  \\
+REQ-F-028 & admin edit $\Rightarrow$ same recalculation + SMS & --- & SMS-32 & & &  \\
+REQ-F-029 & skipped reminder reactivates if future & SCN-11 & SMS-29 & & &  \\
+REQ-F-030 & acting admin not self-notified & SCN-12 & SMS-30 & & &  \\
+REQ-F-031 & duration rounds up to 30-min block & SCN-13 & SMS-25 & & &  \\
+REQ-F-032 & ranked by booking count, per period & SCN-14 & SMS-35 & & &  \\
+REQ-F-033 & snapshot quantity, no period & SCN-15 & SMS-35 & & &  \\
+REQ-NF-001 & unguessable token (UUID) & --- & SMS-26 & & &  \\
+REQ-NF-002 & responsive, listed controls usable & --- & SMS-36 & & &  \\
+REQ-NF-003 & English only, no other language & --- & SMS-36 & & &  \\
+REQ-NF-004 & amounts shown in UAH & --- & SMS-36 & & &  \\
+REQ-NF-005 & no automatic deletion & --- & SMS-37 & & &  \\
+REQ-NF-006 & data visible only to authorized parties & --- & SMS-36 & & &  \\
+REQ-NF-007 & no location/time-zone selector & --- & SMS-36 & & &  \\
+REQ-NF-008 & no start time off 30-min boundary & --- & SMS-25 & & &  \\
+REQ-NF-009 & no payment-gateway integration & --- & SMS-37 & & &  \\
 
 \bottomrule
 \end{longtable}

@@ -30,7 +30,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-13 | Test payment only after completion (SCN-07) | Test | REQ-F-021, 027, SCN-07 | SMS-3 | Coding Agent | Backlog |
 | SMS-14 | Test custom service category + seeds (SCN-08) | Test | REQ-F-024, SCN-08 | SMS-3 | Coding Agent | Backlog |
 | SMS-15 | Test master availability modes (SCN-09) | Test | REQ-F-015, SCN-09 | SMS-3 | Coding Agent | Backlog |
-| SMS-16 | Test revenue report periods (SCN-10) | Test | REQ-F-022, SCN-10 | SMS-3 | Coding Agent | Backlog |
+| SMS-16 | Test reports: revenue, popular services, stock (SCN-10/14/15) | Test | REQ-F-022, 032, 033, SCN-10, SCN-14, SCN-15 | SMS-3 | Coding Agent | Backlog |
 | SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Backlog |
 | SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-3 | Coding Agent | Backlog |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Backlog |
@@ -49,7 +49,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | Backlog |
 | SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Backlog |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Backlog |
-| SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022 | SMS-16, SMS-34 | Coding Agent | Backlog |
+| SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Backlog |
 | SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26 | Coding Agent | Backlog |
 | SMS-37 | Feature: retention & no-gateway constraints | Feature | REQ-NF-005, 009 | SMS-20, SMS-34 | Coding Agent | Backlog |
 
@@ -83,6 +83,8 @@ human only). They inherit the stage's ticket sources as their `Source` field.
 | REQ-F-020 | SMS-33 | SMS-21 |
 | REQ-F-021 | SMS-34 | SMS-13 |
 | REQ-F-022 | SMS-35 | SMS-16 |
+| REQ-F-032 | SMS-35 | SMS-16 |
+| REQ-F-033 | SMS-35 | SMS-16 |
 | REQ-F-023 | SMS-30 | SMS-12 |
 | REQ-F-024 | SMS-23 | SMS-14 |
 | REQ-F-025 | SMS-23 | SMS-21 |
