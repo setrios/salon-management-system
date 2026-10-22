@@ -3,7 +3,8 @@
 Date: 2026-10-21
 Companion artifact: `logs/2026-10-21-sdd-plan.md`
 Input: `spec/salon-management-system-srs-v1.3.tex` (approved baseline)
-Status: **DRAFT — pending student review and PLAN-GATE decision (SMS-3).**
+Status: **APPROVED — PLAN-GATE decision GO, 2026-10-22**
+(`logs/2026-10-22-plan-gate-decision.md`).
 
 Scope note: only risks with a substantive relation to this project are
 included. Per the lab task, the AI-specific analysis covered misinterpretation
