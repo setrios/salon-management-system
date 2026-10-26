@@ -12,7 +12,7 @@ How the mock is made to produce a failure:
   type, security presence).
 - **forced** — the request is valid, so the documented status is selected with
   `Prefer: code=NNN`. This proves the response is defined and well-formed; it
-  does not prove server logic, which is Lab 5.
+  does not prove server logic, which is the next phase.
 - **gap** — the mock cannot reproduce the case faithfully; the row records why.
 
 | ID | Covers | Request | Expected | How | Note |
@@ -39,13 +39,13 @@ How the mock is made to produce a failure:
 
 | Case | Why | Disposition |
 |---|---|---|
-| Unparsable JSON body | Prism hangs on a syntactically invalid JSON body (observed: curl exit 28) | 400 `MALFORMED_REQUEST` is still demonstrated through NEG-03; body-parse 400 is verified in Lab 5 |
-| Data-dependent 404 | No storage | NEG-06, NEG-07 use `Prefer`; real lookup in Lab 5 |
-| State-dependent 409 | No status machine | NEG-08…NEG-12 use `Prefer`; real transitions in Lab 5 |
-| Role-based 403 | Prism checks presence of a token, not its claims | NEG-05 uses `Prefer`; real authorisation in Lab 5 |
-| 500 | Not intentionally triggerable | Documented only; tested in Lab 5 |
+| Unparsable JSON body | Prism hangs on a syntactically invalid JSON body (observed: curl exit 28) | 400 `MALFORMED_REQUEST` is still demonstrated through NEG-03; body-parse 400 is verified in the next phase |
+| Data-dependent 404 | No storage | NEG-06, NEG-07 use `Prefer`; real lookup in the next phase |
+| State-dependent 409 | No status machine | NEG-08…NEG-12 use `Prefer`; real transitions in the next phase |
+| Role-based 403 | Prism checks presence of a token, not its claims | NEG-05 uses `Prefer`; real authorisation in the next phase |
+| 500 | Not intentionally triggerable | Documented only; tested in the next phase |
 
 `PAYMENT_ALREADY_RECORDED` (D12) shares status 409 with
 `APPOINTMENT_NOT_COMPLETED` on `createPayment`. OpenAPI allows one example per
 status, so the operation documents `APPOINTMENT_NOT_COMPLETED`; the duplicate
-payment code stays in the catalog and is verified in Lab 5.
+payment code stays in the catalog and is verified in the next phase.

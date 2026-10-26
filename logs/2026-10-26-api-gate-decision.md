@@ -1,9 +1,9 @@
-# API-GATE decision — Salon Management System (Lab 4)
+# API-GATE decision — Salon Management System
 
 Date: 2026-10-26
-Status: **SIGNED — GO, 2026-10-26.** All ten criteria are evidenced; the student
-signed the decision in §6, so implementation may start in Lab 5.
-Owner of the decision: student.
+Status: **SIGNED — GO, 2026-10-26.** All ten criteria are evidenced; the human
+signed the decision in §6, so implementation may start in the next phase.
+Owner of the decision: human.
 Inputs: SRS v1.3 (approved 2026-09-27), API design plan
 ([`2026-10-26-api-design-plan.md`](2026-10-26-api-design-plan.md)), contract
 package in [`../spec/api/`](../spec/api/).
@@ -12,8 +12,8 @@ package in [`../spec/api/`](../spec/api/).
 
 ## 1. What is being gated
 
-A REST API **contract** and a **mock**, not an implementation. The lab forbids
-writing a server in this iteration; implementation is Lab 5 (TDD). The gate asks
+A REST API **contract** and a **mock**, not an implementation. The scope forbids
+writing a server in this iteration; implementation is the next phase (TDD). The gate asks
 whether the contract is complete, consistent, validated, and demonstrable
 through a spec-driven mock.
 
@@ -61,13 +61,13 @@ three levels and does not blur them.
 | B. Auth presence | A protected operation without a bearer token returns 401 | **Confirmed** — Prism enforces the security scheme |
 | C. Unknown resource | 404 for an unknown id or token | **Forced** — no storage; demonstrated with `Prefer: code=404` |
 | D. Business/state conflict | 409/422 for slot, duplicate, transition, stock, period | **Partly forced** — valid responses proven; server logic deferred |
-| E. State transition | cancel → `cancelled`, payment only after `completed` | **Not reproducible** — deferred to Lab 5, stated plainly |
+| E. State transition | cancel → `cancelled`, payment only after `completed` | **Not reproducible** — deferred to the next phase, stated plainly |
 
 **Verified through the mock:** every documented 2xx example, security rejection,
 schema validation, media-type rejection, and the shape of every catalogued error
 response (status, `application/problem+json`, `code`, `Problem` schema).
 
-**Not verified through the mock, deferred to Lab 5:** that the server computes
+**Not verified through the mock, deferred to the next phase:** that the server computes
 availability, enforces ownership, stores state, mutates stock, prevents duplicate
 payments, and honours the 30-minute boundary. Forced responses prove the
 *contract* is well-formed, not that the *server* behaves.
@@ -104,8 +104,8 @@ otherwise. The criterion text was corrected rather than left aspirational.
 
 | Risk | Disposition |
 |---|---|
-| Contract may drift from SRS during Lab 5 implementation | `api-traceability.md` is the check; any change needs a clarification row |
-| Two codes share status 409 on `createPayment` | Only `APPOINTMENT_NOT_COMPLETED` is demonstrated; `PAYMENT_ALREADY_RECORDED` is Lab 5 evidence |
+| Contract may drift from SRS during next-phase implementation | `api-traceability.md` is the check; any change needs a clarification row |
+| Two codes share status 409 on `createPayment` | Only `APPOINTMENT_NOT_COMPLETED` is demonstrated; `PAYMENT_ALREADY_RECORDED` is next-phase evidence |
 | Mock cannot prove server logic | Explicitly out of scope for this gate; the fidelity table above is the honest boundary |
 | Prism dependency warnings (R-API-07) | Transitive only; no `audit fix --force` |
 
@@ -116,7 +116,7 @@ otherwise. The criterion text was corrected rather than left aspirational.
 Agent recommendation: **GO** — all ten criteria are evidenced, validation is
 clean, and both scenario suites pass.
 
-The student decides and signs:
+The human decides and signs:
 
 | Field | Value |
 |---|---|
@@ -132,6 +132,6 @@ runners, and repeat this gate (plan step 4.4). Do not delete failing evidence.
 
 ## 7. After a GO
 
-1. Commit in the sequence of plan §12 (student executes; the agent cannot commit).
+1. Commit in the sequence of plan §12 (human executes; the agent cannot commit).
 2. Create issues SMS-38…SMS-43 (decision D5) — only after the gate is signed.
-3. Lab 5 starts from `openapi.yaml`; the contract is the test oracle.
+3. Implementation starts from `openapi.yaml`; the contract is the test oracle.

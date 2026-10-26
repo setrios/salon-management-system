@@ -1,4 +1,4 @@
-# API design — Phase 0 setup record (Lab 4)
+# API design — Phase 0 setup record
 
 Date: 2026-10-26
 Status: **COMPLETE — spike passed 5/5.**
@@ -19,7 +19,7 @@ Phase 0 (steps 0.1–0.5).
 | `spec/api/resource-model.md` | Skeleton for Part 1 output | skeleton |
 | `spec/api/error-model.md` | Skeleton for the `Problem` model and code catalog | skeleton |
 | `spec/api/api-traceability.md` | Skeleton for the REQ ↔ operation ↔ scenario matrix | skeleton |
-| `spec/api/clarifications.md` | Register for lab step 14; two rows, closed | done |
+| `spec/api/clarifications.md` | Register for step 14; two rows, closed | done |
 | `spec/api/spike/smoke.yaml` | Throwaway spec used only by the spike | done |
 | `spec/api/spike/run-spike.sh` | Spike runner (lint, mock startup, forced 409, invalid body) | done |
 | `spec/api/spike/FINDINGS.md` | Stable record of what the spike proved and the rules derived from it | done |

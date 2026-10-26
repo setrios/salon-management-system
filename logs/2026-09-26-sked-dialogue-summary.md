@@ -1,7 +1,7 @@
-# SKED dialogue summary — Salon Management System (Lab 2)
+# SKED dialogue summary — Salon Management System
 
 Date: 2026-09-26
-Input artifacts: `DESCRIPTION.md`, `2026-09-16-sms-reminder-conflict.md` (Lab 1),
+Input artifacts: `DESCRIPTION.md`, `2026-09-16-sms-reminder-conflict.md`,
 `agent-choice.md`, `CLAUDE.md`.
 Output artifact: `/spec/salon-management-system-srs-v1.0.tex`.
 
@@ -79,7 +79,7 @@ model.
 ## Deliberately left open (not fixed as a number)
 
 - Concurrent usage / throughput scale — human explicitly declined to fix a
-  number for this lab version; no REQ-NF sets a numeric performance target.
+  number for this version; no REQ-NF sets a numeric performance target.
 
 ## Outcome
 Baseline SRS drafted, compiled without LaTeX errors (11 pages), covering

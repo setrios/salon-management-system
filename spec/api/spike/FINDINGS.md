@@ -86,7 +86,7 @@ literal documented example. Two identical invalid requests returned the *same*
 - Scenarios must assert `status`, `code`, media type and schema conformance —
   **not** per-request correlation values.
 - `traceId` and `instance` in mock responses are illustrative constants. Real
-  per-request generation is Lab 5 behaviour.
+  per-request generation is next-phase behaviour.
 
 ## Q5 (unplanned) — the `--errors` flag
 
@@ -106,7 +106,7 @@ mandatory and is set in both `mock` scripts and in the spike runner.
 | B. Auth presence | Prism rejects with 401 | Not exercised in the spike | Verify in Part 3; declare `Authorization` header on protected operations |
 | C. Unknown resource | 404 documented | Not exercised in the spike | Verify in Part 3 |
 | D. Forced status | `Prefer: code=…` may or may not work | **Works** | Use it for business-rule negatives; document each forced status on the operation |
-| E. State transition | Not reproducible | **Confirmed not reproducible** | Contract review + Lab 5 tests; state plainly in the gate record |
+| E. State transition | Not reproducible | **Confirmed not reproducible** | Contract review + next-phase tests; state plainly in the gate record |
 
 Two corrections to the plan's fidelity table:
 

@@ -5,7 +5,7 @@ extends:
   - recommended
 
 rules:
-  # The contract is internal to the lab and has no public distribution channel,
+  # The contract is internal to the project and has no public distribution channel,
   # so an info.license block would be noise rather than information.
   info-license: off
   # Servers are declared with a real local mock address; the example.com

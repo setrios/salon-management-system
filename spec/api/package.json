@@ -2,7 +2,7 @@
   "name": "salon-management-system-api-contract",
   "version": "1.0.0",
   "private": true,
-  "description": "OpenAPI contract, validation and mock tooling for the Salon Management System REST API (Lab 4). Contract only - no application implementation.",
+  "description": "OpenAPI contract, validation and mock tooling for the Salon Management System REST API. Contract only - no application implementation.",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=24.18.0"

@@ -7,7 +7,7 @@ intended as input material for further requirements clarification through a
 structured dialogue.
 
 **Revision note (2026-09-26):** two decisions in §8 were superseded during
-the Lab 2 SKED dialogue. The controlling requirements artifact is now
+the SKED dialogue. The controlling requirements artifact is now
 `spec/salon-management-system-srs-v1.0.tex`; see
 `logs/2026-09-26-sked-dialogue-summary.md` for the full rationale.
 

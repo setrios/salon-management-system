@@ -338,5 +338,5 @@ Verified in the Phase 0 spike (`spike/FINDINGS.md`):
 Consequence: business-rule and validation negatives are demonstrable through the
 mock, provided each error status is documented on the operation with a `Problem`
 example. State-transition negatives (class E) remain non-reproducible in a
-stateless mock and are deferred to Lab 5 — stated plainly, never claimed as
+stateless mock and are deferred to the next phase — stated plainly, never claimed as
 verified.

@@ -16,7 +16,7 @@ Artifact under review:
 - `spec/salon-management-system-srs-v1.3.tex` traceability matrix, Ticket column
 
 Inputs: SRS v1.3 (approved baseline), GitHub Issues tracker (37 issues,
-issue #N = SMS-N), student review of the plan draft.
+issue #N = SMS-N), human review of the plan draft.
 
 ### Scope of this gate
 
@@ -47,7 +47,7 @@ Addendum, never added to a Feature ticket.
 
 **STATUS: GO — 2026-10-22.**
 
-Decided by the human reviewer (student). Implementation tickets unblocked;
+Decided by the human reviewer (human). Implementation tickets unblocked;
 Stage S1 (Foundations: SMS-8, SMS-21 tests, then SMS-22, 23, 24 features)
 may start.
 
@@ -60,5 +60,5 @@ gate: record PLAN-GATE GO decision
 - checklist verified against commit f55a5fe (42/42 REQ coverage,
   test-first dependencies, human-only gates, risk controls)
 - plan and risk register status switched from DRAFT to APPROVED
-- add Gantt-style schedule diagram to the plan (lab item 10)
+- add Gantt-style schedule diagram to the plan (item 10)
 ```

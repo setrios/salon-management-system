@@ -3,7 +3,7 @@
 # Requires: gh CLI installed and authenticated (`gh auth login`), push access
 # to setrios/salon-management-system.
 # The coding agent cannot run this (CLAUDE.md forbids non-idempotent git/remote
-# actions) — the student runs it.
+# actions) — the human runs it.
 #
 # Why: issues #4, #5 and #6 were imported from docs/issue-import.csv before the
 # ticket renumbering. Their bodies cite ticket IDs that either do not exist or
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 REPO="setrios/salon-management-system"
-MARKER="Correction (Lab 3 ticket renumbering)"
+MARKER="Correction (ticket renumbering)"
 V13_MARKER="Source updated for SRS v1.3"
 
 DRY_RUN=0

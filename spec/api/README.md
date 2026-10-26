@@ -1,7 +1,7 @@
-# Salon Management System — REST API contract (Lab 4)
+# Salon Management System — REST API contract
 
 API-first design package for the Salon Management System. This directory contains
-the **contract only** — no application implementation. Implementation is Lab 5
+the **contract only** — no application implementation. Implementation is the next phase
 (TDD).
 
 Source of truth for behaviour: `spec/salon-management-system-srs-v1.3.tex`
@@ -21,7 +21,7 @@ Scope: **50 operations** — 11 public/booking, 2 authentication, 7 master,
 | `resource-model.md` | Requirement classification, resources, URI grammar, method semantics, 50-operation table | done |
 | `error-model.md` | Single RFC 9457 `Problem` model and 16-code catalog | done |
 | `api-traceability.md` | REQ-ID → operation → scenario matrix | done |
-| `clarifications.md` | Clarification and addendum register (lab step 14) | done |
+| `clarifications.md` | Clarification and addendum register (step 14) | done |
 | `redocly.yaml` | Redocly lint configuration | done |
 | `scenarios/positive.md` | 27 positive scenarios and expected results | done |
 | `scenarios/negative.md` | 17 negative scenarios and expected results | done |

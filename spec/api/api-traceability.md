@@ -13,7 +13,7 @@ mock. Columns:
 - **API scenario** — id in `scenarios/positive.md` or `scenarios/negative.md`.
 - **Mock** — how the contract is demonstrated: `documented` (served directly),
   `forced` (served with `Prefer: code=…` because the stateless mock has no
-  data), `deferred` (needs real state; Lab 5), `n/a` (no API surface).
+  data), `deferred` (needs real state; the next phase), `n/a` (no API surface).
 
 ---
 
@@ -139,8 +139,8 @@ not applicable and carry a reason (REQ-NF-002, REQ-NF-007).
 |---|---|
 | SCN-01…SCN-15 are UI-shaped BDD scenarios; they describe behaviour, not HTTP | Each is re-expressed as an API scenario in Part 3 against the mock |
 | REQ-F-012, F-017, F-018…F-020, F-028 have no BDD scenario | Covered by dedicated API scenarios POS-16, POS-19…POS-21 |
-| Stateless mock cannot hold appointments, stock or payments | Such scenarios use `Prefer: code=…` (`forced`) and are marked as contract-shape evidence only; behaviour is verified in Lab 5 |
-| Two codes share one status on `createPayment` (409) | Only `APPOINTMENT_NOT_COMPLETED` is documented as the 409 example; `PAYMENT_ALREADY_RECORDED` stays in the catalog and is demonstrated in Lab 5 |
+| Stateless mock cannot hold appointments, stock or payments | Such scenarios use `Prefer: code=…` (`forced`) and are marked as contract-shape evidence only; behaviour is verified in the next phase |
+| Two codes share one status on `createPayment` (409) | Only `APPOINTMENT_NOT_COMPLETED` is documented as the 409 example; `PAYMENT_ALREADY_RECORDED` stays in the catalog and is demonstrated in the next phase |
 | `BusinessRuleViolation` and `ValidationFailed` are both 422 | Each operation documents the one example most characteristic for it; scenarios target that operation accordingly |
 
 ---
@@ -173,4 +173,4 @@ Three contract defects were found and fixed during execution, not after:
 Remaining non-reproducible cases (malformed JSON hang, role-based 403,
 data/state-dependent 404 and 409, Prism-owned 405 body) are listed in
 `scenarios/negative.md` and in the gate record. None of them is claimed as
-verified; all are deferred to Lab 5.
+verified; all are deferred to the next phase.

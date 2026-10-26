@@ -13,7 +13,7 @@ Demonstrability legend:
 
 - **full** — the mock serves a documented example and the assertion is real.
 - **shape** — the response is documented and well-formed, but the mock cannot
-  exercise the underlying data or state rule; behaviour is verified in Lab 5.
+  exercise the underlying data or state rule; behaviour is verified in the next phase.
 
 | ID | Covers | Request | Assertions | Mock |
 |---|---|---|---|---|

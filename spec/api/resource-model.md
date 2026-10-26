@@ -5,7 +5,7 @@ Status: **COMPLETE** — Part 1 of the approved plan
 Source of truth for behaviour: SRS v1.3 (approved 2026-09-27),
 `spec/salon-management-system-srs-v1.3.tex`.
 
-This document covers lab steps 1.1–1.6: requirement classification, resource
+This document covers steps 1.1–1.6: requirement classification, resource
 inventory, URI conventions, HTTP method semantics, the per-operation definition,
 and the terminology review against the domain glossary.
 
@@ -15,7 +15,7 @@ R3, R7, R15 are optional trims only if scope ever shrinks, giving 45).
 
 ---
 
-## 1. Requirement classification (lab step 1.1)
+## 1. Requirement classification (step 1.1)
 
 Every SRS v1.3 requirement is classified by API applicability:
 
@@ -79,7 +79,7 @@ constraints). Every operation in §5 appears in at least one row.
 
 ---
 
-## 2. Domain resources and relationships (lab step 1.2)
+## 2. Domain resources and relationships (step 1.2)
 
 Terms follow the SRS domain glossary. "Appointment" is the booking record;
 "slot" is a candidate time range offered by availability, never a stored entity.
@@ -112,7 +112,7 @@ Cardinality rules that matter for the contract:
 
 ---
 
-## 3. URI grammar and conventions (lab step 1.3)
+## 3. URI grammar and conventions (step 1.3)
 
 | Rule | Convention |
 |---|---|
@@ -145,7 +145,7 @@ Naming rules that prevent ambiguity:
 
 ---
 
-## 4. HTTP method semantics (lab step 1.4)
+## 4. HTTP method semantics (step 1.4)
 
 | Method | Semantics | Used for | Success | Typical errors |
 |---|---|---|---|---|
@@ -186,7 +186,7 @@ Status code policy (details and codes in `error-model.md`, Part 2):
 
 ---
 
-## 5. Operation catalog (lab step 1.5)
+## 5. Operation catalog (step 1.5)
 
 Legend — **Auth:** `—` public, `TOKEN` client access token, `JWT` any
 authenticated principal, `JWT-M` master, `JWT-A` administrator. **Errors** lists
@@ -273,7 +273,7 @@ implied for every authenticated operation and omitted from the rows.
 
 ---
 
-## 6. Terminology review against the glossary (lab step 1.6)
+## 6. Terminology review against the glossary (step 1.6)
 
 | Term used | Glossary term | Why |
 |---|---|---|
@@ -300,5 +300,5 @@ recorded as conventions rather than requirements — `occupiedDurationMinutes`
 
 None blocking. The error codes per operation and the JSON schema details are
 defined in Part 2 (`error-model.md`, `openapi.yaml`). Any ambiguity discovered
-while writing schemas goes to `clarifications.md` (lab step 14), not into the
+while writing schemas goes to `clarifications.md` (step 14), not into the
 contract silently.

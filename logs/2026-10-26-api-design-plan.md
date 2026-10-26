@@ -1,24 +1,24 @@
-# API design plan — Salon Management System (Lab 4)
+# API design plan — Salon Management System
 
 Date: 2026-10-26
-Status: **APPROVED** — decisions confirmed by the student on 2026-10-26 (§10);
+Status: **APPROVED** — decisions confirmed by the human on 2026-10-26 (§10);
 execution may start.
 Execution status: Parts 0–3 complete on 2026-10-26; API-GATE record drafted in
 [`2026-10-26-api-gate-decision.md`](2026-10-26-api-gate-decision.md) and awaiting
-the student's signature.
-Owner: student (approval and gate decision), coding agent (draft and execution support).
+the human's signature.
+Owner: human (approval and gate decision), coding agent (draft and execution support).
 Inputs: SRS v1.3 (approved 2026-09-27), BDD scenarios SCN-01..SCN-15, domain
 glossary, traceability matrix, ticket decomposition SMS-1..SMS-37, SDD plan,
 risk register.
 Goal: design the REST API contract, produce the OpenAPI specification, run a
 mock API, cover positive and negative scenarios, and pass the API-GATE — with
-no server implementation (that is Lab 5).
+no server implementation (that is the next phase).
 
 ---
 
 ## 1. Repository analysis (as of 2026-10-26)
 
-| Artifact | State | Consequence for this lab |
+| Artifact | State | Consequence for this phase |
 |---|---|---|
 | `spec/salon-management-system-srs-v1.3.tex` | Approved; 42 requirements (33 REQ-F + 9 REQ-NF); glossary; BDD SCN-01..15; traceability matrix with Ticket column filled | Single source of truth for API scope; no requirement changes expected |
 | `spec/DESCRIPTION.md` | Concept note, synchronized with the two SRS-superseded decisions; constraints | Confirms scope exclusions (no accounts, no gateway, no payroll, no no-show tracking) |
@@ -40,7 +40,7 @@ schemas; single error model; OpenAPI 3.0.3 specification; automated validation;
 mock API; positive and negative scenarios; API-GATE; API traceability; commit
 plan.
 
-**Out of scope:** server implementation (Lab 5), database schema, UI, real auth
+**Out of scope:** server implementation (the next phase), database schema, UI, real auth
 provider, real SMS gateway, payment gateway.
 
 ---
@@ -290,7 +290,7 @@ All error responses use `application/problem+json` and reference the same
 |---|---|---|---|
 | 0.1 | Confirm the decisions in §10 | signed-off decision list | no pending items |
 | 0.2 | Create `spec/api/` skeleton and `package.json` with pinned Redocly/Prism versions; add `.gitignore` | skeleton files | files exist |
-| 0.3 | Student runs `cd spec/api && npm install` | `node_modules/` (ignored) | install succeeds |
+| 0.3 | Human runs `cd spec/api && npm install` | `node_modules/` (ignored) | install succeeds |
 | 0.4 | Tooling spike: lint a minimal spec; start Prism; test whether a defined 4xx response can be forced and whether its body matches `Problem` | `spec/api/README.md` note | capability documented |
 | 0.5 | Create empty artifact files from §3 | skeletons | all files exist |
 
@@ -336,17 +336,17 @@ All error responses use `application/problem+json` and reference the same
 |---|---|---|---|
 | 4.1 | Update `api-traceability.md` with scenario IDs, validation status, and mock status | final matrix | all rows filled |
 | 4.2 | Draft `logs/2026-10-26-api-gate-decision.md` with the 10 criteria and evidence links | gate draft | every criterion has evidence |
-| 4.3 | Student reviews and signs GO or REVISE | signed decision | decision recorded |
+| 4.3 | Human reviews and signs GO or REVISE | signed decision | decision recorded |
 | 4.4 | If REVISE: fix, re-run validation and scenarios, re-gate | revised artifacts | gate repeated |
-| 4.5 | Student commits in the sequence in §12 | 6 commits | history clean and meaningful |
+| 4.5 | Human commits in the sequence in §12 | 6 commits | history clean and meaningful |
 | 4.6 | Create GitHub issues SMS-38..SMS-43 for API design (decision D5) | issues | six issues open with labels |
 
-### 8.1 Lab 17-step mapping (normative order)
+### 8.1 17-step mapping (normative order)
 
-The lab mandates 17 steps in four parts. This table is the authoritative
+The process mandates 17 steps in four parts. This table is the authoritative
 crosswalk; do not reorder steps.
 
-| Lab step | Plan step(s) | Artifact | Done when |
+| Process step | Plan step(s) | Artifact | Done when |
 |---|---|---|---|
 | **Part 1** | | | |
 | 1. Identify SRS requirements exposed via REST | 1.1 | `resource-model.md` §requirements | all 42 REQs classified (exposed / cross-cutting / UI-only) |
@@ -376,7 +376,7 @@ Prism is **stateless**: it validates a request against the specification and
 returns a documented response example. It does not persist an appointment, so a
 `POST /appointments` followed by `GET /appointments/{token}` will not return the
 created record. This affects steps 11–13 and must be handled deliberately — the
-lab forbids writing a server, so a custom stateful mock is out of scope.
+the scope forbids writing a server, so a custom stateful mock is out of scope.
 
 Fidelity classes and how each is verified:
 
@@ -386,7 +386,7 @@ Fidelity classes and how each is verified:
 | B. Auth presence | no `Authorization` header on `/me/*` | Prism rejects with 401 | status + `code` |
 | C. Unknown resource | `GET /services/{unknown}` | 404 documented; Prism may return the example | status + `Problem` shape |
 | D. Forced status | `POST /appointments` → 409 `SLOT_UNAVAILABLE` | `Prefer: code=409` (spike 0.4 decides); else the example body is asserted directly | status + `code` |
-| E. State transition | cancel → status `cancelled`; payment before completion | **Not reproducible** in a stateless mock | contract-level review; deferred to Lab 5 tests; recorded in `clarifications.md` |
+| E. State transition | cancel → status `cancelled`; payment before completion | **Not reproducible** in a stateless mock | contract-level review; deferred to next-phase tests; recorded in `clarifications.md` |
 
 Rules:
 1. Spike 0.4 must answer: does Prism honour `Prefer: code=…` and return the
@@ -395,7 +395,7 @@ Rules:
 2. If no, class D is verified by asserting the documented example in
    `openapi.yaml` (static contract check) and the limitation is recorded as a
    clarification — **not** silently accepted. A thin custom mock is only an
-   option if the student explicitly re-scopes the "no server" rule.
+   option if the human explicitly re-scopes the "no server" rule.
 3. Class E is never claimed as mock-verified. The gate record states it plainly.
 4. Positive scenarios use the examples shipped in the spec; each request must be
    valid per the contract, and the response must match the documented status,
@@ -411,7 +411,7 @@ Rules:
 - Class C — not exercised by the spike; verified in Part 3.
 - Class D — **`Prefer: code=…` works**: `Prefer: code=409` returned 409 with
   `code=SLOT_UNAVAILABLE`. Rule 2's fallback is not needed.
-- Class E — **confirmed not reproducible**; contract review plus Lab 5 tests.
+- Class E — **confirmed not reproducible**; contract review plus next-phase tests.
 - Unplanned finding: `--errors` is mandatory, otherwise Prism answers 2xx to an
   invalid request. Set in both mock scripts.
 - Unplanned finding: Prism drops the path component of `servers[].url`, so the
@@ -425,7 +425,7 @@ Authoring rules derived (apply in Part 2): every operation declares `security`
 (`security: []` when public), documents at least one 4xx, and gives each
 documented error status a `Problem` example whose `code` a scenario asserts.
 
-### 8.3 Clarification and addendum register (lab step 14)
+### 8.3 Clarification and addendum register (step 14)
 
 Any behaviour discovered during design or mock verification that is absent from
 SRS v1.3 is **not** added to the contract silently. It is recorded in
@@ -442,7 +442,7 @@ Rules:
    and a new SPEC-GATE before it enters the contract. Until then the operation is
    marked `x-pending-addendum` and excluded from the API-GATE pass.
 3. Every CL row must end with a disposition — no open rows at the gate.
-4. The register is the evidence for API-GATE criterion 6 and for lab step 14.
+4. The register is the evidence for API-GATE criterion 6 and for step 14.
 
 ---
 
@@ -461,7 +461,7 @@ Rules:
 | 9 | Mock API starts from the approved specification | mock start log; Prism command in `README.md` |
 | 10 | Main positive and negative scenarios reproduce through the mock | `scenarios/results/` pass summary |
 
-Any failed criterion → **REVISE**, fix, repeat the gate. The student signs the
+Any failed criterion → **REVISE**, fix, repeat the gate. The human signs the
 final decision; the agent cannot move the gate to GO.
 
 ---
@@ -476,7 +476,7 @@ as recommended. The table below is retained as the decision record.
 
 | ID | Decision | Recommended default | Alternatives |
 |---|---|---|---|
-| D1 | Tooling installation | isolated `spec/api/package.json`; student runs `npm install` once | `npx` per command; Docker images |
+| D1 | Tooling installation | isolated `spec/api/package.json`; human runs `npm install` once | `npx` per command; Docker images |
 | D2 | OpenAPI version | 3.0.3 (broadest tool support, simpler `nullable`) | 3.1.0 (JSON Schema 2020-12) |
 | D3 | Traceability update | separate `spec/api/api-traceability.md` (SRS untouched; no LaTeX available) | new SRS v1.4 + SPEC-GATE; both |
 | D4 | Mock strategy | Prism spec-driven mock | Prism + thin custom mock for business-rule errors; custom mock only |
@@ -501,13 +501,13 @@ as recommended. The table below is retained as the decision record.
 
 ---
 
-## 11. Risks specific to this lab
+## 11. Risks specific to this phase
 
 | ID | Risk | Detection | Mitigation |
 |---|---|---|---|
 | R-API-01 | Prism cannot force a defined 4xx response or does not match the `Problem` schema | spike in step 0.4; scenario mismatch | **Resolved 2026-10-26**: spike passed 5/5 — forced 4xx works and schema violations return our documented `Problem` example. See `spec/api/spike/FINDINGS.md`. |
 | R-API-02 | OpenAPI file becomes too large to maintain | lint time; review difficulty | tags + components; split only if needed |
-| R-API-03 | Tooling install blocked or offline | `npm install` fails | npx or Docker fallback; student installs |
+| R-API-03 | Tooling install blocked or offline | `npm install` fails | npx or Docker fallback; human installs |
 | R-API-04 | New behavior invented during design | traceability review; gate | clarification/addendum log; no silent invention |
 | R-API-05 | SRS ambiguity (payment methods, timezone, phone format) | design review | decisions register (§10) |
 | R-API-06 | Mock state cannot demonstrate business-rule negatives | scenario failures | choose reproducible negatives; document the rest |
@@ -515,11 +515,11 @@ as recommended. The table below is retained as the decision record.
 
 ---
 
-## 12. Commit sequence (student executes; agent cannot commit)
+## 12. Commit sequence (human executes; agent cannot commit)
 
 | # | Prefix | Subject | Files |
 |---|---|---|---|
-| 0 | `gate:` | record approved API design plan for lab 4 | `logs/2026-10-26-api-design-plan.md`, `logs/2026-10-26-api-phase0-setup.md` |
+| 0 | `gate:` | record approved API design plan | `logs/2026-10-26-api-design-plan.md`, `logs/2026-10-26-api-phase0-setup.md` |
 | 1 | `test:` | add API contract validation and mock tooling | `spec/api/package.json`, `spec/api/package-lock.json`, `spec/api/redocly.yaml`, `spec/api/.gitignore`, `spec/api/spike/**`, `spec/api/clarifications.md` |
 | 2 | `spec:` | add REST API resource model and error model | `spec/api/resource-model.md`, `spec/api/error-model.md` |
 | 3 | `spec:` | add OpenAPI specification for salon management system | `spec/api/openapi.yaml` |
@@ -536,7 +536,7 @@ artifact — commit it first as commit 0, so the approved plan is in history
 before the artifacts it governs:
 
 ```
-gate: record approved API design plan for lab 4
+gate: record approved API design plan
 ```
 
 ### 12.1 GitHub issues for the API design work (decision D5)
@@ -551,16 +551,16 @@ Created **after** the API-GATE decision, so the tracker reflects approved work
 | SMS-40 | Author OpenAPI 3.0.3 specification | Specification | Plan §8 Part 2 | SMS-38, SMS-39 | Coding Agent |
 | SMS-41 | Build API traceability matrix (REQ ↔ operation ↔ scenario) | Documentation | Plan §8.1; SRS §8 | SMS-40 | Coding Agent |
 | SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent |
-| SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human (Student) |
+| SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human |
 
 Add these rows to `docs/ticket-list.md` and `docs/issue-import.csv` in the same
 commit that records the gate decision, so the tracker and the plan stay in step.
 
 ---
 
-## 13. Definition of done for Lab 4
+## 13. Definition of done 
 
-Deliverables required by the lab brief:
+Required deliverables:
 
 - [x] REST resource model documented and consistent with the glossary.
 - [x] Traceability table of REQ-ID to API operations.
@@ -572,11 +572,11 @@ Deliverables required by the lab brief:
 - [x] Automated validation result captured (zero errors, zero warnings).
 - [x] Working mock API started from the approved spec.
 - [x] API traceability matrix updated with scenario and mock status.
-- [x] API-GATE decision record signed by the student.
+- [x] API-GATE decision record signed by the human.
 
-Process completeness required by the lab brief:
+Required process completeness:
 
-- [x] All 17 mandated lab steps evidenced in §8.1.
+- [x] All 17 mandated steps evidenced in §8.1.
 - [x] All 10 API-GATE criteria evidenced in §9.
 - [x] Clarification register `spec/api/clarifications.md` has no open rows.
 - [ ] Artifacts committed in meaningful commits (§12).

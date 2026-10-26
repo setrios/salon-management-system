@@ -3,7 +3,7 @@
 # Requires: gh CLI installed and authenticated (`gh auth login`), push access
 # to setrios/salon-management-system.
 # The coding agent cannot run this (no gh on this machine, read-only network
-# per CLAUDE.md) — the student runs it.
+# per CLAUDE.md) — the human runs it.
 #
 # What it does:
 #   1. creates the workflow labels (statuses, 8 SDD types, roles)
@@ -43,7 +43,7 @@ mklabel "type: gate"          "5319e7" "Human-only go/no-go decision, no code/te
 
 # roles
 mklabel "role: coding agent" "c2e0c6" "Executed primarily by the coding agent"
-mklabel "role: human"        "f9d0c4" "Executed by the human (student) only"
+mklabel "role: human"        "f9d0c4" "Executed by the human only"
 mklabel "role: joint"        "d4c5f9" "Agent drafts, human reviews/approves"
 
 # --- 2. issues --------------------------------------------------------------
@@ -72,7 +72,7 @@ for row in csv.reader(sys.stdin):
        Verification) labels+=("type: verification");; Validation) labels+=("type: validation");;
        Documentation) labels+=("type: documentation");; Gate) labels+=("type: gate");; esac
   case "$role" in "Coding Agent") labels+=("role: coding agent");;
-       "Human (Student)") labels+=("role: human");; Joint) labels+=("role: joint");; esac
+       "Human") labels+=("role: human");; Joint) labels+=("role: joint");; esac
   # Done = closed, carried by the issue state and therefore by no label
   case "$state" in Backlog) labels+=("status: backlog");; "In Progress") labels+=("status: in progress");;
        "In Review") labels+=("status: in review");; Blocked) labels+=("status: blocked");;

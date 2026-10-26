@@ -18,7 +18,7 @@ info:
     `application/problem+json` and always `Problem`; timestamps are RFC 3339 with
     offset in `Europe/Kyiv`; money is integer minor units (`UAH`); UUID v4 ids.
   contact:
-    name: Salon Management System — Lab 4
+    name: Salon Management System
 servers:
   - url: http://127.0.0.1:4010/api/v1
     description: Local Prism mock. Prism serves the paths at the server root, so requests go to http://127.0.0.1:4010/services (see clarifications CL-01).
