@@ -7,11 +7,11 @@
 #
 # What it does:
 #   1. creates the workflow labels (statuses, 8 SDD types, roles)
-#   2. creates all 37 issues in docs/issue-import.csv order, so issue #N = SMS-N
+#   2. creates all 43 issues in docs/issue-import.csv order, so issue #N = SMS-N
 #   3. closes the issues whose CSV State is "Done" (closing = Done state; no label)
 #
 # Idempotent-ish: existing labels are skipped; issues are only created if
-# fewer than 37 open+closed issues exist. Re-running when issues already
+# fewer than 43 open+closed issues exist. Re-running when issues already
 # exist does nothing.
 
 set -euo pipefail
@@ -103,4 +103,4 @@ label_args=()
   fi
 done
 
-echo "Done: 37 issues created. Verify with: gh issue list --repo $REPO --limit 40"
+echo "Done: 43 issues created. Verify with: gh issue list --repo $REPO --limit 40"
