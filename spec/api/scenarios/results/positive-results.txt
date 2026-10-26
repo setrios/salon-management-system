@@ -1,0 +1,107 @@
+== Positive scenarios against http://127.0.0.1:4010 ==
+PASS  POS-01  status 201
+PASS  POS-01  status confirmed
+PASS  POS-01  two service lines
+PASS  POS-01  total duration 75
+PASS  POS-01  occupied duration 90
+PASS  POS-01  total price 85000
+PASS  POS-01  currency UAH
+PASS  POS-01  media type json
+PASS  POS-01  token is UUID
+PASS  POS-01  confirmation URL is https
+PASS  POS-01  two reminders
+PASS  POS-02  status 200
+PASS  POS-02  status cancelled
+PASS  POS-03  status 200
+PASS  POS-03  new start applied
+PASS  POS-03  24h reminder at new time
+PASS  POS-03  2h reminder at new time
+PASS  POS-04  24h reminder 24h before start
+PASS  POS-04  reminder types
+PASS  POS-05  two reminder records
+PASS  POS-05  second reminder is 2h
+PASS  POS-06  status 200
+PASS  POS-06  channel sms
+PASS  POS-06  event cancellation
+PASS  POS-06  enabled
+PASS  POS-06  three preferences
+PASS  POS-07  completion 200
+PASS  POS-07  status completed
+PASS  POS-07  payment 201
+PASS  POS-07  payment paid
+PASS  POS-07  payment card
+PASS  POS-07  payment amount
+PASS  POS-07  payment currency
+PASS  POS-08  status 201
+PASS  POS-08  category present
+PASS  POS-08  three seeds
+PASS  POS-08  seeds flagged
+PASS  POS-09  PUT 200
+PASS  POS-09  monday rule
+PASS  POS-09  start 09:00
+PASS  POS-09  end 18:00
+PASS  POS-09  date override
+PASS  POS-10  status 200
+PASS  POS-10  period month
+PASS  POS-10  currency UAH
+PASS  POS-10  two methods
+PASS  POS-10  cash and card
+PASS  POS-11  status 200
+PASS  POS-11  both reminders scheduled
+PASS  POS-12  status 200
+PASS  POS-12  status cancelled
+PASS  POS-13  status 200
+PASS  POS-13  total duration 75
+PASS  POS-13  occupied 90
+PASS  POS-13  slot duration 90
+PASS  POS-14  status 200
+PASS  POS-14  first rank 1
+PASS  POS-14  first bookings 42
+PASS  POS-14  ranks ascending
+PASS  POS-15  status 200
+PASS  POS-15  asOf present
+PASS  POS-15  quantity numeric
+PASS  POS-15  unknown period ignored
+PASS  POS-16  create 201
+PASS  POS-16  username olena
+PASS  POS-16  active
+PASS  POS-16  login 200
+PASS  POS-16  bearer token
+PASS  POS-16  role master
+PASS  POS-16  expires positive
+PASS  POS-17  status 200
+PASS  POS-17  one appointment
+PASS  POS-17  no accessToken in staff view
+PASS  POS-18  status 200
+PASS  POS-18  one link
+PASS  POS-18  currency UAH
+PASS  POS-18  master id present
+PASS  POS-19  create 201
+PASS  POS-19  deactivate 200
+PASS  POS-19  active false
+PASS  POS-19  DELETE returns 405
+PASS  POS-20  status 200
+PASS  POS-20  start updated
+PASS  POS-20  total numeric
+PASS  POS-21  status 201
+PASS  POS-21  type issue
+PASS  POS-21  quantity 20
+PASS  POS-22  status 201
+PASS  POS-22  unit ml
+PASS  POS-22  five standard units
+PASS  POS-22  standard contains ml
+PASS  POS-23  status 200
+PASS  POS-23  token echoed
+PASS  POS-23  confirmation URL present
+PASS  POS-24  status 200
+PASS  POS-24  no accessToken
+PASS  POS-24  no confirmationUrl
+PASS  POS-25  total currency UAH
+PASS  POS-25  breakdown currency UAH
+PASS  POS-26  PUT 200
+PASS  POS-26  GET 200
+PASS  POS-26  weekly preserved
+PASS  POS-26  dates preserved
+PASS  POS-27  slot minute is 00 or 30
+
+== Summary: 104 passed, 0 failed ==

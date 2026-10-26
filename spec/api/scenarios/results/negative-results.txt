@@ -1,0 +1,43 @@
+== Negative scenarios against http://127.0.0.1:4010 ==
+PASS  NEG-01  status 422
+PASS  NEG-01  problem media type
+PASS  NEG-01  code VALIDATION_ERROR
+PASS  NEG-01  field errors present
+PASS  NEG-02  status 422
+PASS  NEG-02  code VALIDATION_ERROR
+PASS  NEG-03  status 400
+PASS  NEG-03  problem media type
+PASS  NEG-03  code MALFORMED_REQUEST
+PASS  NEG-04  status 401
+PASS  NEG-04  problem media type
+PASS  NEG-04  code UNAUTHENTICATED
+PASS  NEG-05  status 403
+PASS  NEG-05  code FORBIDDEN
+PASS  NEG-06  status 404
+PASS  NEG-06  code NOT_FOUND
+PASS  NEG-07  status 404
+PASS  NEG-07  code NOT_FOUND
+PASS  NEG-08  status 409
+PASS  NEG-08  code SLOT_UNAVAILABLE
+PASS  NEG-09  status 409
+PASS  NEG-09  code DUPLICATE_RESOURCE
+PASS  NEG-10  status 409
+PASS  NEG-10  code INVALID_STATE_TRANSITION
+PASS  NEG-11  status 409
+PASS  NEG-11  code APPOINTMENT_NOT_COMPLETED
+PASS  NEG-12  status 409
+PASS  NEG-12  code MATERIAL_STOCK_INSUFFICIENT
+PASS  NEG-13  status 422
+PASS  NEG-13  code INVALID_PERIOD
+PASS  NEG-14  status 422
+PASS  NEG-14  code BUSINESS_RULE_VIOLATION
+PASS  NEG-15  status 415
+PASS  NEG-15  problem media type
+PASS  NEG-15  code UNSUPPORTED_MEDIA_TYPE
+PASS  NEG-16  status 405
+NOTE  NEG-16 body is Prism's own error object, not Problem (documented gap)
+PASS  NEG-17  status 405
+PASS  NEG-17  problem media type
+PASS  NEG-17  code METHOD_NOT_ALLOWED
+
+== Summary: 39 passed, 0 failed ==
