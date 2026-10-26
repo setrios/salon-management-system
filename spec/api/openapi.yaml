@@ -1,0 +1,3728 @@
+openapi: 3.0.3
+info:
+  title: Salon Management System API
+  version: 1.0.0
+  description: |
+    REST API contract for a single-location unisex beauty salon.
+
+    Clients book without an account and manage their appointment through an
+    access token. Masters see their own schedule and availability. One
+    administrator manages reference data, appointments, materials, payments and
+    reports.
+
+    Derived from SRS v1.3 (approved 2026-09-27). Design rationale and step
+    mapping: `logs/2026-10-26-api-design-plan.md`. Resource model:
+    `spec/api/resource-model.md`. Error model: `spec/api/error-model.md`.
+
+    Conventions: base path `/api/v1`; JSON in, JSON out; errors are
+    `application/problem+json` and always `Problem`; timestamps are RFC 3339 with
+    offset in `Europe/Kyiv`; money is integer minor units (`UAH`); UUID v4 ids.
+  contact:
+    name: Salon Management System — Lab 4
+servers:
+  - url: http://127.0.0.1:4010/api/v1
+    description: Local Prism mock. Prism serves the paths at the server root, so requests go to http://127.0.0.1:4010/services (see clarifications CL-01).
+  - url: https://api.salon.example/api/v1
+    description: Production (placeholder host, not provisioned).
+tags:
+  - name: Public
+    description: Public catalogue, availability and client booking.
+  - name: Auth
+    description: Master and administrator authentication.
+  - name: Master
+    description: Master self-service endpoints.
+  - name: Admin
+    description: Administrator reference data and operations.
+  - name: Reports
+    description: Administrator reporting endpoints.
+security:
+  - bearerAuth: []
+paths:
+  /services:
+    get:
+      operationId: listServices
+      summary: List active services
+      description: Public catalogue. Returns active services, optionally filtered by category or free-text query.
+      tags: [Public]
+      security: []
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring match on the service name.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of active services.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePage'
+              example:
+                items:
+                  - id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    category: Hair
+                    baseDurationMinutes: 45
+                    active: true
+                    createdAt: '2026-09-01T10:00:00+03:00'
+                    updatedAt: '2026-09-01T10:00:00+03:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /services/{serviceId}:
+    get:
+      operationId: getService
+      summary: Get one service
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+      responses:
+        '200':
+          description: The service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+              example:
+                id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                name: Haircut
+                category: Hair
+                baseDurationMinutes: 45
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /categories:
+    get:
+      operationId: listCategories
+      summary: List service categories
+      description: Includes the three seeded categories Hair, Coloring and Barbering plus any custom ones (REQ-F-024).
+      tags: [Public]
+      security: []
+      responses:
+        '200':
+          description: All categories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+              example:
+                - name: Hair
+                  seeded: true
+                - name: Coloring
+                  seeded: true
+                - name: Barbering
+                  seeded: true
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /masters:
+    get:
+      operationId: listMasters
+      summary: List masters
+      tags: [Public]
+      security: []
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of masters in public representation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterPage'
+              example:
+                items:
+                  - id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    fullName: Olena Shevchenko
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /masters/{masterId}:
+    get:
+      operationId: getMaster
+      summary: Get one master
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/MasterId'
+      responses:
+        '200':
+          description: The master in public representation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterPublic'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                fullName: Olena Shevchenko
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /masters/{masterId}/services:
+    get:
+      operationId: listMasterServices
+      summary: List services offered by a master
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/MasterId'
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of master-service links with prices.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterServicePage'
+              example:
+                items:
+                  - id: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f80
+                    masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                    active: true
+                page: 1
+                pageSize: 20
+                total: 1
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /masters/{masterId}/availability:
+    get:
+      operationId: getMasterAvailability
+      summary: Get bookable slots for a date
+      description: |
+        Computes slots from the master's weekly rules and date overrides, filters
+        out booked time, and applies 30-minute rounding (REQ-F-031) and the
+        boundary rule (REQ-NF-008).
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/MasterId'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: serviceIds
+          in: query
+          required: true
+          description: Comma-separated service ids that define the requested duration.
+          schema:
+            type: string
+          example: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+      responses:
+        '200':
+          description: Availability for the date.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+              example:
+                masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                date: '2026-11-03'
+                serviceIds:
+                  - 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                slots:
+                  - startAt: '2026-11-03T10:00:00+02:00'
+                    endAt: '2026-11-03T11:30:00+02:00'
+                    durationMinutes: 90
+                    available: true
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /appointments:
+    post:
+      operationId: createAppointment
+      summary: Book an appointment
+      description: |
+        Creates a confirmed appointment with no approval step (REQ-F-003), sends
+        exactly one confirmation message (REQ-F-005), schedules reminders at the
+        appointment time minus 24 h and 2 h, skipping those already in the past
+        (REQ-F-010, REQ-F-011).
+      tags: [Public]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreate'
+            example:
+              client:
+                name: Iryna Kovalenko
+                phone: '+380501234567'
+              masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+              serviceIds:
+                - 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                - 5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d
+              startAt: '2026-11-03T10:00:00+02:00'
+      responses:
+        '201':
+          description: Appointment created and confirmed.
+          headers:
+            Location:
+              description: URL of the created appointment, containing the access token.
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                  - serviceId: 5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d
+                    name: Styling
+                    baseDurationMinutes: 30
+                    price:
+                      amountMinor: 30000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: scheduled
+                  - type: '2h'
+                    scheduledAt: '2026-11-03T08:00:00+02:00'
+                    status: scheduled
+                accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '409':
+          $ref: '#/components/responses/SlotUnavailable'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /appointments/{token}:
+    get:
+      operationId: getAppointmentByToken
+      summary: Get an appointment by access token
+      description: The token is the credential; an unknown token never reveals whether it existed.
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+      responses:
+        '200':
+          description: The appointment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: scheduled
+                  - type: '2h'
+                    scheduledAt: '2026-11-03T08:00:00+02:00'
+                    status: scheduled
+                accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /appointments/{token}/cancel:
+    post:
+      operationId: cancelAppointmentByToken
+      summary: Cancel an appointment by access token
+      description: |
+        Cancelling an already cancelled appointment returns the current state
+        unchanged (D15). Cancelling a completed appointment is rejected.
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+      responses:
+        '200':
+          description: Appointment after cancellation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: cancelled
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: skipped
+                accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:05:00+02:00'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InvalidStateTransition'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /appointments/{token}/reschedule:
+    post:
+      operationId: rescheduleAppointmentByToken
+      summary: Reschedule an appointment by access token
+      description: |
+        Updates the same record, recalculating totals and reminders (REQ-F-007,
+        REQ-F-008). A reminder that was skipped is reactivated if the new time
+        puts it in the future (REQ-F-029).
+      tags: [Public]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentReschedule'
+            example:
+              startAt: '2026-11-04T14:00:00+02:00'
+      responses:
+        '200':
+          description: Appointment after rescheduling.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-04T14:00:00+02:00'
+                endAt: '2026-11-04T15:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-03T14:00:00+02:00'
+                    status: scheduled
+                  - type: '2h'
+                    scheduledAt: '2026-11-04T12:00:00+02:00'
+                    status: scheduled
+                accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:10:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/SlotUnavailable'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate a master or administrator
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: olena
+              password: correct-horse-battery
+      responses:
+        '200':
+          description: Bearer token for subsequent requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example
+                tokenType: Bearer
+                expiresIn: 3600
+                role: master
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /auth/me:
+    get:
+      operationId: getCurrentPrincipal
+      summary: Get the authenticated principal
+      tags: [Auth]
+      responses:
+        '200':
+          description: The caller's identity and role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Principal'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                role: master
+                displayName: Olena Shevchenko
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me/appointments:
+    get:
+      operationId: listMyAppointments
+      summary: List the caller's own appointments
+      description: Master-only. The scope is derived from the token subject (REQ-F-013).
+      tags: [Master]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [confirmed, completed, cancelled]
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of the caller's appointments in staff representation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdminPage'
+              example:
+                items:
+                  - id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                    status: confirmed
+                    client:
+                      name: Iryna Kovalenko
+                      phone: '+380501234567'
+                    master:
+                      id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                      fullName: Olena Shevchenko
+                    services:
+                      - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                        name: Haircut
+                        baseDurationMinutes: 45
+                        price:
+                          amountMinor: 55000
+                          currency: UAH
+                    startAt: '2026-11-03T10:00:00+02:00'
+                    endAt: '2026-11-03T11:30:00+02:00'
+                    totalDurationMinutes: 75
+                    occupiedDurationMinutes: 90
+                    totalPrice:
+                      amountMinor: 85000
+                      currency: UAH
+                    reminders:
+                      - type: '24h'
+                        scheduledAt: '2026-11-02T10:00:00+02:00'
+                        status: scheduled
+                    createdAt: '2026-10-26T12:00:00+02:00'
+                    updatedAt: '2026-10-26T12:00:00+02:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me/services:
+    get:
+      operationId: listMyServices
+      summary: List services the caller provides
+      description: Master-only; returns only the caller's own MasterService records (REQ-F-014).
+      tags: [Master]
+      responses:
+        '200':
+          description: The caller's master-service links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterServiceList'
+              example:
+                - id: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f80
+                  masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                  price:
+                    amountMinor: 55000
+                    currency: UAH
+                  active: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me/availability:
+    get:
+      operationId: getMyAvailability
+      summary: Get the caller's availability rules
+      tags: [Master]
+      responses:
+        '200':
+          description: Weekly rules and date overrides.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+              example:
+                weekly:
+                  - dayOfWeek: 1
+                    startTime: '09:00'
+                    endTime: '18:00'
+                dates:
+                  - date: '2026-11-03'
+                    startTime: '10:00'
+                    endTime: '14:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      operationId: replaceMyAvailability
+      summary: Replace the caller's availability rules
+      description: Full replacement of the weekly-plus-dates rule set (REQ-F-015).
+      tags: [Master]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Availability'
+            example:
+              weekly:
+                - dayOfWeek: 1
+                  startTime: '09:00'
+                  endTime: '18:00'
+              dates:
+                - date: '2026-11-03'
+                  startTime: '10:00'
+                  endTime: '14:00'
+      responses:
+        '200':
+          description: Stored availability.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+              example:
+                weekly:
+                  - dayOfWeek: 1
+                    startTime: '09:00'
+                    endTime: '18:00'
+                dates:
+                  - date: '2026-11-03'
+                    startTime: '10:00'
+                    endTime: '14:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me/notification-preferences:
+    get:
+      operationId: getMyNotificationPreferences
+      summary: List the caller's notification preferences
+      tags: [Master]
+      responses:
+        '200':
+          description: Preferences per channel and event type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferenceList'
+              example:
+                - channel: sms
+                  eventType: new
+                  enabled: true
+                - channel: sms
+                  eventType: reschedule
+                  enabled: true
+                - channel: sms
+                  eventType: cancellation
+                  enabled: false
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateMyNotificationPreference
+      summary: Toggle one notification preference
+      description: Changes exactly one channel and event-type combination (REQ-F-016, REQ-F-026).
+      tags: [Master]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencePatch'
+            example:
+              channel: sms
+              eventType: cancellation
+              enabled: true
+      responses:
+        '200':
+          description: The updated preference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+              example:
+                channel: sms
+                eventType: cancellation
+                enabled: true
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /me/notifications:
+    get:
+      operationId: listMyNotifications
+      summary: List the caller's notification records
+      tags: [Master]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [scheduled, sent, skipped, failed]
+        - name: eventType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [new, reschedule, cancellation, reminder_24h, reminder_2h]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of notification records.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+              example:
+                items:
+                  - id: 6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d
+                    appointmentId: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                    audience: client
+                    eventType: new
+                    channel: sms
+                    status: sent
+                    sentAt: '2026-10-26T12:00:05+02:00'
+                    createdAt: '2026-10-26T12:00:00+02:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/masters:
+    get:
+      operationId: listMastersAdmin
+      summary: List masters (administrator)
+      tags: [Admin]
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of master accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterAdminPage'
+              example:
+                items:
+                  - id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    fullName: Olena Shevchenko
+                    username: olena
+                    active: true
+                    createdAt: '2026-09-01T10:00:00+03:00'
+                    updatedAt: '2026-09-01T10:00:00+03:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createMaster
+      summary: Create a master account
+      description: Only the administrator can create master accounts (REQ-F-012, REQ-F-017).
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterCreate'
+            example:
+              fullName: Olena Shevchenko
+              username: olena
+              password: correct-horse-battery
+              active: true
+      responses:
+        '201':
+          description: Master created.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Master'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                fullName: Olena Shevchenko
+                username: olena
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/masters/{masterId}:
+    get:
+      operationId: getMasterAdmin
+      summary: Get one master (administrator)
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MasterId'
+      responses:
+        '200':
+          description: The master account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Master'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                fullName: Olena Shevchenko
+                username: olena
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateMaster
+      summary: Update a master account
+      description: 'Deactivation uses `active: false`; no deletion (REQ-NF-005).'
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MasterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterPatch'
+            example:
+              active: false
+      responses:
+        '200':
+          description: Updated master.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Master'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                fullName: Olena Shevchenko
+                username: olena
+                active: false
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/services:
+    get:
+      operationId: listServicesAdmin
+      summary: List services (administrator)
+      tags: [Admin]
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of services, active and inactive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePage'
+              example:
+                items:
+                  - id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    category: Hair
+                    baseDurationMinutes: 45
+                    active: true
+                    createdAt: '2026-09-01T10:00:00+03:00'
+                    updatedAt: '2026-09-01T10:00:00+03:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createService
+      summary: Create a service
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreate'
+            example:
+              name: Haircut
+              category: Hair
+              baseDurationMinutes: 45
+              active: true
+      responses:
+        '201':
+          description: Service created.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+              example:
+                id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                name: Haircut
+                category: Hair
+                baseDurationMinutes: 45
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/services/{serviceId}:
+    get:
+      operationId: getServiceAdmin
+      summary: Get one service (administrator)
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+      responses:
+        '200':
+          description: The service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+              example:
+                id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                name: Haircut
+                category: Hair
+                baseDurationMinutes: 45
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateService
+      summary: Update a service
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/ServiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePatch'
+            example:
+              active: false
+      responses:
+        '200':
+          description: Updated service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+              example:
+                id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                name: Haircut
+                category: Hair
+                baseDurationMinutes: 45
+                active: false
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/categories:
+    get:
+      operationId: listCategoriesAdmin
+      summary: List categories (administrator)
+      tags: [Admin]
+      responses:
+        '200':
+          description: All categories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+              example:
+                - name: Hair
+                  seeded: true
+                - name: Coloring
+                  seeded: true
+                - name: Barbering
+                  seeded: true
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/master-services:
+    get:
+      operationId: listMasterServicesAdmin
+      summary: List master-service links
+      tags: [Admin]
+      parameters:
+        - name: masterId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterServicePage'
+              example:
+                items:
+                  - id: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f80
+                    masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                    active: true
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createMasterService
+      summary: Link a service to a master with a price
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterServiceCreate'
+            example:
+              masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+              serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+              price:
+                amountMinor: 55000
+                currency: UAH
+              active: true
+      responses:
+        '201':
+          description: Link created.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterService'
+              example:
+                id: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f80
+                masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                price:
+                  amountMinor: 55000
+                  currency: UAH
+                active: true
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/master-services/{masterServiceId}:
+    patch:
+      operationId: updateMasterService
+      summary: Update a master-service link
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MasterServiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MasterServicePatch'
+            example:
+              price:
+                amountMinor: 60000
+                currency: UAH
+      responses:
+        '200':
+          description: Updated link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterService'
+              example:
+                id: 4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f80
+                masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                price:
+                  amountMinor: 60000
+                  currency: UAH
+                active: true
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/materials:
+    get:
+      operationId: listMaterialsAdmin
+      summary: List materials
+      tags: [Admin]
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of materials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialPage'
+              example:
+                items:
+                  - id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    name: Shampoo
+                    unit: ml
+                    stockQuantity: 180
+                    active: true
+                    createdAt: '2026-09-01T10:00:00+03:00'
+                    updatedAt: '2026-09-01T10:00:00+03:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createMaterial
+      summary: Create a material
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialCreate'
+            example:
+              name: Shampoo
+              unit: ml
+              initialStockQuantity: 180
+              active: true
+      responses:
+        '201':
+          description: Material created.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                name: Shampoo
+                unit: ml
+                stockQuantity: 180
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/materials/{materialId}:
+    get:
+      operationId: getMaterialAdmin
+      summary: Get one material
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      responses:
+        '200':
+          description: The material.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                name: Shampoo
+                unit: ml
+                stockQuantity: 180
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-09-01T10:00:00+03:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateMaterial
+      summary: Update a material
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialPatch'
+            example:
+              name: Premium Shampoo
+      responses:
+        '200':
+          description: Updated material.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+              example:
+                id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                name: Premium Shampoo
+                unit: ml
+                stockQuantity: 180
+                active: true
+                createdAt: '2026-09-01T10:00:00+03:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DuplicateResource'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/units:
+    get:
+      operationId: listUnits
+      summary: List standard and custom units
+      description: Standard units are ml, l, g, kg and pcs (REQ-F-025).
+      tags: [Admin]
+      responses:
+        '200':
+          description: Available units.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitList'
+              example:
+                standard: [ml, l, g, kg, pcs]
+                custom: [bottle, sachet]
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments:
+    get:
+      operationId: listAppointmentsAdmin
+      summary: List appointments (administrator)
+      tags: [Admin]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: masterId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [confirmed, completed, cancelled]
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of appointments in staff representation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdminPage'
+              example:
+                items:
+                  - id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                    status: confirmed
+                    client:
+                      name: Iryna Kovalenko
+                      phone: '+380501234567'
+                    master:
+                      id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                      fullName: Olena Shevchenko
+                    services:
+                      - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                        name: Haircut
+                        baseDurationMinutes: 45
+                        price:
+                          amountMinor: 55000
+                          currency: UAH
+                    startAt: '2026-11-03T10:00:00+02:00'
+                    endAt: '2026-11-03T11:30:00+02:00'
+                    totalDurationMinutes: 75
+                    occupiedDurationMinutes: 90
+                    totalPrice:
+                      amountMinor: 85000
+                      currency: UAH
+                    reminders:
+                      - type: '24h'
+                        scheduledAt: '2026-11-02T10:00:00+02:00'
+                        status: scheduled
+                    createdAt: '2026-10-26T12:00:00+02:00'
+                    updatedAt: '2026-10-26T12:00:00+02:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createAppointmentAdmin
+      summary: Create an appointment (administrator)
+      description: Applies the same booking rules as the public endpoint (REQ-F-019).
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreate'
+            example:
+              client:
+                name: Iryna Kovalenko
+                phone: '+380501234567'
+              masterId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+              serviceIds:
+                - 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+              startAt: '2026-11-03T10:00:00+02:00'
+      responses:
+        '201':
+          description: Appointment created.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: scheduled
+                accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/SlotUnavailable'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments/{appointmentId}:
+    get:
+      operationId: getAppointmentAdmin
+      summary: Get one appointment (administrator)
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+      responses:
+        '200':
+          description: The appointment in staff representation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdmin'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: scheduled
+                notificationsSummary:
+                  scheduled: 2
+                  sent: 1
+                  skipped: 0
+                  failed: 0
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:00:00+02:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      operationId: updateAppointmentAdmin
+      summary: Edit an appointment (administrator)
+      description: |
+        Recalculates duration and price and re-sends a reschedule message
+        (REQ-F-028). Completed and cancelled appointments are not editable (D15).
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentPatch'
+            example:
+              startAt: '2026-11-04T14:00:00+02:00'
+      responses:
+        '200':
+          description: Updated appointment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdmin'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: confirmed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-04T14:00:00+02:00'
+                endAt: '2026-11-04T15:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-03T14:00:00+02:00'
+                    status: scheduled
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:10:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InvalidStateTransition'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments/{appointmentId}/cancel:
+    post:
+      operationId: cancelAppointmentAdmin
+      summary: Cancel an appointment (administrator)
+      description: |
+        The acting administrator is not self-notified, but the assigned master is
+        still notified (REQ-F-030).
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+      responses:
+        '200':
+          description: Appointment after cancellation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdmin'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: cancelled
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders:
+                  - type: '24h'
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    status: skipped
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-10-26T12:05:00+02:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InvalidStateTransition'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments/{appointmentId}/complete:
+    post:
+      operationId: completeAppointment
+      summary: Mark an appointment completed
+      description: Completion is required before a payment can be recorded (REQ-F-027).
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+      responses:
+        '200':
+          description: Appointment after completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentAdmin'
+              example:
+                id: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                status: completed
+                client:
+                  name: Iryna Kovalenko
+                  phone: '+380501234567'
+                master:
+                  id: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                  fullName: Olena Shevchenko
+                services:
+                  - serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    baseDurationMinutes: 45
+                    price:
+                      amountMinor: 55000
+                      currency: UAH
+                startAt: '2026-11-03T10:00:00+02:00'
+                endAt: '2026-11-03T11:30:00+02:00'
+                totalDurationMinutes: 75
+                occupiedDurationMinutes: 90
+                totalPrice:
+                  amountMinor: 85000
+                  currency: UAH
+                reminders: []
+                createdAt: '2026-10-26T12:00:00+02:00'
+                updatedAt: '2026-11-03T11:35:00+02:00'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InvalidStateTransition'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments/{appointmentId}/notifications:
+    get:
+      operationId: listAppointmentNotifications
+      summary: List notification records for an appointment
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of notification records.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+              example:
+                items:
+                  - id: 6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d
+                    appointmentId: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                    audience: client
+                    eventType: new
+                    channel: sms
+                    status: sent
+                    sentAt: '2026-10-26T12:00:05+02:00'
+                    createdAt: '2026-10-26T12:00:00+02:00'
+                  - id: 7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e
+                    appointmentId: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                    audience: client
+                    eventType: reminder_24h
+                    channel: sms
+                    status: scheduled
+                    scheduledAt: '2026-11-02T10:00:00+02:00'
+                    createdAt: '2026-10-26T12:00:00+02:00'
+                page: 1
+                pageSize: 20
+                total: 2
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/materials/{materialId}/transactions:
+    get:
+      operationId: listMaterialTransactions
+      summary: List stock transactions for a material
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [receipt, issue]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: A page of transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialTransactionPage'
+              example:
+                items:
+                  - id: 8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f
+                    materialId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    type: issue
+                    quantity: 20
+                    occurredAt: '2026-11-03T11:40:00+02:00'
+                    note: Haircut service usage
+                    createdAt: '2026-11-03T11:40:00+02:00'
+                page: 1
+                pageSize: 20
+                total: 1
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: createMaterialTransaction
+      summary: Record a stock receipt or issue
+      description: |
+        A receipt increases the stock level and an issue decreases it
+        (REQ-F-020). Issuing more than the current level is rejected (D13).
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/MaterialId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialTransactionCreate'
+            example:
+              type: issue
+              quantity: 20
+              occurredAt: '2026-11-03T11:40:00+02:00'
+              note: Haircut service usage
+      responses:
+        '201':
+          description: Transaction recorded; stock level updated.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialTransaction'
+              example:
+                id: 8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f
+                materialId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                type: issue
+                quantity: 20
+                occurredAt: '2026-11-03T11:40:00+02:00'
+                note: Haircut service usage
+                createdAt: '2026-11-03T11:40:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/MaterialStockInsufficient'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/appointments/{appointmentId}/payments:
+    post:
+      operationId: createPayment
+      summary: Record a payment for a completed appointment
+      description: |
+        Payments are recorded manually; no gateway is integrated (REQ-NF-009). An
+        appointment carries at most one immutable payment (D12) and must be
+        completed first (REQ-F-021, REQ-F-027).
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/AppointmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+            example:
+              amount:
+                amountMinor: 85000
+                currency: UAH
+              method: card
+              status: paid
+      responses:
+        '201':
+          description: Payment recorded.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                id: 9d0e1f2a-3b4c-4d5e-8f6a-7b8c9d0e1f2a
+                appointmentId: 7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b
+                amount:
+                  amountMinor: 85000
+                  currency: UAH
+                status: paid
+                method: card
+                recordedAt: '2026-11-03T11:45:00+02:00'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/AppointmentNotCompleted'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/reports/revenue:
+    get:
+      operationId: getRevenueReport
+      summary: Revenue for a period
+      description: |
+        Supply either `period` or both `from` and `to`, never both forms
+        (REQ-F-022). A conflicting combination is rejected.
+      tags: [Reports]
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Revenue totals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueReport'
+              example:
+                period: month
+                from: '2026-10-01'
+                to: '2026-10-31'
+                totalAmount:
+                  amountMinor: 1250000
+                  currency: UAH
+                paymentsCount: 15
+                byMethod:
+                  - method: cash
+                    amount:
+                      amountMinor: 400000
+                      currency: UAH
+                    count: 5
+                  - method: card
+                    amount:
+                      amountMinor: 850000
+                      currency: UAH
+                    count: 10
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/InvalidPeriod'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/reports/popular-services:
+    get:
+      operationId: getPopularServicesReport
+      summary: Most booked services for a period
+      description: |
+        Ranked by booking count descending, then by service name ascending
+        (REQ-F-032, D16).
+      tags: [Reports]
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Ranked services.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopularServicesReport'
+              example:
+                period: month
+                from: '2026-10-01'
+                to: '2026-10-31'
+                items:
+                  - rank: 1
+                    serviceId: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+                    name: Haircut
+                    bookingsCount: 42
+                  - rank: 2
+                    serviceId: 5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d
+                    name: Styling
+                    bookingsCount: 17
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/InvalidPeriod'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /admin/reports/stock-levels:
+    get:
+      operationId: getStockLevelsReport
+      summary: Current stock levels
+      description: A snapshot; intentionally has no period parameter (REQ-F-033).
+      tags: [Reports]
+      responses:
+        '200':
+          description: Current levels per material.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockLevelsReport'
+              example:
+                asOf: '2026-11-03T12:00:00+02:00'
+                items:
+                  - materialId: 2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14
+                    name: Shampoo
+                    unit: ml
+                    quantity: 160
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT issued by `POST /auth/login`. Required on Master, Admin and Reports
+        operations; public operations override with `security: []`. Client
+        booking access uses the appointment token in the path, not this scheme.
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 1-based page number.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: Page size; maximum 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    ServiceId:
+      name: serviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MasterId:
+      name: masterId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AccessToken:
+      name: token
+      in: path
+      required: true
+      description: Client access token (REQ-NF-001).
+      schema:
+        type: string
+        format: uuid
+    AppointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MasterServiceId:
+      name: masterServiceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MaterialId:
+      name: materialId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    MalformedRequest:
+      description: The request could not be parsed or a query parameter has the wrong type.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/malformed-request
+            title: Malformed request
+            status: 400
+            detail: The request could not be parsed or contains an ill-typed value.
+            instance: /api/v1/appointments
+            code: MALFORMED_REQUEST
+            traceId: 00000000-0000-4000-8000-000000000001
+    ValidationFailed:
+      description: The request body violates the schema.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/validation-error
+            title: Validation failed
+            status: 422
+            detail: The request body contains invalid fields.
+            instance: /api/v1/appointments
+            code: VALIDATION_ERROR
+            traceId: 00000000-0000-4000-8000-000000000002
+            errors:
+              - field: client.phone
+                code: PATTERN_MISMATCH
+                message: Phone must be in E.164-like format.
+    Unauthenticated:
+      description: Missing, expired or invalid credentials.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/unauthenticated
+            title: Not authenticated
+            status: 401
+            detail: A valid bearer token is required.
+            instance: /api/v1/me/appointments
+            code: UNAUTHENTICATED
+            traceId: 00000000-0000-4000-8000-000000000003
+    Forbidden:
+      description: Authenticated but not permitted for this resource or role.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/forbidden
+            title: Forbidden
+            status: 403
+            detail: This operation requires the administrator role.
+            instance: /api/v1/admin/masters
+            code: FORBIDDEN
+            traceId: 00000000-0000-4000-8000-000000000004
+    NotFound:
+      description: Unknown resource id or unknown appointment token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/not-found
+            title: Not found
+            status: 404
+            detail: No appointment exists for the supplied access token.
+            instance: /api/v1/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
+            code: NOT_FOUND
+            traceId: 00000000-0000-4000-8000-000000000005
+    MethodNotAllowed:
+      description: The method is not defined for this path.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/method-not-allowed
+            title: Method not allowed
+            status: 405
+            detail: DELETE is not supported on this path; deactivate with PATCH active=false.
+            instance: /api/v1/admin/services/1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+            code: METHOD_NOT_ALLOWED
+            traceId: 00000000-0000-4000-8000-000000000006
+    SlotUnavailable:
+      description: The requested slot is outside availability or already booked.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/slot-unavailable
+            title: Slot unavailable
+            status: 409
+            detail: The requested slot is already booked for this master.
+            instance: /api/v1/appointments
+            code: SLOT_UNAVAILABLE
+            traceId: 00000000-0000-4000-8000-000000000007
+    DuplicateResource:
+      description: A unique constraint would be violated.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/duplicate-resource
+            title: Duplicate resource
+            status: 409
+            detail: A master with this username already exists.
+            instance: /api/v1/admin/masters
+            code: DUPLICATE_RESOURCE
+            traceId: 00000000-0000-4000-8000-000000000008
+    InvalidStateTransition:
+      description: The requested change is not allowed in the current appointment status.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/invalid-state-transition
+            title: Invalid state transition
+            status: 409
+            detail: A completed appointment cannot be edited or cancelled.
+            instance: /api/v1/admin/appointments/7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b/cancel
+            code: INVALID_STATE_TRANSITION
+            traceId: 00000000-0000-4000-8000-000000000009
+    AppointmentNotCompleted:
+      description: Payment is allowed only after the appointment reaches completed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/appointment-not-completed
+            title: Appointment not completed
+            status: 409
+            detail: A payment can be recorded only for a completed appointment.
+            instance: /api/v1/admin/appointments/7c1e4a3d-4f6b-4e21-8c5a-9d0b3f141a2b/payments
+            code: APPOINTMENT_NOT_COMPLETED
+            traceId: 00000000-0000-4000-8000-00000000000b
+    MaterialStockInsufficient:
+      description: The issue quantity exceeds the current stock level.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/material-stock-insufficient
+            title: Insufficient stock
+            status: 409
+            detail: Requested issue quantity 250 ml exceeds the current stock of 180 ml.
+            instance: /api/v1/admin/materials/2f7c1e4a-3d4f-4b6b-8e21-7c5a9d0b3f14/transactions
+            code: MATERIAL_STOCK_INSUFFICIENT
+            traceId: 00000000-0000-4000-8000-00000000000c
+    InvalidPeriod:
+      description: The period selection is ambiguous or inconsistent.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/invalid-period
+            title: Invalid period
+            status: 422
+            detail: Supply either period or both from and to, not both forms.
+            instance: /api/v1/admin/reports/revenue
+            code: INVALID_PERIOD
+            traceId: 00000000-0000-4000-8000-00000000000d
+    BusinessRuleViolation:
+      description: The request is well-formed but violates a business rule.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/business-rule-violation
+            title: Business rule violated
+            status: 422
+            detail: The requested start time must fall on a 30-minute boundary.
+            instance: /api/v1/appointments
+            code: BUSINESS_RULE_VIOLATION
+            traceId: 00000000-0000-4000-8000-00000000000e
+    UnsupportedMediaType:
+      description: The request body is not application/json.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/unsupported-media-type
+            title: Unsupported media type
+            status: 415
+            detail: Request bodies must use application/json.
+            instance: /api/v1/appointments
+            code: UNSUPPORTED_MEDIA_TYPE
+            traceId: 00000000-0000-4000-8000-00000000000f
+    InternalError:
+      description: Unexpected server failure.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.salon.example/problems/internal-error
+            title: Internal error
+            status: 500
+            detail: An unexpected error occurred.
+            instance: /api/v1/services
+            code: INTERNAL_ERROR
+            traceId: 00000000-0000-4000-8000-000000000010
+  schemas:
+    Problem:
+      type: object
+      description: |
+        RFC 9457 Problem Details plus a stable machine-readable code and optional
+        field-level errors. Every error response in this API uses this schema.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Stable problem-type URI, one per code.
+          example: https://api.salon.example/problems/slot-unavailable
+        title:
+          type: string
+          description: Short human-readable summary of the error class.
+          example: Slot unavailable
+        status:
+          type: integer
+          description: HTTP status code, repeated in the body.
+          example: 409
+        detail:
+          type: string
+          description: Human-readable explanation of this occurrence.
+          example: The requested slot is already booked for this master.
+        instance:
+          type: string
+          description: Request path that produced the error.
+          example: /api/v1/appointments
+        code:
+          type: string
+          description: Stable machine-readable error code (closed enum).
+          enum:
+            - MALFORMED_REQUEST
+            - VALIDATION_ERROR
+            - UNAUTHENTICATED
+            - FORBIDDEN
+            - NOT_FOUND
+            - METHOD_NOT_ALLOWED
+            - SLOT_UNAVAILABLE
+            - DUPLICATE_RESOURCE
+            - INVALID_STATE_TRANSITION
+            - PAYMENT_ALREADY_RECORDED
+            - APPOINTMENT_NOT_COMPLETED
+            - MATERIAL_STOCK_INSUFFICIENT
+            - INVALID_PERIOD
+            - BUSINESS_RULE_VIOLATION
+            - UNSUPPORTED_MEDIA_TYPE
+            - INTERNAL_ERROR
+          example: SLOT_UNAVAILABLE
+        traceId:
+          type: string
+          format: uuid
+          description: Correlation id for server-log lookup.
+          example: 6f1c2a8e-5b7d-4c2a-9e0f-2d3b4a5c6d7e
+        errors:
+          type: array
+          description: Field-level validation failures; present for validation errors only.
+          items:
+            $ref: '#/components/schemas/ValidationErrorItem'
+    ValidationErrorItem:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+          description: Dot path to the offending field.
+          example: client.phone
+        code:
+          type: string
+          enum: [REQUIRED, PATTERN_MISMATCH, FORMAT_INVALID, ENUM_MISMATCH, OUT_OF_RANGE, UNKNOWN_FIELD]
+          example: PATTERN_MISMATCH
+        message:
+          type: string
+          example: Phone must be in E.164-like format.
+    Money:
+      type: object
+      description: Monetary amount in integer minor units (kopiykas).
+      required: [amountMinor, currency]
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 0
+          example: 55000
+        currency:
+          type: string
+          enum: [UAH]
+          example: UAH
+    Client:
+      type: object
+      additionalProperties: false
+      description: Client identity captured at booking; no account exists.
+      required: [name, phone]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Iryna Kovalenko
+        phone:
+          type: string
+          pattern: '^\+?[0-9]{9,15}$'
+          description: E.164-like phone number (D14).
+          example: '+380501234567'
+    MasterPublic:
+      type: object
+      description: Public master view; only id and full name are exposed (D19).
+      required: [id, fullName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+          example: Olena Shevchenko
+    Master:
+      type: object
+      description: Administrator and self view of a master account.
+      required: [id, fullName, username, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+          example: Olena Shevchenko
+        username:
+          type: string
+          example: olena
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MasterCreate:
+      type: object
+      additionalProperties: false
+      required: [fullName, username, password]
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        username:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: '^[a-zA-Z0-9._-]+$'
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          format: password
+        active:
+          type: boolean
+          default: true
+    MasterPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        active:
+          type: boolean
+    Service:
+      type: object
+      required: [id, name, category, baseDurationMinutes, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Haircut
+        category:
+          type: string
+          description: Free-form category name (REQ-F-024); not an enum.
+          example: Hair
+        baseDurationMinutes:
+          type: integer
+          minimum: 1
+          description: Base duration; appointment totals are rounded up to 30-minute blocks (REQ-F-031).
+          example: 45
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ServiceCreate:
+      type: object
+      additionalProperties: false
+      required: [name, category, baseDurationMinutes]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        category:
+          type: string
+          minLength: 1
+          maxLength: 80
+        baseDurationMinutes:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+          default: true
+    ServicePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        category:
+          type: string
+          minLength: 1
+          maxLength: 80
+        baseDurationMinutes:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+    Category:
+      type: object
+      required: [name, seeded]
+      properties:
+        name:
+          type: string
+          example: Hair
+        seeded:
+          type: boolean
+          description: True for the three seeded categories Hair, Coloring, Barbering.
+    CategoryList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Category'
+    MasterService:
+      type: object
+      description: Link between a master and a service; carries the price.
+      required: [id, masterId, serviceId, price, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        masterId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        price:
+          $ref: '#/components/schemas/Money'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MasterServiceCreate:
+      type: object
+      additionalProperties: false
+      required: [masterId, serviceId, price]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        price:
+          $ref: '#/components/schemas/Money'
+        active:
+          type: boolean
+          default: true
+    MasterServicePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        price:
+          $ref: '#/components/schemas/Money'
+        active:
+          type: boolean
+    Material:
+      type: object
+      required: [id, name, unit, stockQuantity, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Shampoo
+        unit:
+          type: string
+          maxLength: 32
+          description: Standard unit (ml, l, g, kg, pcs) or a custom string (REQ-F-025).
+          example: ml
+        stockQuantity:
+          type: number
+          minimum: 0
+          description: Current stock in the material unit; fractional values allowed for ml, l, g and kg.
+          example: 180
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MaterialCreate:
+      type: object
+      additionalProperties: false
+      required: [name, unit]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 32
+        initialStockQuantity:
+          type: number
+          minimum: 0
+          default: 0
+        active:
+          type: boolean
+          default: true
+    MaterialPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 32
+        active:
+          type: boolean
+    UnitList:
+      type: object
+      required: [standard, custom]
+      properties:
+        standard:
+          type: array
+          items:
+            type: string
+            enum: [ml, l, g, kg, pcs]
+        custom:
+          type: array
+          items:
+            type: string
+          description: Custom units currently in use.
+    MaterialTransaction:
+      type: object
+      required: [id, materialId, type, quantity, occurredAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        materialId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [receipt, issue]
+        quantity:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+        occurredAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+    MaterialTransactionCreate:
+      type: object
+      additionalProperties: false
+      required: [type, quantity, occurredAt]
+      properties:
+        type:
+          type: string
+          enum: [receipt, issue]
+        quantity:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+        occurredAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 500
+    WeeklyRule:
+      type: object
+      additionalProperties: false
+      required: [dayOfWeek, startTime, endTime]
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: ISO weekday, 1 = Monday, 7 = Sunday.
+          example: 1
+        startTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+          example: '09:00'
+        endTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+          example: '18:00'
+    DateRule:
+      type: object
+      additionalProperties: false
+      required: [date, startTime, endTime]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-11-03'
+        startTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        endTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+    Availability:
+      type: object
+      additionalProperties: false
+      description: Weekly rules plus date-specific overrides (REQ-F-015).
+      required: [weekly, dates]
+      properties:
+        weekly:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyRule'
+        dates:
+          type: array
+          description: Overrides for specific dates; a date rule replaces the weekly rule for that date.
+          items:
+            $ref: '#/components/schemas/DateRule'
+    AvailabilitySlot:
+      type: object
+      required: [startAt, endAt, durationMinutes, available]
+      properties:
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          minimum: 30
+          description: Rounded block occupied by the requested services (REQ-F-031).
+        available:
+          type: boolean
+    AvailabilityResponse:
+      type: object
+      required: [masterId, date, serviceIds, totalDurationMinutes, occupiedDurationMinutes, slots]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        totalDurationMinutes:
+          type: integer
+          description: Sum of service base durations before rounding.
+          example: 75
+        occupiedDurationMinutes:
+          type: integer
+          description: Sum after rounding up to a 30-minute boundary (REQ-F-031); 75 becomes 90.
+          example: 90
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilitySlot'
+    AppointmentService:
+      type: object
+      description: Service line with price and duration snapshotted at booking time.
+      required: [serviceId, name, baseDurationMinutes, price]
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        baseDurationMinutes:
+          type: integer
+          minimum: 1
+        price:
+          $ref: '#/components/schemas/Money'
+    Reminder:
+      type: object
+      required: [type, scheduledAt, status]
+      properties:
+        type:
+          type: string
+          enum: ['24h', '2h']
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, skipped, sent, failed]
+    Payment:
+      type: object
+      required: [id, appointmentId, amount, status, method, recordedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        amount:
+          $ref: '#/components/schemas/Money'
+        status:
+          type: string
+          enum: [paid, unpaid]
+        method:
+          type: string
+          enum: [cash, card]
+        recordedAt:
+          type: string
+          format: date-time
+    PaymentCreate:
+      type: object
+      additionalProperties: false
+      required: [amount, method]
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        method:
+          type: string
+          enum: [cash, card]
+        status:
+          type: string
+          enum: [paid, unpaid]
+          default: paid
+    Appointment:
+      type: object
+      description: |
+        Client-facing appointment view. Returns the access token and confirmation
+        URL, so it is used only by token-authenticated client operations. Master
+        and administrator responses use `AppointmentAdmin` (D18).
+      required: [id, status, client, master, services, startAt, endAt, totalDurationMinutes, occupiedDurationMinutes, totalPrice, reminders, accessToken, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [confirmed, completed, cancelled]
+        client:
+          $ref: '#/components/schemas/Client'
+        master:
+          $ref: '#/components/schemas/MasterPublic'
+        services:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AppointmentService'
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        totalDurationMinutes:
+          type: integer
+          minimum: 1
+        occupiedDurationMinutes:
+          type: integer
+          minimum: 30
+        totalPrice:
+          $ref: '#/components/schemas/Money'
+        reminders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+        payment:
+          $ref: '#/components/schemas/Payment'
+        accessToken:
+          type: string
+          format: uuid
+          description: Client credential for this appointment (REQ-NF-001).
+        confirmationUrl:
+          type: string
+          format: uri
+          description: Reachable confirmation page (REQ-F-004).
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AppointmentAdmin:
+      type: object
+      description: |
+        Internal staff view used by master and administrator endpoints. Excludes
+        the client access token and confirmation URL (D18, REQ-NF-006).
+      required: [id, status, client, master, services, startAt, endAt, totalDurationMinutes, occupiedDurationMinutes, totalPrice, reminders, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [confirmed, completed, cancelled]
+        client:
+          $ref: '#/components/schemas/Client'
+        master:
+          $ref: '#/components/schemas/MasterPublic'
+        services:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AppointmentService'
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        totalDurationMinutes:
+          type: integer
+          minimum: 1
+        occupiedDurationMinutes:
+          type: integer
+          minimum: 30
+        totalPrice:
+          $ref: '#/components/schemas/Money'
+        reminders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+        payment:
+          $ref: '#/components/schemas/Payment'
+        notificationsSummary:
+          type: object
+          description: Counts of notification records for this appointment.
+          properties:
+            scheduled:
+              type: integer
+              minimum: 0
+            sent:
+              type: integer
+              minimum: 0
+            skipped:
+              type: integer
+              minimum: 0
+            failed:
+              type: integer
+              minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AppointmentCreate:
+      type: object
+      additionalProperties: false
+      required: [client, masterId, serviceIds, startAt]
+      properties:
+        client:
+          $ref: '#/components/schemas/Client'
+        masterId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            format: uuid
+        startAt:
+          type: string
+          format: date-time
+          description: Must fall on a 30-minute boundary (REQ-NF-008).
+    AppointmentReschedule:
+      type: object
+      additionalProperties: false
+      required: [startAt]
+      properties:
+        startAt:
+          type: string
+          format: date-time
+        masterId:
+          type: string
+          format: uuid
+          description: Optional new master; omit to keep the current one.
+    AppointmentPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        startAt:
+          type: string
+          format: date-time
+        masterId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            format: uuid
+        client:
+          $ref: '#/components/schemas/Client'
+    Notification:
+      type: object
+      required: [id, audience, eventType, channel, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        audience:
+          type: string
+          enum: [client, master, admin]
+        eventType:
+          type: string
+          enum: [new, reschedule, cancellation, reminder_24h, reminder_2h]
+        channel:
+          type: string
+          enum: [sms, in_app]
+        status:
+          type: string
+          enum: [scheduled, sent, skipped, failed]
+        scheduledAt:
+          type: string
+          format: date-time
+        sentAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    NotificationPreference:
+      type: object
+      required: [channel, eventType, enabled]
+      properties:
+        channel:
+          type: string
+          enum: [sms, in_app]
+        eventType:
+          type: string
+          enum: [new, reschedule, cancellation]
+        enabled:
+          type: boolean
+    NotificationPreferencePatch:
+      type: object
+      additionalProperties: false
+      description: Toggles exactly one channel and event-type combination (REQ-F-026).
+      required: [channel, eventType, enabled]
+      properties:
+        channel:
+          type: string
+          enum: [sms, in_app]
+        eventType:
+          type: string
+          enum: [new, reschedule, cancellation]
+        enabled:
+          type: boolean
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn, role]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          type: integer
+          description: Token lifetime in seconds.
+          example: 3600
+        role:
+          type: string
+          enum: [master, admin]
+    Principal:
+      type: object
+      required: [id, role, displayName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [master, admin]
+        displayName:
+          type: string
+    RevenueMethodBreakdown:
+      type: object
+      required: [method, amount, count]
+      properties:
+        method:
+          type: string
+          enum: [cash, card]
+        amount:
+          $ref: '#/components/schemas/Money'
+        count:
+          type: integer
+          minimum: 0
+    RevenueReport:
+      type: object
+      required: [period, from, to, totalAmount, paymentsCount, byMethod]
+      properties:
+        period:
+          type: string
+          description: Resolved period label, or custom when from/to were supplied.
+          enum: [day, week, month, custom]
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        totalAmount:
+          $ref: '#/components/schemas/Money'
+        paymentsCount:
+          type: integer
+          minimum: 0
+        byMethod:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueMethodBreakdown'
+    PopularServiceItem:
+      type: object
+      required: [rank, serviceId, name, bookingsCount]
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        bookingsCount:
+          type: integer
+          minimum: 0
+    PopularServicesReport:
+      type: object
+      required: [period, from, to, items]
+      properties:
+        period:
+          type: string
+          enum: [day, week, month, custom]
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PopularServiceItem'
+    StockLevelItem:
+      type: object
+      required: [materialId, name, unit, quantity]
+      properties:
+        materialId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+    StockLevelsReport:
+      type: object
+      required: [asOf, items]
+      properties:
+        asOf:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockLevelItem'
+    ServicePage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Service'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    MasterPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterPublic'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    MasterAdminPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Master'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    MasterServicePage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MasterService'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    MasterServiceList:
+      type: array
+      items:
+        $ref: '#/components/schemas/MasterService'
+    MaterialPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Material'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    MaterialTransactionPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialTransaction'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    AppointmentAdminPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppointmentAdmin'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    NotificationPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+    NotificationPreferenceList:
+      type: array
+      items:
+        $ref: '#/components/schemas/NotificationPreference'
