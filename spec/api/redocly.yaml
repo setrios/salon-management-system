@@ -1,0 +1,13 @@
+# Redocly CLI configuration for the Salon Management System API contract.
+# Used by `npm run lint` and `npm run bundle` (see package.json).
+
+extends:
+  - recommended
+
+rules:
+  # The contract is internal to the lab and has no public distribution channel,
+  # so an info.license block would be noise rather than information.
+  info-license: off
+  # Servers are declared with a real local mock address; the example.com
+  # heuristic does not apply here.
+  no-server-example.com: off

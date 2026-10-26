@@ -1,0 +1,13 @@
+# Tooling installed locally by the developer (not committed)
+node_modules/
+
+# Bundled/derived specification output
+dist/
+
+# Regenerated spike artefacts (FINDINGS.md is the durable record and IS tracked)
+spike/spike-report.txt
+spike/prism.log
+
+# OS and editor noise
+.DS_Store
+*.swp

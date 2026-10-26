@@ -1,0 +1,25 @@
+{
+  "name": "salon-management-system-api-contract",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenAPI contract, validation and mock tooling for the Salon Management System REST API (Lab 4). Contract only - no application implementation.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24.18.0"
+  },
+  "scripts": {
+    "lint": "redocly lint --config redocly.yaml openapi.yaml",
+    "lint:spike": "redocly lint --config redocly.yaml spike/smoke.yaml",
+    "bundle": "redocly bundle --config redocly.yaml openapi.yaml -o dist/openapi.yaml",
+    "spike": "bash spike/run-spike.sh",
+    "mock": "prism mock openapi.yaml --host 127.0.0.1 --port 4010 --errors",
+    "mock:dynamic": "prism mock openapi.yaml --host 127.0.0.1 --port 4010 --errors --dynamic",
+    "test:positive": "bash scenarios/run-positive.sh",
+    "test:negative": "bash scenarios/run-negative.sh",
+    "test:all": "bash scenarios/run-positive.sh && bash scenarios/run-negative.sh"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.71.0",
+    "@stoplight/prism-cli": "5.16.0"
+  }
+}

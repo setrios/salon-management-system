@@ -1,0 +1,219 @@
+openapi: 3.0.3
+info:
+  title: Salon Management System — tooling smoke test
+  version: 0.0.1
+  description: |
+    Throwaway specification used only by the Phase 0 tooling spike. It exists to
+    answer four questions before the real contract is authored:
+
+    1. Does Redocly lint this file with the configured ruleset?
+    2. Does Prism start from this file and serve the documented paths?
+    3. Does Prism honour `Prefer: code=409` and return the documented 409 body?
+    4. What does Prism return when the request body violates the schema, and does
+       that body match our `Problem` schema?
+
+    This file is not part of the deliverable contract.
+servers:
+  - url: http://127.0.0.1:4010/api/v1
+    description: Local Prism mock
+security: []
+paths:
+  /services:
+    get:
+      operationId: spikeListServices
+      summary: List services (smoke)
+      responses:
+        "200":
+          description: Service list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+              example:
+                - id: 11111111-1111-4111-8111-111111111111
+                  name: Haircut
+                  category: Hair
+                  baseDurationMinutes: 60
+                  active: true
+        "400":
+          description: Invalid query parameters
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://api.salon.example/problems/validation-failed
+                title: Validation failed
+                status: 400
+                detail: The query parameters are invalid.
+                instance: /api/v1/services
+                code: VALIDATION_FAILED
+                traceId: 6f1c2a8e-5b7d-4c2a-9e0f-2d3b4a5c6d7e
+  /appointments:
+    post:
+      operationId: spikeCreateAppointment
+      summary: Create an appointment (smoke)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentCreate"
+      responses:
+        "201":
+          description: Appointment confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+              example:
+                id: 22222222-2222-4222-8222-222222222222
+                accessToken: 33333333-3333-4333-8333-333333333333
+                status: confirmed
+                startsAt: "2026-10-01T14:00:00+03:00"
+                durationMinutes: 60
+                totalCost:
+                  amountMinor: 55000
+                  currency: UAH
+        "409":
+          description: Slot no longer available
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://api.salon.example/problems/slot-unavailable
+                title: Slot unavailable
+                status: 409
+                detail: The selected slot was booked by another client.
+                instance: /api/v1/appointments
+                code: SLOT_UNAVAILABLE
+                traceId: 6f1c2a8e-5b7d-4c2a-9e0f-2d3b4a5c6d7e
+        "422":
+          description: Request body failed validation
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+              example:
+                type: https://api.salon.example/problems/validation-failed
+                title: Validation failed
+                status: 422
+                detail: The request body contains invalid fields.
+                instance: /api/v1/appointments
+                code: VALIDATION_FAILED
+                traceId: 6f1c2a8e-5b7d-4c2a-9e0f-2d3b4a5c6d7e
+                errors:
+                  - field: client.phone
+                    code: PATTERN_MISMATCH
+                    message: Phone must be in E.164-like format.
+components:
+  schemas:
+    Service:
+      type: object
+      required: [id, name, category, baseDurationMinutes, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        baseDurationMinutes:
+          type: integer
+          minimum: 30
+          multipleOf: 30
+        active:
+          type: boolean
+    AppointmentCreate:
+      type: object
+      required: [masterId, serviceIds, startsAt, client]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        client:
+          type: object
+          required: [name, phone]
+          properties:
+            name:
+              type: string
+              minLength: 1
+            phone:
+              type: string
+              pattern: "^\\+?[0-9]{9,15}$"
+    Appointment:
+      type: object
+      required: [id, accessToken, status, startsAt, durationMinutes, totalCost]
+      properties:
+        id:
+          type: string
+          format: uuid
+        accessToken:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [confirmed, completed, cancelled]
+        startsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          multipleOf: 30
+        totalCost:
+          $ref: "#/components/schemas/Money"
+    Money:
+      type: object
+      required: [amountMinor, currency]
+      properties:
+        amountMinor:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          enum: [UAH]
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        traceId:
+          type: string
+          format: uuid
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, code, message]
+            properties:
+              field:
+                type: string
+              code:
+                type: string
+              message:
+                type: string
