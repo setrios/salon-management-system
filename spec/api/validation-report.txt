@@ -1,0 +1,9 @@
+
+> salon-management-system-api-contract@1.0.0 lint
+> redocly lint --config redocly.yaml openapi.yaml
+
+validating openapi.yaml...
+openapi.yaml: validated in 145ms
+
+Woohoo! Your API description is valid. 🎉
+
