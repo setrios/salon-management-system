@@ -8,7 +8,7 @@
 | Test file | `tests/api/auth.test.ts` — 15 assertions |
 | Fixture | `tests/helpers/accounts.ts` — seeds one administrator and one master |
 | Contract | `openapi.yaml#/paths/~1auth~1login/post`, `~1auth~1me/get`; `error-model.md` §3–§4 |
-| Gate | `logs/gates/2026-11-08-test-SMS-21.md` — **PENDING** |
+| Gate | `logs/gates/2026-11-08-test-SMS-21.md` — **SIGNED — GO**, 2026-11-08 |
 
 ## 1. What the test commit contains
 

@@ -1,8 +1,8 @@
 # Implementation plan — Salon Management System REST API (TDD phase)
 
 Date: 2026-11-08
-Status: **DRAFT — awaiting PLAN approval.** No code is written before the
-related gate record in `logs/gates/` is signed.
+Status: **APPROVED** — PLAN-GATE GO, 2026-11-08. No code is written before
+the related gate record in `logs/gates/` is signed.
 Owner: human (approval, gate decisions, commits, dependency installation),
 coding agent (tests, implementation, verification evidence).
 Inputs: SRS v1.3 (approved 2026-09-27), OpenAPI contract approved at API-GATE
@@ -73,6 +73,8 @@ recorded as a gate decision, not done silently.
 | D-15 | CL-06, CL-07 and CL-08 dispositions confirmed as written; the register stays `CLOSED`, since a clarification row does not block a gate | Fixed 2026-11-08 |
 | D-16 | S1.0 owns ticket **SMS-44** (type `Test`); the addendum ticket is **SMS-45** (§8.1) | Fixed 2026-11-08 |
 | D-17 | The scaffold predates every test and is committed as `feat: infrastructure scaffold` before SMS-44; it is not encoded as a skip flag. Ordering for pre-existing files is proved by run order in `logs/tdd/`, not by git — see §6.2 | Fixed 2026-11-08 |
+| D-18 | Password storage: **scrypt** from `node:crypto`, serialised `scrypt$N$r$p$salt-base64$key-base64` with N=16384, r=8, p=1 and a 64-byte key. No dependency is added — `bcrypt` was removed from the scaffold and installing packages is outside the agent's rights — §5.1, `logs/gates/2026-11-08-test-SMS-21.md` | Fixed 2026-11-08 |
+| D-19 | The single administrator is a row of `masters` with `role = 'admin'`; masters carry `role = 'master'`. Columns are declared in §5.1 before any test writes them. Accounts are created by the administrator or provisioned out of band, never by self-registration (REQ-F-012, REQ-F-017) — `logs/gates/2026-11-08-test-SMS-21.md` | Fixed 2026-11-08 |
 
 ### 3.1 Stack
 
@@ -154,6 +156,29 @@ spec/addenda/NNN-<slug>.md     addendum document (§8)
 Component boundary: `modules/*` know HTTP and the database; `lib/*` know
 neither. This satisfies the "separate the system into components" requirement
 and gives the unit level of the test pyramid something real to test.
+
+### 5.1 Declared schema — `masters` (S1.1, D-18, D-19)
+
+The S1.1 test fixture (`tests/helpers/accounts.ts`) arranges staff accounts in
+this table, so the columns are declared here **before** anything writes them.
+The declaration is the artifact the fixture follows; without it the test would be
+dictating an undeclared schema, which is the coupling this plan forbids
+elsewhere. `src/db/schema.ts` carries the same list in its header comment.
+
+| Column | Type | Constraints | Contract or decision |
+|---|---|---|---|
+| `id` | `uuid` | primary key, default `gen_random_uuid()` | `Master.id` |
+| `full_name` | `text` | not null | `Master.fullName`, `MasterCreate.fullName` |
+| `username` | `text` | not null, **unique** | login identifier; `MasterCreate.username` pattern `^[a-zA-Z0-9._-]+$` |
+| `password_hash` | `text` | not null | D-18 — `scrypt$N$r$p$salt-base64$key-base64`, never returned by any operation |
+| `role` | `text` | not null, `check (role in ('master','admin'))` | D-19 — the single administrator is a row with `role = 'admin'` (REQ-F-017) |
+| `active` | `boolean` | not null, default `true` | `Master.active`, `MasterPatch.active` |
+| `created_at` | `timestamptz` | not null, default `now()` | `Master.createdAt` |
+| `updated_at` | `timestamptz` | not null, default `now()` | `Master.updatedAt` |
+
+No other column is read or written at S1.1. Reference-data columns for masters
+(a master's service list, availability) belong to their own tables in later
+stages and are not part of this declaration.
 
 ---
 
