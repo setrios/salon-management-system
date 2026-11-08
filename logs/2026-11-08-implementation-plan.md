@@ -16,6 +16,8 @@ recorded in §3.
 
 Revision 2 — 2026-11-08: §2, §7, §8.3 and §10 corrected before S1.1 implementation; no change to scope or stage order. §5, §6.1, §9 and the R-TDD-02 detection were reworded at the same time to describe the test-based contract check; no ticket, decision or stage changed.
 
+Revision 3 — 2026-11-08: §7 extended with CL-10; scope, stages, tickets and decisions unchanged.
+
 ---
 
 ## 1. Repository state at plan time
@@ -279,7 +281,7 @@ This is a stated limit, not a passing check, and it is what the final validation
 
 ## 7. Known contract issues carried into implementation
 
-Recorded in `spec/api/clarifications.md` as CL-06..CL-09. None of them changes
+Recorded in `spec/api/clarifications.md` as CL-06..CL-10. None of them changes
 the contract.
 
 | ID | Issue | Handling |
@@ -288,6 +290,7 @@ the contract.
 | CL-07 | Design plan §5 for M1 names `AppointmentPage`, which does not exist in the contract; `resource-model.md:224` and `openapi.yaml` use `AppointmentAdminPage` | Contract and resource model are authoritative; the committed design plan is not retroactively edited |
 | CL-08 | OpenAPI 3.0 `exclusiveMinimum: true` plus `minimum: 0` is rejected by AJV 8 (draft-07 semantics) | `src/contract/convert.mjs` rewrites it to `exclusiveMinimum: 0`; the published contract stays OpenAPI 3.0.3 |
 | CL-09 | `login` declares no 422 response, while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body"; `login` is the only one of the 17 body-taking operations where the two statements disagree | A body that violates `LoginRequest` is answered **400 `MALFORMED_REQUEST`**; **the contract is not changed**. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation |
+| CL-10 | Three declared responses cannot be produced by any allowed request: R4/R6/R8/R12 declare 409 `DUPLICATE_RESOURCE`, but `MasterPatch` has no `username`, the R8/R12 bodies cannot violate the three uniqueness constraints of `error-model.md` §3, and `Service.name` is not unique there; `GET /categories` (P3) declares 400 but takes no parameter, and `resource-model.md` §5 lists no 400 for it | **Accepted, no contract change.** The declarations are not implemented and not tested; no uniqueness or validation rule is invented. Dropping them would change the approved contract and requires its own gate |
 
 ---
 
