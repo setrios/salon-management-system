@@ -23,6 +23,11 @@ $ npm run check:test-first                          1/1 entries pass, exit 0
 $ node scripts/verify-contract.mjs                   contract: 3.0.3 — 50 operations, exit 0
 ```
 
+The first two counts above belong to the run before the sixteenth assertion was
+added (`logs/tdd/tdd-SMS-21.md` §11.1): `15 passed` and `24 passed` were measured
+before that assertion existed. The proof block below was run after the fix and
+records the final counts, `25 passed`. Both blocks are kept as they were run.
+
 The migration is applied to the **test** database (`TEST_DATABASE_URL`) by
 `tests/setup.ts` on every run, through `migrate()` from
 `drizzle-orm/node-postgres/migrator`; nothing is applied by hand any more. For
@@ -33,8 +38,9 @@ $ DATABASE_URL=postgres://…/salon npx drizzle-kit migrate
 ```
 
 Plan §4 gives database migrations to the agent after the first successful run
-and `docker compose up -d postgres` to the human; the development database was
-not started during this run, so nothing was applied to it.
+and `docker compose up -d postgres` to the human. The development database was
+not running when the commands above were run, so nothing was applied to it at
+that point; the control run in §2 was taken against it later.
 
 **Proof that GREEN does not depend on this machine's database state.** The test
 schema was dropped, then the suite was run:
@@ -55,6 +61,14 @@ $ npm test                    # second run: migrator applies nothing
  Test Files  2 passed (2)
       Tests  25 passed (25)
 ```
+
+**Seeding the development database.** `psql` is not installed on this machine,
+so the administrator for the control run in §2 was seeded with `node` and the
+`pg` client instead of a SQL script. The first attempt did not insert the row,
+and the login with the correct password answered 401; the retry in §2 seeded it
+and answered 200. That failure is evidence in its own right, and it was taken
+against the built artifact: a username that does not exist answers 401
+`UNAUTHENTICATED`, not 404 (§3, §4).
 
 ## 2. Requests and responses — built artifact
 
@@ -89,6 +103,39 @@ The missing-password body carries the CL-09 status and the field-level error:
  "traceId":"4b0d3a62-cf21-438d-8329-78903e225260","detail":"The body contains invalid fields.",
  "errors":[{"field":"password","code":"REQUIRED","message":"must have required property 'password'"}]}
 ```
+
+### After the fix
+
+The control run was repeated on `dist/` after `middleware/logger.ts` moved the
+contract-template lookup to `req.originalUrl` (§4). Verbatim output of the
+second run:
+
+```
+seeded admin
+[1] 192168
+token length: 217
+200 expected: 200
+401 expected: 401
+{"ts":"2026-11-08T17:32:18.150Z","level":"info","event":"server.started","port":3000,"nodeEnv":"development"}
+{"ts":"2026-11-08T17:32:19.849Z","level":"info","event":"http.request","traceId":"1a712fa6-b59b-4bbe-b736-ef70af719835","method":"POST","path":"/api/v1/auth/login","status":200,"durationMs":78.300727}
+{"ts":"2026-11-08T17:32:19.858Z","level":"info","event":"http.request","traceId":"99c1f42a-e9d0-428b-95c9-3722b1dc558b","method":"GET","path":"/api/v1/auth/me","status":200,"durationMs":1.680127}
+{"ts":"2026-11-08T17:32:19.898Z","level":"warn","event":"http.request","traceId":"dd4c4d66-22e8-4666-9b40-2251055b29e1","method":"POST","path":"/api/v1/auth/login","status":401,"durationMs":33.130324}
+cleaned
+```
+
+`[1] 192168` is the background server's job number and PID; `token length: 217`
+and the two `expected` lines are the runner's own assertions. The two login
+records, one 200 and one 401, carry the same `path`:
+
+```
+POST /api/v1/auth/login  200  path=/api/v1/auth/login
+POST /api/v1/auth/login  401  path=/api/v1/auth/login
+```
+
+That is the property §3's excerpt lacks: the success finishes before the router
+restores `req.baseUrl` and the rejection after it, yet both resolve through the
+contract template, because `originalUrl` is never rewritten. §3 is left as the
+historical evidence of the defect.
 
 ## 3. Log records written for those requests
 
