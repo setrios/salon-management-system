@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: false,
+    // Runs once in the main process: regenerates the derived contract bundle
+    // that `tests/setup.ts` and the suites compile their validators from.
+    globalSetup: ['tests/global-setup.ts'],
     setupFiles: ['tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
     testTimeout: 15_000,
