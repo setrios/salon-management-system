@@ -11,5 +11,25 @@
     "added without breaking the checker. An empty array is valid and exits 0."
   ],
   "schemaVersion": 1,
-  "entries": []
+  "entries": [
+    {
+      "ticket": "SMS-21 (test) → SMS-22 (implementation)",
+      "test": "tests/api/auth.test.ts",
+      "sources": ["REQ-F-012", "REQ-F-017"],
+      "implementation": [
+        "src/modules/auth/password.ts",
+        "src/modules/auth/tokens.ts",
+        "src/modules/auth/service.ts",
+        "src/modules/auth/routes.ts"
+      ],
+      "touches": [
+        "src/db/schema.ts",
+        "src/contract/convert.mjs",
+        "src/contract/validators.ts",
+        "src/middleware/validate.ts",
+        "src/middleware/auth.ts",
+        "src/app.ts"
+      ]
+    }
+  ]
 }
