@@ -40,6 +40,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { SignJWT } from 'jose';
 import request from 'supertest';
@@ -51,6 +53,53 @@ import { getSchemaValidator } from '../../src/contract/validators.js';
 import { seedAccount } from '../helpers/accounts.js';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** One `http.request` record as `middleware/logger.ts` writes it. */
+interface RequestRecord {
+  readonly traceId?: string;
+  readonly method: string;
+  readonly path: string;
+  readonly status: number;
+}
+
+/** The day's JSONL access log, as `middleware/logger.ts` names it. */
+function logFile(): string {
+  return join(config.logDir, `app-${new Date().toISOString().slice(0, 10)}.jsonl`);
+}
+
+/** Every access-log record written so far today. */
+function accessRecords(): RequestRecord[] {
+  let raw: string;
+  try {
+    raw = readFileSync(logFile(), 'utf8');
+  } catch {
+    return [];
+  }
+
+  return raw
+    .split('\n')
+    .filter((line) => line !== '')
+    .map((line) => JSON.parse(line) as { event?: string } & RequestRecord)
+    .filter((record) => record.event === 'http.request');
+}
+
+/**
+ * Waits until `predicate` matches at least `count` records, then returns them.
+ * The log write is asynchronous, so a fixed sleep would be a race.
+ */
+async function waitForRecords(
+  predicate: (record: RequestRecord) => boolean,
+  count: number,
+): Promise<RequestRecord[]> {
+  const deadline = Date.now() + 2_000;
+
+  for (;;) {
+    const matched = accessRecords().filter(predicate);
+    if (matched.length >= count) return matched;
+    if (Date.now() > deadline) return matched;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
 
 /** The two accounts the SRS knows (REQ-F-012, REQ-F-017), filled by the fixture. */
 const ADMIN = {
@@ -297,6 +346,31 @@ describe('S1.1 authentication — login and bearer tokens', () => {
         role: 'admin',
         displayName: ADMIN.fullName,
       });
+    });
+
+    it('logs the same contract path for a login that succeeds and one that fails', async () => {
+      // The access log is the join key for every runs-*.md analysis, so one
+      // operation must appear under one `path` regardless of which layer produced
+      // the response. The contract template includes the `/api/v1` prefix, so a
+      // successful login and a rejected one must both be recorded as
+      // `/api/v1/auth/login` — not once with the prefix and once without.
+      const isLoginRecord = (record: RequestRecord): boolean =>
+        record.method === 'POST' && (record.status === 200 || record.status === 401);
+      const seen = accessRecords().filter(isLoginRecord).length;
+
+      const accepted = await login(ADMIN.username, ADMIN.password);
+      const rejected = await login(ADMIN.username, 'not-the-password');
+      expect(accepted.status).toBe(200);
+      expect(rejected.status).toBe(401);
+
+      const records = await waitForRecords(isLoginRecord, seen + 2);
+      const fresh = records.slice(seen);
+
+      expect(fresh).toHaveLength(2);
+      expect(fresh.map((record) => record.path)).toEqual([
+        '/api/v1/auth/login',
+        '/api/v1/auth/login',
+      ]);
     });
   });
 
