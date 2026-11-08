@@ -213,6 +213,26 @@ describe('S1.0 infrastructure — structural behaviour', () => {
     expect(records.at(-1)?.path).toBe('/health');
   });
 
+  it('logs the contract template, not the token, for an unmatched token-bearing path', async () => {
+    // REQ-NF-001 and REQ-NF-006: the client access token is unguessable and must
+    // not reach the log. At S1.0 no operation router is mounted, so this request
+    // takes the unmatched branch — the very branch that would otherwise log the
+    // concrete URL. The path is defined by the contract, so its template is
+    // available and is what the record must carry.
+    const token = '9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14';
+    const response = await request(app).post(`/api/v1/appointments/${token}/cancel`);
+
+    // The method is defined for the path, so the status is 404 (not 405): the
+    // operation is simply not implemented yet.
+    expect(response.status).toBe(404);
+    const traceId = response.body.traceId as string;
+
+    const records = await waitForRecords((record) => record.traceId === traceId, 1);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.path).toBe('/api/v1/appointments/{token}/cancel');
+    expect(JSON.stringify(records[0])).not.toContain(token);
+  });
+
   it('logs the request path when no route matched', async () => {
     const path = '/api/v1/no-such-resource';
     const response = await request(app).get(path);

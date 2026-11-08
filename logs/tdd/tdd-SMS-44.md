@@ -185,4 +185,133 @@ human signs `logs/gates/2026-11-08-test-SMS-44.md`.
 
 ## 6. GREEN run
 
-*(to be appended after the TEST-GATE signature and the implementation commit)*
+After the TEST-GATE was signed (`logs/gates/2026-11-08-test-SMS-44.md`, commit
+`2bc81a7`), the implementation below was written and the same suite re-run:
+
+```
+$ npx vitest run tests/api/structural.test.ts --reporter=verbose
+
+ RUN  v4.1.12 /home/novell/Documents/VScode-projects/pis/salon-management-system
+
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers an unknown path with 404 NOT_FOUND as application/problem+json 23ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers a contract-defined path with an undefined method with 405 METHOD_NOT_ALLOWED 5ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > recognises a parameterised contract path when the method is undefined 2ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > does not treat a path beyond a parameterised template as defined 2ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers a syntactically invalid JSON body with 400 MALFORMED_REQUEST 7ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > writes the response trace id into the request log record 3ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > logs the matched route template for a request that reached a route 7ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > logs the request path when no route matched 2ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  16:05:27
+   Duration  648ms (transform 52ms, setup 26ms, import 147ms, tests 374ms, environment 0ms)
+```
+
+No test was edited between the RED and the GREEN run. The four RED assertions
+turned green; the four characterisation assertions stayed green, which is what
+they are for.
+
+## 7. Implementation summary
+
+| File | Change | Assertion it serves |
+|---|---|---|
+| `src/contract/paths.ts` | new — compiles the contract's paths into templates (`{param}` = one non-empty segment) and returns the methods defined for a request path | 2, 3, 4 |
+| `src/middleware/not-found.ts` | 405 when the contract defines the path but not the method; 404 otherwise | 2, 3, 4 |
+| `src/middleware/error-handler.ts` | body-parser `SyntaxError` (`type: 'entity.parse.failed'`) → 400 `MALFORMED_REQUEST`; such errors are no longer logged as unexpected | 5 |
+| `src/middleware/logger.ts` | unmatched requests log `req.originalUrl`'s path instead of an empty string | 8 |
+| `scripts/copy-contract.mjs`, `package.json` | build step copies the generated contract next to the compiled validators | none — defect found by the control run |
+
+The last row is not covered by an assertion, and saying so matters. The built
+application failed every 404/405 with 500 until the copy step existed:
+`loadContract()` resolves `openapi.json` relative to its module, and `tsc` emits
+only `.js`. The defect predates SMS-44 and only became reachable when `notFound`
+started consulting the contract. It was found by `logs/runs/runs-01.md`, not by
+the suite; a test that pins the built artifact would need to run `node dist/…`,
+which is a different kind of test from an in-process supertest suite. Recorded
+as an open item for the verification stage rather than silently fixed.
+
+## 8. Second cycle — token-bearing paths must not reach the log
+
+### 8.1 Why the first implementation was wrong
+
+The first `feat:` implementation logged `req.originalUrl` for every request
+that had no matched Express route. At S1.0 **no operation router is mounted**, so
+*every* `/api/v1/*` request takes that branch — including
+`/appointments/{token}/cancel`. The record for such a request carried the client
+access token in clear text:
+
+```
+{"ts":"2026-11-08T14:11:06.696Z","level":"warn","event":"http.request","traceId":"c89fc872-867c-404f-af76-574a8f056203","method":"POST","path":"/api/v1/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14/cancel","status":404,"durationMs":0.185487}
+```
+
+That record was written by the RED run below. It is the defect made visible, and
+it is why the assertion was written: REQ-NF-001 (unguessable token) and
+REQ-NF-006 (privacy) are violated by a durable log line, not only by a response.
+
+The sentence in the first `runs-01.md` — "a route that carries a client access
+token matches, and matched routes log the template" — was wrong for this stage
+and is corrected there.
+
+### 8.2 RED
+
+```
+$ npx vitest run tests/api/structural.test.ts --reporter=verbose
+
+ ✓ … answers an unknown path with 404 NOT_FOUND as application/problem+json
+ ✓ … answers a contract-defined path with an undefined method with 405 METHOD_NOT_ALLOWED
+ ✓ … recognises a parameterised contract path when the method is undefined
+ ✓ … does not treat a path beyond a parameterised template as defined
+ ✓ … answers a syntactically invalid JSON body with 400 MALFORMED_REQUEST
+ ✓ … writes the response trace id into the request log record
+ ✓ … logs the matched route template for a request that reached a route
+ × … logs the contract template, not the token, for an unmatched token-bearing path 5ms
+   → expected '/api/v1/appointments/9b2f7c1e-4a3d-4f…' to be '/api/v1/appointments/{token}/cancel' // Object.is equality
+ ✓ … logs the request path when no route matched
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+```
+
+Expected cause: the logger had no way to know that the unmatched path was a
+contract path, so it could only report what the client sent. The fix is to make
+the contract template available to the logger, not to guess by pattern.
+
+### 8.3 GREEN
+
+After `contractPathFor()` was made to return the template alongside the methods,
+and the logger was changed to prefer it:
+
+```
+$ npx vitest run tests/api/structural.test.ts --reporter=verbose
+
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers an unknown path with 404 NOT_FOUND as application/problem+json 23ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers a contract-defined path with an undefined method with 405 METHOD_NOT_ALLOWED 7ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > recognises a parameterised contract path when the method is undefined 2ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > does not treat a path beyond a parameterised template as defined 1ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > answers a syntactically invalid JSON body with 400 MALFORMED_REQUEST 6ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > writes the response trace id into the request log record 2ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > logs the matched route template for a request that reached a route 2ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > logs the contract template, not the token, for an unmatched token-bearing path 1ms
+ ✓ tests/api/structural.test.ts > S1.0 infrastructure — structural behaviour > logs the request path when no route matched 2ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+```
+
+Implementation for this cycle: `src/contract/paths.ts` returns
+`{ template, methods }` from `contractPathFor()`; `not-found.ts` uses the
+methods; `logger.ts` uses the template when the request path is a contract path,
+and the request path only when no contract path claims it.
+
+The post-fix records (control run, §4 of `runs-01.md`):
+
+```
+{"ts":"2026-11-08T14:11:49.249Z","level":"warn","event":"http.request","traceId":"d7c0e3a2-7913-49bc-ac4d-1fea13399e5a","method":"POST","path":"/api/v1/appointments/{token}/cancel","status":404,"durationMs":3.575172}
+{"ts":"2026-11-08T14:11:49.257Z","level":"warn","event":"http.request","traceId":"c11df1db-d5a1-4408-9a1b-0f7f4cd1a75c","method":"GET","path":"/api/v1/appointments/{token}","status":404,"durationMs":0.304903}
+{"ts":"2026-11-08T14:11:49.260Z","level":"warn","event":"http.request","traceId":"efebf21d-cc0a-4be9-b040-13f031bea26e","method":"GET","path":"/api/v1/nope","status":404,"durationMs":0.310343}
+```
+
+The last line shows the fallback is still honest: a path the contract does not
+define has no template, so the request path is logged — and it cannot contain a
+token, because no contract path claims it.
