@@ -1,7 +1,6 @@
 # Clarification and addendum register — Salon Management System API
 
-Status: **CLOSED** — five rows, all clarified with no SRS impact. The register
-has no open rows, so it does not block the API-GATE decision.
+Status: CLOSED — eight rows. CL-06..CL-08 added 2026-11-08; their dispositions were confirmed in logs/gates/2026-11-08-plan-gate.md before the first TEST-GATE.
 
 Purpose (step 14): behaviour discovered during API design or mock
 verification that is **not** in SRS v1.3 must not enter the contract silently.
@@ -25,12 +24,15 @@ It is routed here, given a type and a disposition.
 | CL-03 | 2026-10-26 | Part 3 scenario run | Prism hangs on a syntactically invalid JSON request body instead of answering 400 (observed: `curl --max-time` exit 28). | clarification — mock artefact | Accepted. `400 MALFORMED_REQUEST` stays in the catalog and is demonstrated through a wrong query-parameter type (NEG-03); body-parse rejection is verified in the next phase. Not claimed as mock-verified. | none |
 | CL-04 | 2026-10-26 | Part 3 scenario run | An undefined method (`DELETE` on a documented path) returns 405, but the body is Prism's own error object, not our `Problem`. | clarification — mock artefact | Accepted. The contract still forbids deletion and documents `METHOD_NOT_ALLOWED`; NEG-17 demonstrates the documented shape with `Prefer: code=405`. NEG-16 records the status-only observation. Enforcement is next-phase work. | none |
 | CL-05 | 2026-10-26 | Part 2/3 design review | Cross-field rules (period XOR, 30-minute boundary, issue-vs-stock) cannot be expressed as an OpenAPI 3.0 schema constraint. | clarification — expressiveness limit | Accepted. Rules are stated in operation descriptions and `error-model.md`; negative scenarios force the documented codes so the responses are proven well-formed. Behavioural enforcement is next-phase work. | none |
+| CL-06 | 2026-11-08 | Implementation plan §7 | `createAppointmentAdmin` (R19) documents `201` with schema `Appointment`, which carries `accessToken` and `confirmationUrl`. The `Appointment` schema description states that "Master and administrator responses use `AppointmentAdmin` (D18)", and decision D18 reads "exclude appointment token from admin responses". The two statements in the contract are not fully consistent for this operation. | clarification — internal contract inconsistency, token exposure on creation | Accepted, no contract change. The operation table (`resource-model.md` R19), the response example and the rule that an administrator-created appointment must still yield a client link all fix the behaviour: R19 returns `Appointment`. D18 is read as applying to staff **read** operations (`listMyAppointments`, `listAppointmentsAdmin`, `getAppointmentAdmin`), which POS-24 already asserts. Implementation follows the path table; the wording inconsistency is recorded rather than silently resolved. | none |
+| CL-07 | 2026-11-08 | Implementation plan §7 | The approved design plan (`logs/2026-10-26-api-design-plan.md` §5, row M1) names the response schema `AppointmentPage`, which does not exist in `openapi.yaml`. `resource-model.md` (M1) and the contract both specify `AppointmentAdminPage`. | clarification — stale text in a superseded draft section | Accepted, no change. `openapi.yaml` and `resource-model.md` are authoritative for M1; the committed design plan is not retroactively edited, consistent with the immutable-history rule used for the SRS gate sections. | none |
+| CL-08 | 2026-11-08 | Implementation plan §7 | `MaterialTransaction` and `MaterialTransactionCreate` use `exclusiveMinimum: true` together with `minimum: 0`. This is valid OpenAPI 3.0.3 (a boolean modifier on `minimum`) but AJV 8 applies draft-07 semantics, where `exclusiveMinimum` must be numeric, so the contract cannot be compiled directly. | clarification — tooling expressiveness | Accepted, no contract change. `src/contract/convert.mjs` rewrites the pair to `exclusiveMinimum: 0` when generating JSON Schema for AJV. The published contract remains OpenAPI 3.0.3. | none |
 
 ## Status summary
 
 | Open | Clarified | Addendum required | Rejected |
 |---:|---:|---:|---:|
-| 0 | 5 | 0 | 0 |
+| 0 | 8 | 0 | 0 |
 
 ## Open items to be added during Parts 1–4
 
