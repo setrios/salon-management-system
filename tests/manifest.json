@@ -33,6 +33,30 @@
         "tests/setup.ts",
         "drizzle.config.ts"
       ]
+    },
+    {
+      "ticket": "SMS-14 (test) → SMS-23 (implementation)",
+      "test": "tests/api/reference-data.test.ts",
+      "sources": ["REQ-F-018", "REQ-F-024", "REQ-F-025", "SCN-08"],
+      "implementation": [
+        "src/modules/masters/routes.ts",
+        "src/modules/masters/service.ts",
+        "src/modules/catalog/routes.ts",
+        "src/modules/catalog/service.ts",
+        "src/modules/master-services/routes.ts",
+        "src/modules/master-services/service.ts",
+        "src/modules/materials/routes.ts",
+        "src/modules/materials/service.ts",
+        "src/modules/units/routes.ts",
+        "src/modules/units/service.ts"
+      ],
+      "touches": [
+        "src/db/schema.ts",
+        "src/routes.ts",
+        "src/middleware/auth.ts",
+        "src/middleware/validate.ts",
+        "src/middleware/error-handler.ts"
+      ]
     }
   ]
 }
