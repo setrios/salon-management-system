@@ -28,7 +28,10 @@
         "src/contract/validators.ts",
         "src/middleware/validate.ts",
         "src/middleware/auth.ts",
-        "src/app.ts"
+        "src/middleware/logger.ts",
+        "src/routes.ts",
+        "tests/setup.ts",
+        "drizzle.config.ts"
       ]
     }
   ]
