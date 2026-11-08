@@ -6,6 +6,11 @@
  * exits once in-flight requests finish; a shutdown that outlives the timeout
  * exits non-zero rather than hanging.
  *
+ * Environment: the process reads `process.env` only. `.env` is loaded by the
+ * npm scripts (`node --env-file-if-exists=.env`), not by this module, so a
+ * direct `node dist/src/index.js` run must carry the variables itself and fails
+ * fast with `ConfigError` when it does not.
+ *
  * Source: logs/2026-11-08-implementation-plan.md §5.
  */
 

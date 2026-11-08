@@ -10,8 +10,8 @@
   },
   "scripts": {
     "build": "npm run convert:contract && tsc -p tsconfig.json && node scripts/copy-contract.mjs",
-    "dev": "npm run build && node --watch dist/src/index.js",
-    "start": "node dist/src/index.js",
+    "dev": "npm run build && node --watch --env-file-if-exists=.env dist/src/index.js",
+    "start": "node --env-file-if-exists=.env dist/src/index.js",
     "test": "vitest run",
     "lint:contract": "npm --prefix spec/api run lint",
     "verify:contract": "node scripts/verify-contract.mjs",
