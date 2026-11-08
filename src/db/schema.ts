@@ -14,7 +14,11 @@
  *
  * Planned tables (11), each an entity of resource-model.md §2:
  *
- *   masters                  Master: credentials, full name, active flag
+ *   masters                  Master: id uuid, full_name text, username text
+ *                            (unique), password_hash text, role text
+ *                            ('master' | 'admin'), active boolean default true,
+ *                            created_at/updated_at timestamptz — declared in
+ *                            plan §5.1, created by SMS-22 (D-18, D-19)
  *   services                 Service: name, category, base duration, active
  *   categories               Category: free-form name, `seeded` marker
  *   master_services          MasterService: master↔service link with price
