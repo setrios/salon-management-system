@@ -1,6 +1,6 @@
 # Clarification and addendum register — Salon Management System API
 
-Status: CLOSED — eight rows. CL-06..CL-08 added 2026-11-08; their dispositions were confirmed in logs/gates/2026-11-08-plan-gate.md before the first TEST-GATE.
+Status: CLOSED — nine rows. CL-06..CL-08 added 2026-11-08; their dispositions were confirmed in logs/gates/2026-11-08-plan-gate.md before the first TEST-GATE. CL-09 added 2026-11-08 at the S1.1 TEST-GATE (SMS-21).
 
 Purpose (step 14): behaviour discovered during API design or mock
 verification that is **not** in SRS v1.3 must not enter the contract silently.
@@ -27,12 +27,13 @@ It is routed here, given a type and a disposition.
 | CL-06 | 2026-11-08 | Implementation plan §7 | `createAppointmentAdmin` (R19) documents `201` with schema `Appointment`, which carries `accessToken` and `confirmationUrl`. The `Appointment` schema description states that "Master and administrator responses use `AppointmentAdmin` (D18)", and decision D18 reads "exclude appointment token from admin responses". The two statements in the contract are not fully consistent for this operation. | clarification — internal contract inconsistency, token exposure on creation | Accepted, no contract change. The operation table (`resource-model.md` R19), the response example and the rule that an administrator-created appointment must still yield a client link all fix the behaviour: R19 returns `Appointment`. D18 is read as applying to staff **read** operations (`listMyAppointments`, `listAppointmentsAdmin`, `getAppointmentAdmin`), which POS-24 already asserts. Implementation follows the path table; the wording inconsistency is recorded rather than silently resolved. | none |
 | CL-07 | 2026-11-08 | Implementation plan §7 | The approved design plan (`logs/2026-10-26-api-design-plan.md` §5, row M1) names the response schema `AppointmentPage`, which does not exist in `openapi.yaml`. `resource-model.md` (M1) and the contract both specify `AppointmentAdminPage`. | clarification — stale text in a superseded draft section | Accepted, no change. `openapi.yaml` and `resource-model.md` are authoritative for M1; the committed design plan is not retroactively edited, consistent with the immutable-history rule used for the SRS gate sections. | none |
 | CL-08 | 2026-11-08 | Implementation plan §7 | `MaterialTransaction` and `MaterialTransactionCreate` use `exclusiveMinimum: true` together with `minimum: 0`. This is valid OpenAPI 3.0.3 (a boolean modifier on `minimum`) but AJV 8 applies draft-07 semantics, where `exclusiveMinimum` must be numeric, so the contract cannot be compiled directly. | clarification — tooling expressiveness | Accepted, no contract change. `src/contract/convert.mjs` rewrites the pair to `exclusiveMinimum: 0` when generating JSON Schema for AJV. The published contract remains OpenAPI 3.0.3. | none |
+| CL-09 | 2026-11-08 | S1.1 TEST-GATE (SMS-21) | `login` declares no 422 response (`openapi.yaml` `/auth/login` lists 200, 400, 401, 415, 500), while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body". Both statements are in the approved contract; `login` is the only one of the 17 body-taking operations for which they disagree. | clarification — internal contract inconsistency, response-code scope | Accepted, no contract change. A body that violates `LoginRequest` is answered with `400 MALFORMED_REQUEST`: the operation's response set is closed, and 422 would be an undocumented response. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation. | none |
 
 ## Status summary
 
 | Open | Clarified | Addendum required | Rejected |
 |---:|---:|---:|---:|
-| 0 | 8 | 0 | 0 |
+| 0 | 9 | 0 | 0 |
 
 ## Open items to be added during Parts 1–4
 
