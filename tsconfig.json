@@ -1,0 +1,28 @@
+{
+  // Tests are included so that `npm run build` type-checks them as well. The
+  // cost is that they are also emitted to dist/tests, which nothing loads; the
+  // gain is that a test file using a stale symbol fails the build instead of
+  // failing at run time. Splitting into a second config would fix the emission,
+  // but the scaffold has one config by design.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": ".",
+    "outDir": "dist",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "declaration": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist", "spec"]
+}

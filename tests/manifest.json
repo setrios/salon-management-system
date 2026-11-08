@@ -1,0 +1,15 @@
+{
+  "$comment": [
+    "Ticket → test → implementation mapping, read by scripts/check-test-first.mjs.",
+    "One entry per test file, added in the `test:` commit of its ticket and left",
+    "unchanged afterwards. `implementation` lists only source files this ticket",
+    "CREATES; the checker proves none of them existed at the commit where the test",
+    "file was first added. A file that already exists and is only modified goes",
+    "under `touches`, which the checker ignores — listing it under `implementation`",
+    "fails the check, because the ordering would not be provable (plan §6.2, D-17).",
+    "Kept as a top-level object with an `entries` array so that metadata can be",
+    "added without breaking the checker. An empty array is valid and exits 0."
+  ],
+  "schemaVersion": 1,
+  "entries": []
+}

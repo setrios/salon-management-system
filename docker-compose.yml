@@ -1,0 +1,35 @@
+# Local development database for the Salon Management System.
+#
+# Two databases are used:
+#   salon       — development (drizzle.config.ts, DATABASE_URL)
+#   salon_test  — tests (tests/setup.ts, TEST_DATABASE_URL); truncated before
+#                 each test file, so it must never hold data worth keeping.
+#
+# The container creates `salon` on first start. `salon_test` is created once by
+# the developer, after the container is healthy:
+#
+#   docker compose exec postgres createdb -U salon salon_test
+#
+# Credentials here are local-only placeholders, not secrets.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: salon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: salon
+      POSTGRES_PASSWORD: salon
+      POSTGRES_DB: salon
+    ports:
+      - "5432:5432"
+    volumes:
+      - salon-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salon -d salon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  salon-pgdata:
