@@ -15,13 +15,5 @@ export default defineConfig({
     fileParallelism: false,
     restoreMocks: true,
     clearMocks: true,
-    // `vitest run` exits 1 when no test file matches. Before S1.0 the suite is
-    // deliberately empty, and a non-zero exit there would be indistinguishable
-    // from a failing test.
-    //
-    // REMOVE IN SMS-44: the commit that adds `tests/api/structural.test.ts`
-    // deletes this option, so that a missing or mistyped test path fails the run
-    // again instead of passing silently.
-    passWithNoTests: true,
   },
 });
