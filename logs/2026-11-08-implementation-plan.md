@@ -14,6 +14,8 @@ This plan supersedes the undated draft circulated on 2026-11-08. The differences
 are listed in §12; each is traceable to a verified defect or to a decision
 recorded in §3.
 
+Revision 2 — 2026-11-08: §2, §7, §8.3 and §10 corrected before S1.1 implementation; no change to scope or stage order. §5, §6.1, §9 and the R-TDD-02 detection were reworded at the same time to describe the test-based contract check; no ticket, decision or stage changed.
+
 ---
 
 ## 1. Repository state at plan time
@@ -46,8 +48,18 @@ verification and validation.
 **Out of scope:** UI/frontend (React/Vite), real SMS gateway, real payment
 gateway, client accounts, loyalty, payroll, no-show tracking — all excluded by
 SRS v1.3 §2.3, §3.5 and REQ-NF-009. Tickets SMS-36 and SMS-37 carry no
-operation in the contract and therefore require no implementation code; SMS-20
-covers their acceptance criteria as NFR checks.
+operation in the contract and therefore require no implementation code.
+
+**Where the NFRs are discharged.** REQ-NF-002 (responsive layout), REQ-NF-003
+(English interface) and REQ-NF-004 (UAH amounts) are properties of the user
+interface, which this work does not build; they are closed outside it by ticket
+SMS-36 and are **not** counted as verified here. REQ-NF-006 (client-data
+privacy) and REQ-NF-007 (single location and time zone, no time-zone or
+location parameter anywhere in the contract) are observable through the API and
+are verified here by SMS-20. REQ-NF-001 and REQ-NF-008 are verified by the stage
+tests that implement them; REQ-NF-005 and REQ-NF-009 are absence constraints
+(no purge job, no payment gateway) and are verified by SMS-20 together with the
+refactoring review, not by a behaviour test.
 
 **Reserve scope (only if the schedule fails):** drop the five detail `GET`s
 P2, P5, R3, R7, R15, giving **45 operations**, exactly as D21 permits. They are
@@ -143,7 +155,7 @@ tests/
   manifest.json                ticket -> test -> implementation -> REQ mapping
 scripts/
   check-test-first.mjs         causal-independence proof (§6.2)
-  verify-contract.mjs          every operation checked against the contract
+  verify-contract.mjs          every operation covered by a test (§6.1 step 6)
 logs/
   tdd/tdd-SMS-NN.md            RED output, expected reason, GREEN output
   gates/YYYY-MM-DD-<gate>.md   gate decisions with signature
@@ -197,8 +209,10 @@ stages and are not part of this declaration.
    implementation starts.
 4. **Implementation.**
 5. **GREEN.** The same test passes; output appended to the same TDD file.
-6. **Contract check.** `scripts/verify-contract.mjs` validates status, media
-   type and body of every operation against `openapi.yaml`.
+6. **Contract check.** The operation's tests compare status, media type and
+   response body with `openapi.yaml`; `scripts/verify-contract.mjs` proves the
+   set is complete — the operations the contract declares are the set the tests
+   cover. No operation is verified by the script alone.
 7. **Log analysis.** `logs/runs/runs-SN.md` records what the JSONL logs contain
    for that run: request ids, durations, error codes, anything unexpected.
 
@@ -265,7 +279,7 @@ This is a stated limit, not a passing check, and it is what the final validation
 
 ## 7. Known contract issues carried into implementation
 
-Recorded in `spec/api/clarifications.md` as CL-06..CL-08. None of them changes
+Recorded in `spec/api/clarifications.md` as CL-06..CL-09. None of them changes
 the contract.
 
 | ID | Issue | Handling |
@@ -273,6 +287,7 @@ the contract.
 | CL-06 | `createAppointmentAdmin` (R19) documents `201 Appointment`, which includes `accessToken` and `confirmationUrl`, while the `Appointment` schema description says administrator responses use `AppointmentAdmin` | Implement as the path table and example state (`Appointment`). D18 is read as applying to staff **read** operations (`listMyAppointments`, `listAppointmentsAdmin`, `getAppointmentAdmin`). Both readings are listed; the contract is not edited |
 | CL-07 | Design plan §5 for M1 names `AppointmentPage`, which does not exist in the contract; `resource-model.md:224` and `openapi.yaml` use `AppointmentAdminPage` | Contract and resource model are authoritative; the committed design plan is not retroactively edited |
 | CL-08 | OpenAPI 3.0 `exclusiveMinimum: true` plus `minimum: 0` is rejected by AJV 8 (draft-07 semantics) | `src/contract/convert.mjs` rewrites it to `exclusiveMinimum: 0`; the published contract stays OpenAPI 3.0.3 |
+| CL-09 | `login` declares no 422 response, while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body"; `login` is the only one of the 17 body-taking operations where the two statements disagree | A body that violates `LoginRequest` is answered **400 `MALFORMED_REQUEST`**; **the contract is not changed**. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation |
 
 ---
 
@@ -283,7 +298,7 @@ move a gate to GO.
 
 | Stage | Content | Test tickets (RED) | Feature ticket(s) | Gate |
 |---|---|---|---|---|
-| S1.0 | Infrastructure: config, Drizzle schema, migrations, seed, app factory, router, `Problem` handler, trace ids, JSONL logger, AJV conversion and validators, test harness, `/health` outside `/api/v1` | SMS-44 (structural tests: 404, 405, malformed JSON → 400 `MALFORMED_REQUEST`, `Problem` shape, trace propagation, log line shape) | minimal scaffolding only | TEST-GATE only; no exit gate; ordering evidence is the RED run, not git (D-17) |
+| S1.0 | Infrastructure: config, schema declaration and migration tooling (tables created ticket by ticket), seed scaffolding, app factory, router, `Problem` handler, trace ids, JSONL logger, AJV conversion and validators, test harness, `/health` outside `/api/v1` | SMS-44 (structural tests: 404, 405, malformed JSON → 400 `MALFORMED_REQUEST`, `Problem` shape, trace propagation, log line shape) | minimal scaffolding only | TEST-GATE only; no exit gate; ordering evidence is the RED run, not git (D-17) |
 | S1.1 | Authentication: single administrator, master accounts created by the administrator, login — **also** 415 `UNSUPPORTED_MEDIA_TYPE` (see §8.2) | SMS-21 | SMS-22 | G1 |
 | S1.2 | Reference data: masters, services, categories with three seeds, MasterService prices, materials, units | SMS-14, SMS-21 | SMS-23 | G1 |
 | S1.3 | Availability: weekly pattern and date-specific rules | SMS-15 | SMS-24 | G1 |
@@ -410,14 +425,50 @@ different layers: body validity first, method routing second.
    is required. The genuine RED is three items: **405**, the **unmatched-path
    log field**, and **malformed JSON → 400**.
 
+### 8.3 Exit gates G1–G4
+
+The gate identifiers and their owners come from `logs/2026-10-21-sdd-plan.md`
+(tickets SMS-4..SMS-7, one per exit). This plan fixes which stages each gate
+closes and what the gate record must contain; it does not restate the SDD plan's
+reasoning for the division.
+
+| Gate | Ticket | Stages closed | Implementation tickets covered |
+|---|---|---|---|
+| G1 | SMS-4 | S1.1, S1.2, S1.3 | SMS-22, SMS-23, SMS-24 |
+| G2 | SMS-5 | S2.1, S2.2, S2.3 | SMS-25, SMS-26, SMS-27 |
+| G3 | SMS-6 | S3.1 (no gate of its own), S3.2, S4.1, S4.2 | SMS-28, SMS-29, SMS-30, SMS-31 |
+| G4 | SMS-7 | S5.1, S5.2, S5.3, S5.4, S5.5 | SMS-20, SMS-32, SMS-33, SMS-34, SMS-35 |
+
+S1.0 has no exit gate: it is scaffolding, and its ordering evidence is the RED
+run rather than git (D-17).
+
+**Criteria.** Every item is a command or a file path, not a judgement:
+
+1. `npm test` is green over the whole suite, not only over the stage files.
+2. Every ticket listed for the gate has a signed TEST-GATE record in
+   `logs/gates/` and a `feat:` (or `test:`, for SMS-20 and SMS-44-style work)
+   commit that follows it, visible in `git log --oneline`.
+3. `logs/runs/` holds a control run for each closed stage, and the last one was
+   taken against the built artifact (`npm run build && npm start`, §10), not
+   only against the TypeScript sources.
+4. `spec/api/api-traceability.md` names a Test and a Code location for every
+   operation delivered by the gate's stages.
+5. `npm run check:test-first` exits 0 for every manifest entry of those stages.
+6. Nothing is carried into the next stage without a line in the gate record that
+   names the item, its owner and the stage it moves to.
+
+A gate record that cannot show all six stays PENDING; the human signs it, not
+the agent (§4).
+
 ## 9. Refactoring of the base implementation (step 3)
 
 - Extract remaining logic from controllers into `lib/*`; remove duplication
   across controllers; tighten DTO mapping; keep every route, status code and
   response field identical.
 - **Proof of unchanged external behaviour:** the same test suite before and after;
-  `verify-contract.mjs` green; a diff review confirming no change to route
-  definitions, status codes or schema mapping.
+  every operation covered by a test; `verify-contract.mjs` shows the operation
+  set is unchanged; a diff review confirming no change to route definitions,
+  status codes or schema mapping.
 - Recorded in `logs/gates/…-refactor.md` with the before/after run outputs.
 - Committed separately from the feature work.
 
@@ -425,9 +476,17 @@ different layers: body validity first, method routing second.
 
 ## 10. Verification and validation (step 7)
 
-**Verification (agent):** every REQ-F and REQ-NF mapped to at least one passing
-test plus a contract check; the matrix in `spec/api/api-traceability.md` updated
-with Test, Code and Doc columns; `logs/runs/` evidence for each stage.
+**Verification (agent):** every requirement that has an operation in the
+contract is mapped to at least one passing test, and each of those tests compares
+status, media type and schema with `openapi.yaml`.
+
+**Explicit exceptions,** named here so that the final gate does not have to
+invent them: REQ-NF-002, REQ-NF-003 and REQ-NF-004 are UI properties and are
+closed by ticket SMS-36 outside this work (§2). They are listed as
+`out of scope — SMS-36` in the traceability matrix, not as verified.
+
+The matrix in `spec/api/api-traceability.md` is updated with Test, Code and Doc
+columns; `logs/runs/` evidence exists for each stage.
 
 **Validation (human):** a single signed record
 `logs/validation/YYYY-MM-DD-human-validation.md` containing:
@@ -455,8 +514,9 @@ in-process suite cannot see that class of defect. Recorded in
 `logs/gates/YYYY-MM-DD-final-gate.md` records **GO**, **REVISE** or **STOP** with
 the reasoning and the evidence consulted: test results, contract verification,
 log analysis, human validation, traceability completeness. Traceability matrix
-updated. GO requires that every requirement has a passing test, the contract
-verification is clean and the human validation record is signed.
+updated. GO requires that every requirement is mapped to a passing test except
+the UI exceptions listed in §2 and §10, that the contract verification is clean
+and the human validation record is signed.
 
 ---
 
@@ -480,7 +540,7 @@ verification is clean and the human validation record is signed.
 | ID | Risk | Detection | Mitigation |
 |---|---|---|---|
 | R-TDD-01 | Test written to match the implementation (correlated error, R-07) | `check-test-first.mjs`; human review of the TEST-GATE record | Test tickets reviewed against the AC text before implementation starts |
-| R-TDD-02 | Contract drift while implementing | `verify-contract.mjs` on every operation | Contract is the oracle; changes go through clarifications or the addendum |
+| R-TDD-02 | Contract drift while implementing | every operation is exercised by a test that compares status and media type; `verify-contract.mjs` proves the set equals the contract | Contract is the oracle; changes go through clarifications or the addendum |
 | R-TDD-03 | TypeScript types diverge from the contract | Contract check failures in CI-style runs | Types are not the source of truth; AJV validates against the contract |
 | R-TDD-04 | Environment blocked: no `npm install`, Docker unavailable | `npm install` fails; `docker compose up` fails | Human runs both; agent reports rather than works around |
 | R-TDD-05 | Flaky time-dependent tests (reminders, DST) | Repeated runs of S3/S5 suites | Injected clock; fixed instants taken from SCN scenarios; `Europe/Kyiv` offset tested explicitly |
