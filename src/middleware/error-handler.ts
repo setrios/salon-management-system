@@ -84,16 +84,25 @@ export function sendProblem(res: Response, problem: Problem): void {
 }
 
 /**
+ * A body the JSON parser refused (an `http-errors` object with
+ * `type: 'entity.parse.failed'`). The rejection happens in `express.json`,
+ * before any route runs, so no route can own this mapping (SMS-44).
+ */
+function isBodyParseError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { type?: unknown }).type === 'entity.parse.failed'
+  );
+}
+
+/**
  * Terminal error handler, registered last.
  *
- * A thrown `HttpProblem` is rendered as-is; anything else is unexpected and
- * becomes 500 `INTERNAL_ERROR` (error-model.md §4: 500 is never used for a
- * client-caused condition).
- *
- * TODO(ticket-driven): malformed JSON. `express.json` throws a `SyntaxError`
- * carrying `status: 400` and `type: 'entity.parse.failed'`; the catalog wants
- * 400 `MALFORMED_REQUEST`, so the mapping is added together with the S1.0 test
- * that asserts it (plan §8, SMS-44), not before.
+ * A thrown `HttpProblem` is rendered as-is; a body the JSON parser rejected is
+ * a client mistake and becomes 400 `MALFORMED_REQUEST` (error-model.md §4: 400
+ * is for a request that cannot be parsed, and 500 is never used for a
+ * client-caused condition); anything else is unexpected and becomes 500.
  */
 export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   if (res.headersSent) {
@@ -103,10 +112,13 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
 
   const traceId = getTraceId(res);
   const known = error instanceof HttpProblem ? error : undefined;
-  const code = known?.code ?? 'INTERNAL_ERROR';
+  const parseFailure = known === undefined && isBodyParseError(error);
+  const code = known?.code ?? (parseFailure ? 'MALFORMED_REQUEST' : 'INTERNAL_ERROR');
   const [status, title] = PROBLEM_CATALOG[code];
+  const detail =
+    known?.detail ?? (parseFailure ? 'The request body is not valid JSON.' : undefined);
 
-  if (known === undefined) {
+  if (known === undefined && !parseFailure) {
     const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
     process.stderr.write(`[${traceId ?? 'no-trace'}] unhandled error: ${message}\n`);
   }
@@ -120,7 +132,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
     // `traceId` is optional in `Problem`; when the middleware did not run there
     // is no id to correlate, so the field is omitted rather than invented.
     ...(traceId === undefined ? {} : { traceId }),
-    ...(known?.detail === undefined ? {} : { detail: known.detail }),
+    ...(detail === undefined ? {} : { detail }),
     ...(known?.errors === undefined || known.errors.length === 0 ? {} : { errors: known.errors }),
   });
 };

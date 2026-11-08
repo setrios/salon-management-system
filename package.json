@@ -9,7 +9,7 @@
     "node": ">=24.18.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run convert:contract && tsc -p tsconfig.json && node scripts/copy-contract.mjs",
     "dev": "npm run build && node --watch dist/src/index.js",
     "start": "node dist/src/index.js",
     "test": "vitest run",

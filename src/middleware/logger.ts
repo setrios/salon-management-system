@@ -13,6 +13,7 @@ import { join } from 'node:path';
 
 import type { RequestHandler } from 'express';
 
+import { contractPathFor } from '../contract/paths.js';
 import { getTraceId } from './trace.js';
 
 export type LogLevel = 'info' | 'warn' | 'error';
@@ -53,9 +54,17 @@ function levelFor(status: number): LogLevel {
 }
 
 /**
- * Per-request access log, written when the response finishes. `path` is the
- * matched route template, so a path parameter carrying a client access token
- * (REQ-NF-001) is never written to the log.
+ * Per-request access log, written when the response finishes.
+ *
+ * `path` must never carry a concrete value for a contract path, because a path
+ * parameter can hold a client access token (REQ-NF-001, REQ-NF-006):
+ *
+ *   - a matched Express route gives `${baseUrl}${route.path}`;
+ *   - an unmatched request that names a contract path gets the contract
+ *     template — at S1.0-S5.5 every `/api/v1/*` request is unmatched, so this
+ *     is the branch that keeps the token out of the log;
+ *   - anything else gets the request path, which no contract path claims and
+ *     therefore cannot carry a token defined by the contract.
  */
 export function requestLogger(logDir: string): RequestHandler {
   const logger = createLogger(logDir);
@@ -64,12 +73,16 @@ export function requestLogger(logDir: string): RequestHandler {
     const startedAt = process.hrtime.bigint();
     res.once('finish', () => {
       const route = (req as unknown as { route?: { path?: unknown } }).route?.path;
+      const path =
+        typeof route === 'string'
+          ? `${req.baseUrl}${route}`
+          : (contractPathFor(req.path)?.template ?? req.originalUrl.split('?')[0]);
       logger.record(levelFor(res.statusCode), 'http.request', {
         // `traceMiddleware` always runs before this one, but the field is typed
         // optional; `null` keeps the record's key set stable across events.
         traceId: getTraceId(res) ?? null,
         method: req.method,
-        path: typeof route === 'string' ? `${req.baseUrl}${route}` : req.baseUrl,
+        path,
         status: res.statusCode,
         durationMs: Number(process.hrtime.bigint() - startedAt) / 1e6,
       });

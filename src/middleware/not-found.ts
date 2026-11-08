@@ -1,27 +1,42 @@
 /**
- * Terminal 404.
+ * Terminal 404 / 405.
  *
- * Reached only when no route matched. It raises a `NOT_FOUND` HttpProblem
- * instead of answering directly, so that 404 has exactly the same rendering
- * path as every other error (error-model.md §4: 404 "Resource id or token
- * unknown"; 405 is reserved for a defined path with an undefined method).
+ * Reached when no route handled the request. It raises an `HttpProblem` instead
+ * of answering directly, so both statuses use exactly the same rendering path as
+ * every other error (error-model.md §4).
  *
- * The scaffold registers no `/api/v1` operation yet, so at this stage every API
- * request lands here. That is the expected state before S1.0, and the first
- * failing test asserts exactly this response.
+ * Two cases are distinguished, because the contract distinguishes them:
  *
- * TODO(ticket-driven): 405. Express also falls through to this handler when the
- * path exists but the method does not, which the catalog requires to be
- * `METHOD_NOT_ALLOWED`. Recognising it needs the set of paths the router
- * actually registered, so it is added together with the first mounted router —
- * before any test asserts a 405.
+ *   - the path is defined in the contract, but the method is not → 405
+ *     `METHOD_NOT_ALLOWED`;
+ *   - anything else → 404 `NOT_FOUND`.
+ *
+ * The path set comes from the contract, not from the Express router: at S1.0 no
+ * operation router is mounted, and Express 5 offers no public way to ask whether
+ * a path is registered under another method. See `src/contract/paths.ts` and the
+ * temporary-asymmetry note in `logs/gates/2026-11-08-test-SMS-44.md` §1: a
+ * contract path whose *method* is defined but not yet implemented stays 404,
+ * because 405 speaks about the method, not about implementation progress.
  */
 
 import type { RequestHandler } from 'express';
 
+import { contractPathFor } from '../contract/paths.js';
 import { HttpProblem } from './error-handler.js';
 
-export const notFound: RequestHandler = (_req, _res, next) => {
+export const notFound: RequestHandler = (req, _res, next) => {
+  const match = contractPathFor(req.path);
+
+  if (match !== undefined && !match.methods.has(req.method)) {
+    next(
+      new HttpProblem(
+        'METHOD_NOT_ALLOWED',
+        `The path is defined for ${[...match.methods].sort().join(', ')}.`,
+      ),
+    );
+    return;
+  }
+
   // `detail` does not repeat the path. RFC 9457 puts it in `instance`, which the
   // error handler fills from the request, so repeating it here would duplicate
   // the same string in two fields of one body.
