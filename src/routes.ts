@@ -1,10 +1,12 @@
 /**
- * Route table — DECLARATION ONLY.
+ * Route table.
  *
- * The contract defines 50 operations. None of them is registered yet: each is
- * added by its own ticket, after its failing test and its TEST-GATE, so that
- * `git log` shows requirements → tests → implementation per operation. Writing
- * the routes first would be the "vibe coding" shape the task forbids.
+ * The contract defines 50 operations. They are mounted one component at a time:
+ * each arrives with its own ticket, after its failing test and its TEST-GATE, so
+ * that `git log` shows requirements → tests → implementation per operation.
+ * Writing the routes first would be the "vibe coding" shape the task forbids.
+ * S1.1 mounts authentication (`login`, `getCurrentPrincipal`); the rest are
+ * listed as TODO below.
  *
  * The `/api/v1` prefix is applied here and only here. Every path of
  * `openapi.yaml#/paths` is relative to the server base path, and the contract's
@@ -23,15 +25,18 @@
 import type { Express } from 'express';
 import { Router } from 'express';
 
+import { authRoutes } from './modules/auth/routes.js';
+
 export const API_PREFIX = '/api/v1';
 
 export function registerRoutes(app: Express): void {
   const api = Router();
 
+  api.use(authRoutes);
+
   // TODO(ticket-driven): one router per system component, mounted here as that
   // component's first ticket reaches its `feat:` commit:
   //
-  //   api.use(authRoutes)            authentication            SMS-1..
   //   api.use(catalogRoutes)         services, categories      SMS-2..
   //   api.use(mastersRoutes)         masters                   SMS-4..
   //   api.use(masterServicesRoutes)  master-service links       SMS-6..

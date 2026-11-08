@@ -6,17 +6,46 @@
  * only in the tests. `spec/api/error-model.md` §3 fixes the codes:
  * 400 MALFORMED_REQUEST (body required but absent, parameter missing or wrongly
  * typed), 415 UNSUPPORTED_MEDIA_TYPE, 422 VALIDATION_ERROR (schema violation).
+ *
+ * The schema-violation status is derived from the operation's declared response
+ * codes (CL-09): an operation that declares 422 gets 422, one that does not gets
+ * 400. `login` is the only body-taking operation in the contract without 422,
+ * and the rule never reads the operation id, so a later contract change is
+ * followed automatically.
  */
 
 import type { RequestHandler } from 'express';
 
-import { getOperation, getSchemaValidator, toValidationItems } from '../contract/validators.js';
+import {
+  getOperation,
+  getSchemaValidator,
+  toValidationItems,
+  type ConvertedOperation,
+} from '../contract/validators.js';
 import { HttpProblem } from './error-handler.js';
+
+/**
+ * The Problem for a body that violates its schema.
+ *
+ * CL-09: the status follows the operation's declared responses, never its id —
+ * 422 when the operation declares 422, otherwise 400. `errors[]` is carried in
+ * both cases, because `error-model.md` §2.1 allows it "for validation failures"
+ * and a schema violation is one whichever status the response set leaves room
+ * for.
+ */
+function bodyViolation(
+  operation: ConvertedOperation,
+  errors: Parameters<typeof toValidationItems>[0],
+): HttpProblem {
+  const code = operation.responseCodes.includes(422) ? 'VALIDATION_ERROR' : 'MALFORMED_REQUEST';
+  return new HttpProblem(code, 'The body contains invalid fields.', toValidationItems(errors));
+}
 
 /** Validates the body of an operation against its schema. No body → passes. */
 export function validateBody(operationId: string): RequestHandler {
   return (req, _res, next) => {
-    const body = getOperation(operationId).requestBody;
+    const operation = getOperation(operationId);
+    const body = operation.requestBody;
     if (body === null) {
       next();
       return;
@@ -45,14 +74,7 @@ export function validateBody(operationId: string): RequestHandler {
     }
 
     const validate = getSchemaValidator(name);
-    const problem = validate(req.body)
-      ? undefined
-      : new HttpProblem(
-          'VALIDATION_ERROR',
-          'The body contains invalid fields.',
-          toValidationItems(validate.errors),
-        );
-    return next(problem);
+    return next(validate(req.body) ? undefined : bodyViolation(operation, validate.errors));
   };
 }
 

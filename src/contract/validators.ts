@@ -43,6 +43,8 @@ export interface ConvertedOperation {
   path: string;
   parameters: ConvertedParameter[];
   requestBody: { required: boolean; schema?: object } | null;
+  /** Declared status codes, ascending. Drives the 400-vs-422 rule (CL-09). */
+  responseCodes: number[];
 }
 
 export interface ConvertedParameter {

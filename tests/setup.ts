@@ -9,16 +9,16 @@
  *      a database ending in `_test`; the suite truncates tables before each test
  *      file (decision D-7), so a mistyped URL must fail loudly instead of wiping
  *      a development database.
- *   3. Truncate every table before each test file, so suites do not depend on
+ *   3. Apply every migration in `src/db/migrations` to the test database, so
+ *      `npm test` reproduces the schema on an empty database — the migrations
+ *      are the only source of the schema, and the migrator records what it has
+ *      applied, so repeated runs are no-ops.
+ *   4. Truncate every table before each test file, so suites do not depend on
  *      execution order.
- *   4. Close the pool once, after the last file.
+ *   5. Close the pool once, after the last file.
  *
  * Application modules are imported dynamically inside the hooks for the same
  * reason: a static `import` would be evaluated before step 1 runs.
- *
- * Nothing here creates the schema. Tables come from the Drizzle migrations
- * generated from `src/db/schema.ts`, which is empty until the first ticket that
- * needs a table; with no tables the truncate step is a no-op.
  *
  * Source: logs/2026-11-08-implementation-plan.md §3 (D-7), §5.
  */
@@ -107,8 +107,25 @@ export async function truncateAll(): Promise<void> {
   await getPool().query(`truncate table ${quoted} restart identity cascade`);
 }
 
+/**
+ * Applies the migrations from `src/db/migrations` to the test database.
+ *
+ * `migrate` reads `meta/_journal.json` and applies only what the journal table
+ * does not already record, so a second run changes nothing. The folder is
+ * resolved from the process working directory, which is the repository root
+ * under both `npm test` and a direct `npx vitest run`.
+ */
+async function migrateDatabase(): Promise<void> {
+  const { getDb } = await import('../src/db/client.js');
+  const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+  await migrate(getDb(), {
+    migrationsFolder: resolve(process.cwd(), 'src/db/migrations'),
+  });
+}
+
 beforeAll(async () => {
   if (!hasTestDatabase) return; // Pure unit suites do not need a database.
+  await migrateDatabase();
   await truncateAll();
 });
 

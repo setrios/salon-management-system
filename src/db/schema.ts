@@ -1,13 +1,12 @@
 /**
- * Database schema — DECLARATION ONLY.
+ * Database schema — tables declared ticket by ticket.
  *
- * This file is part of the scaffold and intentionally contains no Drizzle code.
- * Tables are added ticket by ticket, each after its failing test and its
- * TEST-GATE, following the stage plan in
- * `logs/2026-11-08-implementation-plan.md` §8. Writing the schema first would
- * make the implementation lead the tests instead of the other way round.
+ * Each table is added after its failing test and its TEST-GATE, following the
+ * stage plan in `logs/2026-11-08-implementation-plan.md` §8. Writing the schema
+ * first would make the implementation lead the tests instead of the other way
+ * round.
  *
- * Authoritative sources for the eventual columns:
+ * Authoritative sources:
  *   spec/api/resource-model.md §2   — domain resources and relationships
  *   spec/api/openapi.yaml           — component schemas (external shape)
  *   spec/salon-management-system-srs-v1.3.tex — REQ-F rules per entity
@@ -37,9 +36,33 @@
  * the reminder/notification subsystem, which the stage plan schedules after the
  * booking path (S4). Their shape is fixed by `Appointment.reminders[]`,
  * `Notification`, `NotificationPreference` in openapi.yaml.
- *
- * TODO(ticket-driven): replace this comment block with `pgTable` declarations
- * as each ticket reaches its `feat:` commit. Until then, importing this file is
- * valid and yields nothing — that keeps the scaffold type-checkable without
- * pre-empting any test.
  */
+
+import { sql } from 'drizzle-orm';
+import { boolean, check, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+
+/**
+ * Staff accounts: masters and the single administrator.
+ *
+ * The columns are the artifact declared in plan §5.1 before the S1.1 fixture
+ * wrote to them; the same list appears in `tests/helpers/accounts.ts`.
+ *
+ * D-19: one table, not two. The administrator is a row with `role = 'admin'`;
+ * REQ-F-017 allows exactly one, and no operation creates accounts at this
+ * stage. D-18: `password_hash` holds the scrypt string
+ * `scrypt$N$r$p$salt-base64$key-base64` and is never returned by any operation.
+ */
+export const masters = pgTable(
+  'masters',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fullName: text('full_name').notNull(),
+    username: text('username').notNull().unique(),
+    passwordHash: text('password_hash').notNull(),
+    role: text('role').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check('masters_role_check', sql`${table.role} in ('master', 'admin')`)],
+);

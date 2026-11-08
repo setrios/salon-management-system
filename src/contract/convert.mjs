@@ -13,8 +13,11 @@
  * test that needs it.
  *
  * Output (`src/contract/openapi.json`, git-ignored): `{ definitions,
- * operations }`. Responses are not collected — nothing needs them until a check
- * of a real response exists, which arrives with the test requiring it.
+ * operations }`. For each operation the declared response status codes are
+ * collected, because the choice between 400 and 422 for a schema violation is
+ * derived from what the operation declares (CL-09), never from its id. Response
+ * bodies are still not collected: the tests compare those against the contract,
+ * and no runtime code needs them.
  *
  * Usage: node src/contract/convert.mjs
  */
@@ -111,6 +114,13 @@ async function main() {
               schema: convert(body.content?.['application/json']?.schema ?? {}),
             }
           : null,
+        // Declared status codes, ascending. `default` is not a status code and
+        // is skipped; nothing in the contract uses it, but a future addition
+        // must not enter this list by accident.
+        responseCodes: Object.keys(operation.responses ?? {})
+          .map(Number)
+          .filter((code) => Number.isInteger(code) && code >= 100 && code <= 599)
+          .sort((a, b) => a - b),
       });
     }
   }

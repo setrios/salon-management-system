@@ -57,14 +57,23 @@ function levelFor(status: number): LogLevel {
  * Per-request access log, written when the response finishes.
  *
  * `path` must never carry a concrete value for a contract path, because a path
- * parameter can hold a client access token (REQ-NF-001, REQ-NF-006):
+ * parameter can hold a client access token (REQ-NF-001, REQ-NF-006), so the
+ * path is resolved in this order:
  *
- *   - a matched Express route gives `${baseUrl}${route.path}`;
- *   - an unmatched request that names a contract path gets the contract
- *     template — at S1.0-S5.5 every `/api/v1/*` request is unmatched, so this
- *     is the branch that keeps the token out of the log;
- *   - anything else gets the request path, which no contract path claims and
- *     therefore cannot carry a token defined by the contract.
+ *   1. the contract template (`/api/v1/auth/login`,
+ *      `/api/v1/appointments/{token}/cancel`) — one spelling per operation,
+ *      prefix included, no concrete value;
+ *   2. `${baseUrl}${route.path}` for a route the contract does not define
+ *      (`/health` is the only one today);
+ *   3. the request path, which no contract path claims and therefore cannot
+ *      carry a token defined by the contract.
+ *
+ * The contract template comes first because `req.baseUrl` is restored to `''`
+ * when the router unwinds, and the response `finish` event lands on either
+ * side of that: a response produced by a route handler is logged before the
+ * restore, one produced by the error handler after it. Reading `baseUrl` first
+ * therefore logged the same operation as `/api/v1/auth/login` and as
+ * `/auth/login` in a single run (runs-02 §4, tdd-SMS-21 §11).
  */
 export function requestLogger(logDir: string): RequestHandler {
   const logger = createLogger(logDir);
@@ -72,11 +81,16 @@ export function requestLogger(logDir: string): RequestHandler {
   return (req, res, next) => {
     const startedAt = process.hrtime.bigint();
     res.once('finish', () => {
+      // `originalUrl` is never rewritten by Express, unlike `req.path`, whose
+      // `/api/v1` prefix the router strips and restores. Reading it keeps both
+      // response paths (handler and error handler) on this one branch. The
+      // types mark it optional; `req.url` is the same value when it is absent.
+      const requestPath = (req.originalUrl ?? req.url).split('?')[0] ?? '';
+      const contractTemplate = contractPathFor(requestPath)?.template;
       const route = (req as unknown as { route?: { path?: unknown } }).route?.path;
       const path =
-        typeof route === 'string'
-          ? `${req.baseUrl}${route}`
-          : (contractPathFor(req.path)?.template ?? req.originalUrl.split('?')[0]);
+        contractTemplate ??
+        (typeof route === 'string' ? `${req.baseUrl}${route}` : requestPath);
       logger.record(levelFor(res.statusCode), 'http.request', {
         // `traceMiddleware` always runs before this one, but the field is typed
         // optional; `null` keeps the record's key set stable across events.
