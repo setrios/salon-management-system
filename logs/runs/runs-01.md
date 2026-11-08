@@ -164,3 +164,40 @@ contradictory.
   of the final verification checklist (plan §10): the missing-contract defect in
   §4 was invisible to the in-process suite, and only running the built artifact
   surfaced it.
+
+## 7. Entry-point run — environment loading (added after a manual attempt)
+
+Running `node dist/src/index.js` directly failed with
+`ConfigError: Missing required environment variable: DATABASE_URL`: nothing in
+the process loaded `.env`. The tests load it themselves (`tests/setup.ts`), so
+the gap only appeared when the built artifact was started by hand.
+
+Fixed in the npm scripts, not in application code — `node` has carried the flag
+since v22.9 and the project requires Node >= 24.18:
+
+```
+"dev":   "npm run build && node --watch --env-file-if-exists=.env dist/src/index.js"
+"start": "node --env-file-if-exists=.env dist/src/index.js"
+```
+
+Verified: `npm start` writes `server.started` with `port: 3000` and
+`nodeEnv: development`. A bare `node dist/src/index.js` still fails fast, which
+is intended: the process reads `process.env` only and should not silently invent
+a database.
+
+### Observation: the final shutdown record is lost
+
+With the server started and SIGTERM delivered, the process exits 0 (so the
+graceful path runs) but the log ends at `server.stopping`:
+
+```
+{"ts":"…","level":"info","event":"server.started","port":3000,"nodeEnv":"development"}
+{"ts":"…","level":"info","event":"server.stopping","signal":"SIGTERM"}
+```
+
+`server.stopped` is written inside the `server.close` callback and
+`process.exit(0)` is called immediately afterwards; a `WriteStream` write is
+asynchronous, so the last record is discarded. Not fixed here: the fix is a
+`logger.close(callback)` that ends the stream before exiting, and the only test
+that can see it spawns the built process — the same built-artifact class as §4.
+Recorded as a candidate for the NFR/harness ticket, test first.

@@ -415,12 +415,13 @@ with Test, Code and Doc columns; `logs/runs/` evidence for each stage.
 
 A validation record that only repeats the test results is not a validation.
 
-**Build artifact.** Verification runs `npm run build && node dist/src/index.js`
-and exercises the result, not only the TypeScript sources. The S1.0 control run
-found that the built application could not load the contract at all — `tsc`
-copies only `.js`, so the generated `openapi.json` was missing next to the
-compiled validators — and the in-process suite cannot see that class of defect.
-Recorded in `logs/runs/runs-01.md` §4.
+**Build artifact.** Verification runs `npm run build && npm start` (the npm
+scripts load `.env` via `--env-file-if-exists`) and exercises the result, not
+only the TypeScript sources. The S1.0 control run found that the built
+application could not load the contract at all — `tsc` copies only `.js`, so the
+generated `openapi.json` was missing next to the compiled validators — and the
+in-process suite cannot see that class of defect. Recorded in
+`logs/runs/runs-01.md` §4.
 
 ---
 
