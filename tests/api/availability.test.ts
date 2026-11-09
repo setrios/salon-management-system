@@ -363,21 +363,50 @@ describe('S1.3 availability — P7, M3, M4', () => {
       // `weekly` and `dates` are required by the schema, so "nothing configured"
       // is two empty arrays rather than a 404: a master without availability has
       // no bookable slot, not a missing resource.
-      const response = await getMyAvailability(petroToken);
+      //
+      // A master created here, not Petro: Petro's rule set is written by the P7
+      // block's `beforeEach` and by the privacy case below, so "never set any"
+      // would be a claim about execution order rather than about a fresh master.
+      // That is the same order dependence that failed under `--sequence.shuffle`
+      // at S1.2, and it is not repeated here.
+      const fresh = await seedAccount({
+        role: 'master',
+        username: `never-${randomUUID().slice(0, 8)}`,
+        password: 'never-set-availability',
+        fullName: 'Never Set Availability',
+      });
+
+      const response = await getMyAvailability(await login(fresh.username, fresh.password));
       expectJson(response, 200, isAvailability);
       expect(response.body).toMatchObject({ weekly: [], dates: [] });
     });
 
     it('keeps each rule set private to its own master', async () => {
-      await arrangeAvailability(petroToken, [
-        { dayOfWeek: 3, startTime: '08:00', endTime: '09:00' },
-      ]);
+      // Both sides are written here, and the second master is created here.
+      // Asserting that Ihor's set stayed empty would be a claim about execution
+      // order — other cases in this block write Ihor's rules — and that is the
+      // defect `--sequence.shuffle` found at S1.2. Two independent writes, each
+      // read back by its own owner, test isolation without relying on who ran
+      // first.
+      const other = await seedAccount({
+        role: 'master',
+        username: `other-${randomUUID().slice(0, 8)}`,
+        password: 'other-master-password',
+        fullName: 'Other Master',
+      });
+      const otherToken = await login(other.username, other.password);
+
+      const mineRule = { dayOfWeek: 3, startTime: '08:00', endTime: '09:00' };
+      const theirsRule = { dayOfWeek: 4, startTime: '14:00', endTime: '16:00' };
+
+      await arrangeAvailability(petroToken, [mineRule]);
+      await arrangeAvailability(otherToken, [theirsRule]);
 
       const mine = await getMyAvailability(petroToken);
-      const theirs = await getMyAvailability(ihorToken);
+      const theirs = await getMyAvailability(otherToken);
 
-      expect(mine.body.weekly).toHaveLength(1);
-      expect(theirs.body.weekly).toEqual([]);
+      expect(mine.body).toMatchObject({ weekly: [mineRule], dates: [] });
+      expect(theirs.body).toMatchObject({ weekly: [theirsRule], dates: [] });
     });
 
     it('is idempotent: the same PUT twice leaves the same set', async () => {
