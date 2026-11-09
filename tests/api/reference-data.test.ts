@@ -187,6 +187,15 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
   let masterToken = '';
 
   beforeAll(async () => {
+    // The Given of SCN-08, arranged once per file and before any test can save
+    // a service. Without this, a test that creates a service with category
+    // "Hair" (the create helper's default) would bring the category into
+    // existence with `seeded:false` through D-27's write path, and the later
+    // `ensureSeedCategories()` — `on conflict do nothing` — could not restore
+    // the marker. That made the file order-dependent under `--sequence.shuffle`;
+    // seeding first is what a fresh installation looks like anyway.
+    await ensureSeedCategories();
+
     const admin = await seedAccount({
       role: 'admin',
       username: ADMIN.username,
@@ -437,6 +446,17 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expectProblem(response, { status: 404, code: 'NOT_FOUND' });
+
+      // `getMasterAdmin` declares 200, 401, 403, 404 and 500 — no 400. An id
+      // that is not a uuid names no resource, so it may not answer 400: the
+      // status follows the declared set, as CL-09 does for its 422/400 pair.
+      // The second call is also the one that would reach Postgres as `abc` and
+      // fail with SQLSTATE 22P02 if the format were not checked.
+      const malformed = await request(app)
+        .get('/api/v1/admin/masters/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expectProblem(malformed, { status: 404, code: 'NOT_FOUND' });
     });
 
     it('R4 changes fullName and deactivates through active:false, never deletes', async () => {
@@ -669,6 +689,13 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
         .get(`/api/v1/admin/services/${randomUUID()}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expectProblem(missing, { status: 404, code: 'NOT_FOUND' });
+
+      // `getServiceAdmin` declares no 400, so an id that is not a uuid is a
+      // resource that does not exist — the same rule as R3's negative.
+      const malformed = await request(app)
+        .get('/api/v1/admin/services/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expectProblem(malformed, { status: 404, code: 'NOT_FOUND' });
     });
 
     it('R8 deactivates a service through active:false (REQ-F-018, POS-19)', async () => {
@@ -992,6 +1019,13 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
         .get(`/api/v1/admin/materials/${randomUUID()}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expectProblem(missing, { status: 404, code: 'NOT_FOUND' });
+
+      // `getMaterialAdmin` declares no 400, so an id that is not a uuid is a
+      // resource that does not exist — the same rule as R3's and R7's negatives.
+      const malformed = await request(app)
+        .get('/api/v1/admin/materials/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expectProblem(malformed, { status: 404, code: 'NOT_FOUND' });
     });
 
     it('R16 renames, changes the unit and deactivates a material', async () => {
