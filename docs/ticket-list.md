@@ -28,17 +28,17 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-11 | Test reminder skip rules (SCN-04, SCN-05) | Test | REQ-F-010, 011, SCN-04, SCN-05 | SMS-3 | Coding Agent | Backlog |
 | SMS-12 | Test per-channel notification preferences (SCN-06) | Test | REQ-F-016, 023, 026, SCN-06 | SMS-3 | Coding Agent | Backlog |
 | SMS-13 | Test payment only after completion (SCN-07) | Test | REQ-F-021, 027, SCN-07 | SMS-3 | Coding Agent | Backlog |
-| SMS-14 | Test custom service category + seeds (SCN-08) | Test | REQ-F-024, SCN-08 | SMS-3 | Coding Agent | Backlog |
-| SMS-15 | Test master availability modes (SCN-09) | Test | REQ-F-015, SCN-09 | SMS-3 | Coding Agent | Backlog |
+| SMS-14 | Test custom service category + seeds (SCN-08) | Test | REQ-F-024, SCN-08 | SMS-3 | Coding Agent | Done |
+| SMS-15 | Test master availability modes (SCN-09) | Test | REQ-F-015, SCN-09 | SMS-3 | Coding Agent | Done |
 | SMS-16 | Test reports: revenue, popular services, stock (SCN-10/14/15) | Test | REQ-F-022, 032, 033, SCN-10, SCN-14, SCN-15 | SMS-3 | Coding Agent | Backlog |
 | SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Backlog |
 | SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-3 | Coding Agent | Backlog |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Backlog |
 | SMS-20 | Test non-functional acceptance criteria | Test | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
-| SMS-21 | Test auth and reference-data CRUD checks | Test | REQ-F-012, 013, 014, 017, 018, 019, 020, 025 | SMS-3 | Coding Agent | Backlog |
-| SMS-22 | Feature: authentication (master + single admin) | Feature | REQ-F-012, 017 | SMS-21 | Coding Agent | Backlog |
-| SMS-23 | Feature: reference data (masters, services/categories, MasterService, materials/units, deactivate) | Feature | REQ-F-018, 024, 025 | SMS-14, SMS-21 | Coding Agent | Backlog |
-| SMS-24 | Feature: master availability (weekly pattern + specific dates) | Feature | REQ-F-015 | SMS-15 | Coding Agent | Backlog |
+| SMS-21 | Test auth and reference-data CRUD checks | Test | REQ-F-012, 013, 014, 017, 018, 019, 020, 025 | SMS-3 | Coding Agent | Done |
+| SMS-22 | Feature: authentication (master + single admin) | Feature | REQ-F-012, 017 | SMS-21 | Coding Agent | Done |
+| SMS-23 | Feature: reference data (masters, services/categories, MasterService, materials/units, deactivate) | Feature | REQ-F-018, 024, 025 | SMS-14, SMS-21 | Coding Agent | Done |
+| SMS-24 | Feature: master availability (weekly pattern + specific dates) | Feature | REQ-F-015 | SMS-15 | Coding Agent | Done |
 | SMS-25 | Feature: booking flow (multi-service sum, slot picking, auto-confirm, 30-min rounding) | Feature | REQ-F-001, 002, 003, 031; REQ-NF-008 | SMS-8, SMS-19, SMS-23, SMS-24 | Coding Agent | Backlog |
 | SMS-26 | Feature: confirmation page + confirmation SMS + unguessable token | Feature | REQ-F-004, 005; REQ-NF-001 | SMS-25 | Coding Agent | Backlog |
 | SMS-27 | Feature: client cancellation | Feature | REQ-F-006 | SMS-9, SMS-26 | Coding Agent | Backlog |
@@ -58,7 +58,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-41 | Build API traceability matrix (REQ ↔ operation ↔ scenario) | Documentation | Plan §8.1; SRS §8 | SMS-40 | Coding Agent | Backlog |
 | SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent | Backlog |
 | SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human | Backlog |
-| SMS-44 | Test S1.0 infrastructure: 404, 405, malformed JSON → 400, Problem shape, trace propagation, log line shape (415 moves to SMS-21, plan §8.2) | Test | Plan §8, §8.2; error-model.md §3 | SMS-43 | Coding Agent | Backlog |
+| SMS-44 | Test S1.0 infrastructure: 404, 405, malformed JSON → 400, Problem shape, trace propagation, log line shape (415 moves to SMS-21, plan §8.2) | Test | Plan §8, §8.2; error-model.md §3 | SMS-43 | Coding Agent | Done |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
