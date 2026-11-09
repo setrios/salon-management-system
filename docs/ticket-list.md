@@ -18,7 +18,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-1 | Baseline specification reference (SRS v1.3 §1–3: scope, actors, glossary, constraints) | Specification | SRS v1.3 §1–3 | — | Human | Done (SRS already approved) |
 | SMS-2 | Populate traceability matrix Ticket column | Documentation | SRS v1.3 §8 (matrix) | SMS-1 | Joint | Done |
 | SMS-3 | PLAN-GATE: approve decomposition, dependencies, plan, risks | Gate | This plan §9 | SMS-1, SMS-2 | Human | Done (GO, 2026-10-22) |
-| SMS-4 | G1: approve stage S1 (foundations) exit | Gate | Plan §6 | SMS-3 | Human | Backlog |
+| SMS-4 | G1: approve stage S1 (foundations) exit | Gate | Plan §6 | SMS-3 | Human | Done |
 | SMS-5 | G2: approve stage S2 (client booking core) exit | Gate | Plan §6 | SMS-4 | Human | Backlog |
 | SMS-6 | G3: approve stages S3+S4 (reschedule/reminders, notifications) exit | Gate | Plan §6 | SMS-5 | Human | Backlog |
 | SMS-7 | G4: approve stage S5 (admin & payment) exit | Gate | Plan §6 | SMS-6 | Human | Backlog |
@@ -52,12 +52,12 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Backlog |
 | SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26 | Coding Agent | Backlog |
 | SMS-37 | Feature: retention & no-gateway constraints | Feature | REQ-NF-005, 009 | SMS-20, SMS-34 | Coding Agent | Backlog |
-| SMS-38 | Define REST resource model and URI/method conventions | Specification | Plan §5; SRS §4–5 | — | Joint | Backlog |
-| SMS-39 | Define component schemas and unified error model | Specification | Plan §6–7; SRS §6–7 | SMS-38 | Joint | Backlog |
-| SMS-40 | Author OpenAPI 3.0.3 specification | Specification | Plan §8 Part 2 | SMS-38, SMS-39 | Coding Agent | Backlog |
-| SMS-41 | Build API traceability matrix (REQ ↔ operation ↔ scenario) | Documentation | Plan §8.1; SRS §8 | SMS-40 | Coding Agent | Backlog |
-| SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent | Backlog |
-| SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human | Backlog |
+| SMS-38 | Define REST resource model and URI/method conventions | Specification | Plan §5; SRS §4–5 | — | Joint | Done |
+| SMS-39 | Define component schemas and unified error model | Specification | Plan §6–7; SRS §6–7 | SMS-38 | Joint | Done |
+| SMS-40 | Author OpenAPI 3.0.3 specification | Specification | Plan §8 Part 2 | SMS-38, SMS-39 | Coding Agent | Done |
+| SMS-41 | Build API traceability matrix (REQ ↔ operation ↔ scenario) | Documentation | Plan §8.1; SRS §8 | SMS-40 | Coding Agent | Done |
+| SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent | Done |
+| SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human | Done |
 | SMS-44 | Test S1.0 infrastructure: 404, 405, malformed JSON → 400, Problem shape, trace propagation, log line shape (415 moves to SMS-21, plan §8.2) | Test | Plan §8, §8.2; error-model.md §3 | SMS-43 | Coding Agent | Done |
 
 Verification and Validation tickets are created per stage at stage start
