@@ -63,6 +63,25 @@
         "src/middleware/error-handler.ts",
         "src/modules/auth/password.ts"
       ]
+    },
+    {
+      "ticket": "SMS-15 (test) → SMS-24 (implementation)",
+      "test": "tests/api/availability.test.ts",
+      "sources": ["REQ-F-015", "REQ-F-031", "REQ-NF-008", "SCN-09", "SCN-13"],
+      "implementation": [
+        "src/modules/availability/routes.ts",
+        "src/modules/availability/service.ts",
+        "src/modules/availability/rules.ts",
+        "src/lib/availability.ts",
+        "src/lib/time.ts"
+      ],
+      "touches": [
+        "src/db/schema.ts",
+        "src/db/migrations/meta/_journal.json",
+        "src/routes.ts",
+        "src/middleware/authorize.ts",
+        "src/middleware/validate.ts"
+      ]
     }
   ]
 }
