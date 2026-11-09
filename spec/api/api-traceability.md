@@ -1,7 +1,10 @@
 # API traceability matrix — Salon Management System
 
 Status: **FINAL** — built in Part 2 (step 2.3), finalised in Part 4 (step 4.1)
-after the mock scenarios ran on 2026-10-26.
+after the mock scenarios ran on 2026-10-26. Extended on 2026-11-09 with §6, which
+adds a **Test** and a **Code** location per operation delivered by stages S1.1–S1.3
+(G1 exit criterion 4, `logs/2026-11-08-implementation-plan.md` §8.3). Sections 1–5
+are unchanged by that extension.
 
 Links every SRS v1.3 requirement to the operations that expose it, the BDD
 scenario that motivated it, and the API scenario that will verify it on the
@@ -174,3 +177,89 @@ Remaining non-reproducible cases (malformed JSON hang, role-based 403,
 data/state-dependent 404 and 409, Prism-owned 405 body) are listed in
 `scenarios/negative.md` and in the gate record. None of them is claimed as
 verified; all are deferred to the next phase.
+
+---
+
+## 6. Test and Code locations for the operations delivered by S1.1–S1.3
+
+G1 exit criterion 4 (`logs/2026-11-08-implementation-plan.md` §8.3) requires this
+file to name a **Test** and a **Code** location for every operation the gate's
+stages delivered. This section is that record. It adds two columns and does not
+restate any row of §1–§5.
+
+**Shape of a Test entry:** the test file and the `it` title that carries the
+operation's primary behaviour — the one a reader should open first. Every one of
+these operations has further assertions beside it (validation, refusals,
+role matrix); the file is the unit that matters, and the title is the entry
+point. A name without a line number is deliberate: `it` titles are stable, line
+numbers are not.
+
+**Shape of a Code entry:** the route module that declares the operation. The
+storage half of each module is its sibling `service.ts`, and shared transport is
+`src/modules/reference-data/http.ts`; those are cited once below rather than
+repeated in 22 rows.
+
+### 6.1 S1.1 — authentication (SMS-21 → SMS-22)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `login` | `POST /auth/login` | `tests/api/auth.test.ts` — "issues an administrator token with role admin" | `src/modules/auth/routes.ts` |
+| `getCurrentPrincipal` | `GET /auth/me` | `tests/api/auth.test.ts` — "authorises GET /auth/me with the issued token" | `src/modules/auth/routes.ts` |
+
+### 6.2 S1.2 — administrator reference data (SMS-14 → SMS-23)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `listMastersAdmin` (R1) | `GET /admin/masters` | `tests/api/reference-data.test.ts` — "R1 lists masters as a MasterAdminPage containing the created account" | `src/modules/masters/routes.ts` |
+| `createMaster` (R2) | `POST /admin/masters` | `tests/api/reference-data.test.ts` — "R2 creates a master and returns the 201 Master shape with a Location" | `src/modules/masters/routes.ts` |
+| `getMasterAdmin` (R3) | `GET /admin/masters/{masterId}` | `tests/api/reference-data.test.ts` — "R3 returns one master by id" | `src/modules/masters/routes.ts` |
+| `updateMaster` (R4) | `PATCH /admin/masters/{masterId}` | `tests/api/reference-data.test.ts` — "R4 changes fullName and deactivates through active:false, never deletes" | `src/modules/masters/routes.ts` |
+| `listServicesAdmin` (R5) | `GET /admin/services` | `tests/api/reference-data.test.ts` — "R5 lists services as a ServicePage and filters by category" | `src/modules/catalog/routes.ts` |
+| `createService` (R6) | `POST /admin/services` | `tests/api/reference-data.test.ts` — "SCN-08 saves a service with a category outside the seeds" | `src/modules/catalog/routes.ts` |
+| `getServiceAdmin` (R7) | `GET /admin/services/{serviceId}` | `tests/api/reference-data.test.ts` — "R7 returns one service and answers an unknown id with 404" | `src/modules/catalog/routes.ts` |
+| `updateService` (R8) | `PATCH /admin/services/{serviceId}` | `tests/api/reference-data.test.ts` — "R8 deactivates a service through active:false (REQ-F-018, POS-19)" | `src/modules/catalog/routes.ts` |
+| `listCategoriesAdmin` (R9) | `GET /admin/categories` | `tests/api/reference-data.test.ts` — "R9 lists the same categories for the administrator" | `src/modules/catalog/routes.ts` |
+| `listMasterServicesAdmin` (R10) | `GET /admin/master-services` | `tests/api/reference-data.test.ts` — "R10 lists links and filters by masterId and serviceId" | `src/modules/master-services/routes.ts` |
+| `createMasterService` (R11) | `POST /admin/master-services` | `tests/api/reference-data.test.ts` — "R11 links a service to a master with a price" | `src/modules/master-services/routes.ts` |
+| `updateMasterService` (R12) | `PATCH /admin/master-services/{masterServiceId}` | `tests/api/reference-data.test.ts` — "R12 updates the price and deactivates the link" | `src/modules/master-services/routes.ts` |
+| `listMaterialsAdmin` (R13) | `GET /admin/materials` | `tests/api/reference-data.test.ts` — "R13 lists materials and filters by q and active" | `src/modules/materials/routes.ts` |
+| `createMaterial` (R14) | `POST /admin/materials` | `tests/api/reference-data.test.ts` — "R14 creates a material with the initial stock as stockQuantity" | `src/modules/materials/routes.ts` |
+| `getMaterialAdmin` (R15) | `GET /admin/materials/{materialId}` | `tests/api/reference-data.test.ts` — "R15 returns one material and answers an unknown id with 404" | `src/modules/materials/routes.ts` |
+| `updateMaterial` (R16) | `PATCH /admin/materials/{materialId}` | `tests/api/reference-data.test.ts` — "R16 renames, changes the unit and deactivates a material" | `src/modules/materials/routes.ts` |
+| `listUnits` (R17) | `GET /admin/units` | `tests/api/reference-data.test.ts` — "R17 lists the five standard units and the custom units in use" | `src/modules/units/routes.ts` |
+
+### 6.3 S1.3 — availability (SMS-15 → SMS-24)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `getMasterAvailability` (P7) | `GET /masters/{masterId}/availability` | `tests/api/availability.test.ts` — "offers a slot at every 30-minute start that a 90-minute block still fits in" | `src/modules/availability/routes.ts` |
+| `getMyAvailability` (M3) | `GET /me/availability` | `tests/api/availability.test.ts` — "M3 answers 200 for the owning master" | `src/modules/availability/routes.ts` |
+| `replaceMyAvailability` (M4) | `PUT /me/availability` | `tests/api/availability.test.ts` — "replaces the previous set: a second PUT leaves only what it sent" | `src/modules/availability/routes.ts` |
+
+### 6.4 Count, and what the two columns do not say
+
+**22 operations**, one per row: 2 from S1.1, 17 from S1.2, 3 from S1.3. That is
+the set the gate S1.1–S1.3 delivered; the remaining 28 of the contract's 50 have
+no row here yet and belong to later gates (S2.1 onwards), as the plan's stage
+table assigns them.
+
+The **Test** column points at the assertion that states the operation's normal
+behaviour. It does not enumerate negatives: each of the 22 also has refusals
+asserted in the same file (400/401/403/404/409/415/422 as the contract declares
+them), and §2 of each TEST-GATE record is the place those are counted. A row here
+is "this operation is tested", not "this operation is tested exhaustively".
+
+The **Code** column points at the module that declares the operation. Behaviour
+is split between that file and its `service.ts`, and a few shared pieces sit
+elsewhere: `src/modules/reference-data/http.ts` (response validation, pagination,
+`Location`, 409 mapping), `src/lib/availability.ts` and `src/lib/time.ts` (P7's
+arithmetic and Kyiv offsets), `src/middleware/{validate,auth,authorize}.ts`
+(contract validation, bearer token, role gate), `src/modules/availability/rules.ts`
+(the window rule). Naming one file per row keeps the table readable; naming all
+of them would turn each row into a dependency list.
+
+**What this section is for.** Criterion 4 is a file-path criterion, not a
+judgement: a reader who doubts that `updateMasterService` is delivered can open
+the named test and the named module and see both. Nothing here replaces the
+suite: `npm test` is criterion 1, and this table is not evidence that the tests
+pass — it is evidence that each operation has somewhere to look.
