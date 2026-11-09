@@ -23,6 +23,7 @@ import {
   type ConvertedOperation,
   type ConvertedParameter,
 } from '../contract/validators.js';
+import { parseCalendarDate } from '../lib/time.js';
 import { HttpProblem } from './error-handler.js';
 
 /**
@@ -114,6 +115,14 @@ function coerce(raw: unknown, schema: { type?: string; format?: string }): unkno
   }
 
   if (schema.format === 'uuid' && !UUID.test(raw)) return undefined;
+
+  // `date` is a *calendar* date, not merely a string of the right shape:
+  // `2026-02-30` matches the pattern and names no day. AJV's `date` format
+  // already agrees with this reading on bodies; query parameters are coerced
+  // here because Express hands them over as strings. Every query parameter the
+  // contract declares as `date` sits on an operation that declares 400, so
+  // rejecting it here stays inside each operation's declared set (CL-09).
+  if (schema.format === 'date' && parseCalendarDate(raw) === null) return undefined;
 
   return raw;
 }

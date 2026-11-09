@@ -39,7 +39,19 @@ import { HttpProblem } from './error-handler.js';
  * `authenticate` first). It is answered 401 rather than 403, because "no valid
  * credentials" is the truthful reading of a request that never authenticated,
  * and it keeps the direction of trust the same as `getCurrentPrincipal`.
+ *
+ * The `detail` names the role the operation requires, and it is derived from
+ * `role` rather than written out per call site: S1.3 introduced the first
+ * non-administrator use (`requireRole('master')` on `/me/availability`), and a
+ * hard-coded "administrator" there would have described the wrong gate in the
+ * body while the status was right. The map is exhaustive over `PrincipalRole`,
+ * so a third role fails to compile until it is named here.
  */
+const ROLE_DETAIL: Record<PrincipalRole, string> = {
+  admin: 'This operation requires the administrator role.',
+  master: 'This operation requires the master role.',
+};
+
 export function requireRole(role: PrincipalRole): RequestHandler {
   return (_req, res, next) => {
     const principal = res.locals.principal as { role?: PrincipalRole } | undefined;
@@ -50,7 +62,7 @@ export function requireRole(role: PrincipalRole): RequestHandler {
     }
 
     if (principal.role !== role) {
-      next(new HttpProblem('FORBIDDEN', 'This operation requires the administrator role.'));
+      next(new HttpProblem('FORBIDDEN', ROLE_DETAIL[role]));
       return;
     }
 

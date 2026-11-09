@@ -15,6 +15,13 @@
       "when": 1794221733114,
       "tag": "0001_violet_medusa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794228049111,
+      "tag": "0002_availability",
+      "breakpoints": true
     }
   ]
 }

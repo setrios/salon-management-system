@@ -175,3 +175,64 @@ export const materials = pgTable(
   },
   (table) => [check('materials_stock_check', sql`${table.stockQuantity} >= 0`)],
 );
+
+/**
+ * Availability — a master's weekly pattern (REQ-F-015).
+ *
+ * Two tables, not one with a nullable date: a weekly rule and a date rule carry
+ * different columns (`day_of_week` has no meaning on a date, `date` none on a
+ * weekday), and the read path selects one set or the other, never a mix. Keeping
+ * them apart makes "a date rule replaces the weekly rule for that date" a plain
+ * SQL choice rather than a filter over a union type.
+ *
+ * `day_of_week` is the ISO numbering 1 (Monday) … 7 (Sunday), matching
+ * `WeeklyRule.dayOfWeek` exactly, so no conversion happens at the boundary.
+ * `start_time` and `end_time` are `HH:MM` wall clock in Europe/Kyiv, the salon's
+ * single zone (REQ-NF-007); they are stored as text because that is what the
+ * contract carries and what a rule means — a rule is a wall-clock fact, not an
+ * instant. The offset is applied when a slot is built (`lib/time.ts`).
+ *
+ * Neither table has a uniqueness constraint or an overlap check. The S1.3 gate
+ * fixes that: overlapping windows on one weekday are undefined by the SRS and
+ * the contract (§5 G4), so the schema must not choose union, intersection or
+ * rejection by accident.
+ */
+export const availabilityWeekly = pgTable(
+  'availability_weekly',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    masterId: uuid('master_id')
+      .notNull()
+      .references(() => masters.id),
+    dayOfWeek: integer('day_of_week').notNull(),
+    startTime: text('start_time').notNull(),
+    endTime: text('end_time').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('availability_weekly_day_check', sql`${table.dayOfWeek} between 1 and 7`),
+    // Decision (a) from the SMS-15 gate: a window that ends at or before its
+    // start is self-contradictory input, so the database refuses it as well as
+    // the route. This is a comparison of two zero-padded `HH:MM` strings, which
+    // sorts in clock order by construction.
+    check('availability_weekly_window_check', sql`${table.endTime} > ${table.startTime}`),
+  ],
+);
+
+/** Availability overrides for specific dates (REQ-F-015, SCN-09). */
+export const availabilityDates = pgTable(
+  'availability_dates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    masterId: uuid('master_id')
+      .notNull()
+      .references(() => masters.id),
+    date: text('date').notNull(),
+    startTime: text('start_time').notNull(),
+    endTime: text('end_time').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('availability_dates_window_check', sql`${table.endTime} > ${table.startTime}`),
+  ],
+);

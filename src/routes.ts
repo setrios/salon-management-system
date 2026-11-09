@@ -7,8 +7,10 @@
  * Writing the routes first would be the "vibe coding" shape the task forbids.
  *
  * S1.1 mounts authentication (`login`, `getCurrentPrincipal`); S1.2 mounts the
- * five administrator reference-data modules (R1–R17). The remaining components
- * are listed as TODO below.
+ * five administrator reference-data modules (R1–R17); S1.3 mounts availability
+ * (`getMasterAvailability` publicly, `getMyAvailability` and
+ * `replaceMyAvailability` behind the master role). The remaining components are
+ * listed as TODO below.
  *
  * The `/api/v1` prefix is applied here and only here. Every path of
  * `openapi.yaml#/paths` is relative to the server base path, and the contract's
@@ -28,6 +30,7 @@ import type { Express } from 'express';
 import { Router } from 'express';
 
 import { authRoutes } from './modules/auth/routes.js';
+import { availabilityRoutes } from './modules/availability/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
 import { masterRoutes } from './modules/masters/routes.js';
 import { masterServiceRoutes } from './modules/master-services/routes.js';
@@ -65,10 +68,16 @@ export function registerRoutes(app: Express): void {
 
   api.use(admin);
 
+  // Availability is neither an administrator surface nor an operation behind a
+  // single role: P7 is public and M3/M4 carry their own `masterAccess`, which is
+  // why the module mounts on `api` rather than on `admin`. Mounting it on the
+  // admin router would put P7 behind the administrator gate, and a client books
+  // without an account (SRS §2 Actors).
+  availabilityRoutes(api);
+
   // TODO(ticket-driven): the remaining components are mounted here as their
   // first ticket reaches its `feat:` commit:
   //
-  //   api.use(availabilityRoutes)    availability, slots        SMS-8..
   //   api.use(appointmentsRoutes)    client booking, admin      SMS-10..
   //   api.use(paymentsRoutes)        payments                  SMS-22..
   //   api.use(reportsRoutes)         reports                   SMS-28..
