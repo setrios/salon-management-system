@@ -276,11 +276,18 @@ added or edited.
 
 ## 10. Causal independence
 
-The `tests/manifest.json` entry is in the `test:` commit. It lists the ten files
-SMS-23 is planned to create (plan §5's `modules/<component>/routes.ts` and
+The `tests/manifest.json` entry is in the `test:` commit. It listed the ten files
+SMS-23 planned to create (plan §5's `modules/<component>/routes.ts` and
 `service.ts` for `masters`, `catalog`, `master-services`, `materials`, `units`);
-none exists now, so each takes the checker's "not committed yet (unambiguously
+none existed then, so each took the checker's "not committed yet (unambiguously
 after the test)" branch. Files SMS-23 only modifies are under `"touches"`.
+
+Two files were added to `implementation` after that commit, before the `feat:`
+commit, because they carry behaviour this ticket introduced:
+`src/middleware/authorize.ts` (the role gate) and
+`src/modules/reference-data/http.ts` (the shared transport). Both are new at
+`feat:` time, so they take the same "after the test" branch — listing them is
+what keeps them inside the causality check rather than outside it.
 
 Before the `test:` commit the checker cannot pass — its first step is to find the
 commit that added the test file:
@@ -301,31 +308,361 @@ check-test-first: 1/2 entries pass.
 exit=1
 ```
 
-Expected immediately after the `test:` commit, with no other change:
+### 10.1 After the `test:` commit (5196aa3), before any implementation
+
+Verbatim, as supplied by the human on 2026-11-09 together with the signed gate
+(`de6750f`). This is the causality proof taken at the moment the test existed and
+no implementation did:
 
 ```
-PASS SMS-21 (test) → SMS-22 (implementation) tests/api/auth.test.ts
 PASS SMS-14 (test) → SMS-23 (implementation) tests/api/reference-data.test.ts
-     · test added in <sha> test: add S1.2 reference-data tests (SMS-14)
-     · header cites REQ-F-018, REQ-F-024, REQ-F-025, SCN-08
+     · test added in 5196aa35da0a test: add S1.2 reference-data tests (SMS-14)
+     · header cites SCN-08, REQ-F-018, REQ-F-024, REQ-F-025
      · src/modules/masters/routes.ts: not committed yet (unambiguously after the test)
-     · … nine more of the same
+     · src/modules/masters/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/catalog/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/catalog/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/master-services/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/master-services/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/materials/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/materials/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/units/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/units/service.ts: not committed yet (unambiguously after the test)
+
 check-test-first: 2/2 entries pass.
 ```
 
+
 ## 11. GREEN run — SMS-23 implementation
 
-To be completed after the gate is signed and SMS-23 is implemented.
+Signed gate: `logs/gates/2026-11-08-test-SMS-14.md`, `SIGNED — GO`, commit
+`de6750f`. Implementation: SMS-23.
 
-Required evidence at GREEN:
+### 11.1 What was implemented
 
-1. `npm test` twice consecutively — 113/113 on both runs (the harness keeps
-   state per file, not per test; a second run must not depend on the first).
-2. `npm test -- --sequence.shuffle` — 113/113. The 88 assertions in this file
-   share one truncated database, so they must be order-independent (unique names,
-   no assertion that depends on a test that ran earlier). A shuffle failure is a
-   defect in these tests, fixed before the `feat:` commit is recorded; the fix
-   and its reason go in this section.
+| Operations | Module | Files |
+|---|---|---|
+| R1–R4 masters | `masters` | `routes.ts`, `service.ts` |
+| R5–R9 services and categories | `catalog` | `routes.ts`, `service.ts` |
+| R10–R12 master-service links | `master-services` | `routes.ts`, `service.ts` |
+| R13–R16 materials | `materials` | `routes.ts`, `service.ts` |
+| R17 units | `units` | `routes.ts`, `service.ts` |
 
-The pre-commit shuffled run at RED kept the same four passing tests (`84 failed
-| 4 passed`), so no order-dependence is visible before implementation.
+Plus two files the manifest now lists as implementation, because they carry
+behaviour this ticket introduced and were not in the tree at the test commit:
+
+- `src/middleware/authorize.ts` — the role gate (`requireRole`, `adminAccess`);
+- `src/modules/reference-data/http.ts` — the five modules' shared transport:
+  response-schema validation, pagination, `Location`, the 409 mapping, and the
+  async wrapper.
+
+`src/modules/auth/password.ts` gained `hashPassword`; it moved to `"touches"`
+in the manifest, because the file existed at the test commit (S1.1 created it)
+and only gained a function.
+
+### 11.2 The four constraints, and where each is satisfied
+
+**D-24 — no invented uniqueness.** `services.name` has no unique index, in the
+schema or the migration (`0001_violet_medusa.sql`: `services` declares only the
+duration check). The 409 paths are the three constraints `error-model.md` §3
+names, and the mapping checks the constraint *name*, not only SQLSTATE 23505
+(`isUniqueViolation`), so a future index cannot silently become the trigger for
+the wrong resource. R6 and R8 declare 409 and can never answer it; that is
+CL-10's disposition, unchanged.
+
+**403 on a master token for all seventeen operations, from one place.** The
+check lives in `src/middleware/authorize.ts` and nowhere else; each operation
+spreads the same `adminAccess` pair (`authenticate`, `requireRole('admin')`)
+before its validators, so the order is 401 → 403 → 400/415/422 on every route.
+The gate is attached per operation rather than to a sub-router because a
+router-level mount also catches requests that name no operation, and
+`error-model.md` §4 requires those to stay 404 (unknown path) or 405 (path
+exists, method does not). That was measured, not assumed: with the router-level
+mount, six `structural.test.ts` assertions failed with 401 where they expect 404
+or 405.
+
+**New files in the manifest.** `tests/manifest.json` lists `authorize.ts` and
+`reference-data/http.ts` under SMS-23's `implementation`, in the working tree now
+and in the `feat:` commit; §11.4 is the checker's output over the committed tree.
+
+**No CRUD for categories or units.** `categories` is written only inside
+`catalog/service.ts`, as the side effect of saving a service (D-27). Units are
+read from a constant plus `distinct materials.unit` (D-26). Neither module has a
+create, rename or delete handler, and no operation was added to the contract.
+
+### 11.3 Defects found and fixed during GREEN
+
+Three things the RED could not have shown:
+
+1. **`date-time` must be a string before it is serialised.** The view mappers
+   first returned `Date` objects. `sendJson` validates the body against the
+   contract schema *before* `res.json` stringifies it, so `Master.createdAt`
+   failed `type: string` and every create answered 500. The mappers now call
+   `toISOString()`. This is not a test change; it is the response validation
+   catching a real contract violation in the implementation.
+
+2. **Drizzle wraps driver errors.** `isUniqueViolation` read `code` and
+   `constraint` off the thrown object; Drizzle throws a `DrizzleQueryError` whose
+   `cause` is the `pg` error. All four intended 409s answered 500 instead. The
+   check now walks the `cause` chain (depth 3, enough for Drizzle over `pg`).
+   The four 409 assertions caught this; had they been written to accept "409 or
+   500", it would have shipped.
+
+3. **Three GETs answered a 400 the contract does not declare.** Adding
+   `format: uuid` checking to `validateParams` made
+   `GET /api/v1/admin/masters/abc` answer 400 `MALFORMED_REQUEST`. But
+   `getMasterAdmin`, `getServiceAdmin` and `getMaterialAdmin` declare
+   `200, 401, 403, 404, 500` and no 400, so 400 is a response the operation does
+   not define. No test saw it, because every negative in this file used
+   `randomUUID()` — a well-formed id that simply does not exist.
+
+   The fix applies the principle already recorded in CL-09: the behaviour is
+   derived from the operation's declared response set. An operation that does
+   not declare 400 but does declare 404 is one that identifies a resource, and an
+   identifier that is not a valid `uuid` names no resource — so the answer is 404
+   `NOT_FOUND`. That is inside the declared set, needs no contract change and no
+   new clarification. It is CL-09's mirror: there 422/400, here 400/404.
+   `parameterProblem` in `middleware/validate.ts` reads `responseCodes` and never
+   the operation id, so a later contract change is followed without an edit.
+
+   **The same fix closed a second, unreported defect.** Before the `format: uuid`
+   check, `not-a-uuid` reached PostgreSQL and failed the uuid cast with SQLSTATE
+   22P02, which the error handler would have turned into a 500 `INTERNAL_ERROR`
+   for a purely client-caused mistake. Measured directly against the running
+   database:
+
+   ```
+   select 'not-a-uuid'::uuid
+     -> sqlstate: 22P02
+        message: invalid input syntax for type uuid: "not-a-uuid"
+   ```
+
+   So this change removed an undeclared 400 **and** a reachable 500 at the same
+   time. Coverage was added inside the three existing negatives rather than as
+   new assertions: each of R3's, R7's and R15's "unknown id → 404" test now sends
+   a second request with `not-a-uuid` and asserts the same 404. The suite stays
+   at 88 assertions in this file, so the signed gate's inventory is unchanged and
+   no addendum is needed.
+
+A fourth wiring defect was caught by `structural.test.ts` rather than by this
+file: mounting the gate on the `/admin` sub-router made the whole path space
+authenticated, so a POST to `/admin/masters/{id}` (no such operation) answered
+401 instead of 405, and unmatched `/admin/*` paths answered 401 instead of 404.
+`adminAccess` is now spread per operation. See §11.2.
+
+One test-side change was made, and it is recorded in §11.4(b): the file's
+`beforeAll` now arranges the three seed categories before any test runs, because
+one seed of the shuffled suite exposed an order dependence the RED could not
+show. No assertion was changed and the implementation was not touched to make a
+test pass.
+
+**The RED is reproduced from commit `5196aa3`, not from the working tree.** §3's
+output was taken there; it is not reproducible against this tree, because
+`beforeAll` now calls `ensureSeedCategories()` and the `categories` table exists.
+On a tree without that migration `beforeAll` fails, and the four tests §5 lists as
+already-green are no longer green — so §3 and §5 describe the commit, not the
+current file.
+
+### 11.4 Required evidence
+
+**(a) `npm test` twice consecutively — 113/113 both times.**
+
+```
+$ npm test
+ Test Files  3 passed (3)
+      Tests  113 passed (113)
+   Start at  13:56:17
+   Duration  3.69s (transform 116ms, setup 32ms, import 1.56s, tests 1.67s, environment 0ms)
+
+$ npm test
+ Test Files  3 passed (3)
+      Tests  113 passed (113)
+   Start at  13:56:21
+   Duration  3.69s (transform 114ms, setup 34ms, import 1.58s, tests 1.64s, environment 0ms)
+```
+
+These are the final runs — after the three `not-a-uuid` probes were added and
+after the `parameterProblem` rule. Earlier runs at 113/113, taken before the test
+edit, are not quoted here: the count is the same, but the file they ran was not
+this file.
+
+**(b) `npm test -- --sequence.shuffle` — 113/113, after one fix.**
+
+The first shuffled run at GREEN passed with seed `1794222728657`. A later run with
+a different seed failed three assertions, so the first pass was luck, not
+independence. The failure and its fix belong here because the gate says a
+shuffle failure is a defect in these tests to be fixed before the `feat:` commit.
+
+What was wrong: `createService`'s helper defaults to `category: 'Hair'`, and any
+test that created a service before a test that called `ensureSeedCategories()`
+brought `Hair` into existence through D-27's write path — with `seeded: false`.
+The fixture's `on conflict (name) do nothing` then had nothing to do, so
+`Hair` stayed `seeded: false` for the rest of the file and SCN-08's assertions
+failed. Every SCN-08 assertion passed only when it happened to run first.
+
+The fix is in the test file, not in the implementation: `beforeAll` calls
+`ensureSeedCategories()` before `seedAccount`. The three seeds are then the
+Given before any test can save a service, which is what a fresh installation
+looks like and what SCN-08 describes. No assertion changed, and the
+implementation is untouched — an implementation that seeded at start-up would
+have hidden this, but the suite truncates every table (D-7), so the test file
+must arrange the Given itself.
+
+```
+$ npm test -- --sequence.shuffle    # seed A
+      Tests  113 passed (113)
+
+$ npm test -- --sequence.shuffle    # seed B — before the fix
+      Tests  3 failed | 110 passed (113)
+
+# after the fix, five consecutive shuffled runs:
+$ for i in 1 2 3 4 5; do npm test -- --sequence.shuffle; done
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+
+# and three more after the not-a-uuid probes and the parameterProblem rule:
+$ for i in 1 2 3; do npm test -- --sequence.shuffle; done
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+      Tests  113 passed (113)
+```
+
+A single shuffled pass is not evidence of order independence: one seed can be
+lucky, as seed B above showed. Eight seeds passing, across two versions of the
+file, is the claim this section makes.
+
+**(c) `npm run check:test-first -- --verbose` — every implementation file added
+later than the test.** Run against the working tree, before the `feat:` commit:
+
+```
+PASS SMS-21 (test) → SMS-22 (implementation) tests/api/auth.test.ts
+     · test added in 89a9923e404c test: add S1.1 authentication tests (SMS-21)
+     · header cites REQ-F-012, REQ-F-017
+     · src/modules/auth/password.ts: added later in 33fffd2132a6 feat: implement S1.1 authentication (SMS-22)
+     · src/modules/auth/tokens.ts: added later in 33fffd2132a6 feat: implement S1.1 authentication (SMS-22)
+     · src/modules/auth/service.ts: added later in 33fffd2132a6 feat: implement S1.1 authentication (SMS-22)
+     · src/modules/auth/routes.ts: added later in 33fffd2132a6 feat: implement S1.1 authentication (SMS-22)
+PASS SMS-14 (test) → SMS-23 (implementation) tests/api/reference-data.test.ts
+     · test added in 5196aa35da0a test: add S1.2 reference-data tests (SMS-14)
+     · header cites SCN-08, REQ-F-018, REQ-F-024, REQ-F-025
+     · src/middleware/authorize.ts: not committed yet (unambiguously after the test)
+     · src/modules/reference-data/http.ts: not committed yet (unambiguously after the test)
+     · src/modules/masters/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/masters/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/catalog/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/catalog/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/master-services/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/master-services/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/materials/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/materials/service.ts: not committed yet (unambiguously after the test)
+     · src/modules/units/routes.ts: not committed yet (unambiguously after the test)
+     · src/modules/units/service.ts: not committed yet (unambiguously after the test)
+
+check-test-first: 2/2 entries pass.
+```
+
+The "not committed yet" wording is the checker's branch for a file that exists
+in the working tree but has no commit; after the `feat:` commit it reads
+`added later in <sha> feat: implement S1.2 reference data (SMS-23)`. The
+ordering claim is the same in both forms — the test commit `5196aa3` is the only
+commit that adds the test, and nothing in the implementation exists at it.
+
+**(d) Control run on `dist/`, `GET /api/v1/admin/categories` — exactly three
+seeds with `seeded: true`.** Run from the compiled artefact — rebuilt after all
+the fixes in §11.3 (`npm run build`) so the run exercises the fixed code —
+against a scratch database created for the run and dropped afterwards, so "fresh
+installation" is literal: the migrator applied `0000` and `0001` to an empty
+database and nothing else wrote a category.
+
+```
+scratch database created: salon_s12_control_test
+tables after migration: categories, master_services, masters, materials, services
+categories written by the migration: [{"name":"Barbering","seeded":true},{"name":"Coloring","seeded":true},{"name":"Hair","seeded":true}]
+
+--- GET /api/v1/admin/categories (admin token) ---
+status: 200 | content-type: application/json; charset=utf-8
+body: [{"name":"Barbering","seeded":true},{"name":"Coloring","seeded":true},{"name":"Hair","seeded":true}]
+seeded entries: 3
+```
+
+This is evidence for gate §4 G9 — the seeds a fresh installation offers are not
+observable through the suite, because `tests/setup.ts` truncates every table
+before each file. The self-seeding path is the initial migration
+(`0001_violet_medusa.sql`, idempotent `ON CONFLICT DO NOTHING`), and the control
+run above is what shows it produces exactly the three seeds and no fourth.
+
+**(e) `GET /api/v1/admin/masters` with a master token — 403 FORBIDDEN, not 401.**
+
+```
+--- GET /api/v1/admin/masters (master token) ---
+status: 403 | content-type: application/problem+json
+body: {"type":"https://api.salon.example/problems/forbidden","title":"Forbidden","status":403,"instance":"/api/v1/admin/masters","code":"FORBIDDEN","traceId":"61e052ba-4037-4fab-8fb0-a31b0cc2152b","detail":"This operation requires the administrator role."}
+
+--- GET /api/v1/admin/masters (no token) ---
+status: 401 | code: UNAUTHENTICATED
+```
+
+The second request is the control for the first: the same path answers 401
+without a token and 403 with a valid token of the wrong role, so the 403 is the
+role check and not a credential refusal.
+
+The same run also exercised the §11.3 defect 3 fix on the built artefact:
+
+```
+--- GET /api/v1/admin/masters/not-a-uuid (admin token) ---
+status: 404 | code: NOT_FOUND
+declared set of getMasterAdmin: 200, 401, 403, 404, 500 — no 400
+```
+
+and a create and the derived unit list:
+
+```
+--- POST /api/v1/admin/materials (admin token) ---
+status: 201 | location: /api/v1/admin/materials/078bdb8c-c74e-4668-a99b-38dd0e07e97e
+body: {"id":"078bdb8c-c74e-4668-a99b-38dd0e07e97e","name":"Control Shampoo","unit":"ml","stockQuantity":180,"active":true,"createdAt":"2026-11-09T11:53:25.339Z","updatedAt":"2026-11-09T11:53:25.339Z"}
+
+--- GET /api/v1/admin/units (admin token) ---
+status: 200
+body: {"standard":["ml","l","g","kg","pcs"],"custom":["sachet"]}
+```
+
+Full output, including the commands, is `logs/runs/runs-03.md` §2–§3.
+
+`dist/` is git-ignored and the control run script is not committed; it lives at
+`logs/runtime/s12-control-run.mjs`, which is git-ignored too (`logs/runtime/`).
+runs-03 §7 records that as an open item. The outputs above are the record.
+
+### 11.5 What GREEN does not prove
+
+- **The development database.** Migrations were not applied to it *during* this
+  run (at that point it still held only `masters`, from S1.1). The human applied
+  `0001` with `npx drizzle-kit migrate` afterwards and checked the result on
+  2026-11-09 — five tables and the three seed categories with `seeded: true` —
+  so the file is not untried against a persistent database. What this run
+  observed is still only the scratch database, which is why runs-03 §6 names
+  the development database as not established *by the run*.
+- **The `seeded` marker is immutable by construction, not by a rule.** Nothing
+  in the code path can flip it — `recordCategory` inserts with
+  `on conflict do nothing` and never updates — but no constraint forbids an
+  `UPDATE` outside this module. The contract exposes no operation that could
+  issue one.
+- **CL-10's declared-but-unreachable responses remain unreachable.** 409 on R4,
+  R6, R8 and R12, and 400 on P3, are neither implemented nor asserted. That is
+  the accepted disposition, not a gap introduced here.
+- **The 400/404 rule is asserted on the only three operations it can change.**
+  Of the 50 operations, 22 have a `uuid` path parameter; exactly three of them
+  declare no 400 — `getMasterAdmin`, `getServiceAdmin`, `getMaterialAdmin` — and
+  those are the three with a `not-a-uuid` probe. Every other `{id}` operation
+  declares 400, so 400 for a malformed id stays the answer there, which is what
+  `error-model.md` §4 says and what its declared set allows. The remaining
+  no-400 case in the contract, `getAppointmentAdmin`, belongs to a later stage
+  and will follow the same rule when it arrives.
+- **`check:test-first` has not yet seen the `feat:` commit.** §11.4(c) is the
+  working-tree run: every implementation file takes the "not committed yet"
+  branch, which the checker treats as unambiguously later than the test. The
+  "added later in `<sha>`" form appears only after `feat:` is committed, and the
+  ordering claim is the same in both — `5196aa3` remains the only commit that
+  adds the test file.

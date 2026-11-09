@@ -1,5 +1,5 @@
 /**
- * Password verification (D-18).
+ * Password hashing and verification (D-18).
  *
  * Passwords are stored as scrypt hashes produced by `node:crypto`, so no
  * password-hashing dependency is added (CLAUDE.md forbids the agent installing
@@ -13,22 +13,49 @@
  * Comparison is constant-time. A hash that cannot be parsed, or whose
  * parameters `scryptSync` rejects, verifies as `false` rather than throwing: a
  * corrupt row must not turn a login attempt into a 500.
+ *
+ * `hashPassword` was added with S1.2 (SMS-23), when `POST /admin/masters` became
+ * the first operation to create a credential. The parameters are read back out of
+ * the stored string by the verifier, so a row written by the fixture, by this
+ * function or by an older deployment all verify the same way.
  */
 
-import { scryptSync, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 /** `scrypt$N$r$p$salt$key`; both payloads are standard base64. */
 const HASH_FORMAT = /^scrypt\$(\d+)\$(\d+)\$(\d+)\$([A-Za-z0-9+/]+={0,2})\$([A-Za-z0-9+/]+={0,2})$/;
 
+/** Parameters of D-18, used both to hash a new password and to burn a check. */
+const SCRYPT_N = 16_384;
+const SCRYPT_R = 8;
+const SCRYPT_P = 1;
+const KEY_LENGTH = 64;
+
+/**
+ * Produces the stored representation of a password (D-18).
+ *
+ * Used by `modules/masters` when the administrator creates an account; the
+ * verifier below reads the parameters back out of the string, so the two stay
+ * in step without a shared constant.
+ */
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const key = scryptSync(password, salt, KEY_LENGTH, { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P });
+
+  return ['scrypt', SCRYPT_N, SCRYPT_R, SCRYPT_P, salt.toString('base64'), key.toString('base64')].join(
+    '$',
+  );
+}
+
 /**
  * Key length used when there is no account to compare against, so an unknown
  * username and a wrong password cost the same wall-clock time and cannot be
- * told apart by timing. It matches the length the fixture writes.
+ * told apart by timing. It matches the length `hashPassword` writes.
  */
-const BURN_KEY_LENGTH = 64;
+const BURN_KEY_LENGTH = KEY_LENGTH;
 
 /** scrypt parameters the burn path uses; the same values as D-18. */
-const BURN_PARAMS = { N: 16_384, r: 8, p: 1 } as const;
+const BURN_PARAMS = { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P } as const;
 
 /**
  * Returns true when `password` produced the stored hash.

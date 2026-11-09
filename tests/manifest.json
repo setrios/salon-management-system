@@ -39,6 +39,8 @@
       "test": "tests/api/reference-data.test.ts",
       "sources": ["REQ-F-018", "REQ-F-024", "REQ-F-025", "SCN-08"],
       "implementation": [
+        "src/middleware/authorize.ts",
+        "src/modules/reference-data/http.ts",
         "src/modules/masters/routes.ts",
         "src/modules/masters/service.ts",
         "src/modules/catalog/routes.ts",
@@ -52,10 +54,14 @@
       ],
       "touches": [
         "src/db/schema.ts",
+        "src/db/migrations/0001_violet_medusa.sql",
+        "src/db/migrations/meta/_journal.json",
+        "src/db/migrations/meta/0001_snapshot.json",
         "src/routes.ts",
         "src/middleware/auth.ts",
         "src/middleware/validate.ts",
-        "src/middleware/error-handler.ts"
+        "src/middleware/error-handler.ts",
+        "src/modules/auth/password.ts"
       ]
     }
   ]

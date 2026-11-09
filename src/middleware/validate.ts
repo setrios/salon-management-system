@@ -21,6 +21,7 @@ import {
   getSchemaValidator,
   toValidationItems,
   type ConvertedOperation,
+  type ConvertedParameter,
 } from '../contract/validators.js';
 import { HttpProblem } from './error-handler.js';
 
@@ -43,7 +44,7 @@ function bodyViolation(
 
 /** Validates the body of an operation against its schema. No body → passes. */
 export function validateBody(operationId: string): RequestHandler {
-  return (req, _res, next) => {
+  return (req, res, next) => {
     const operation = getOperation(operationId);
     const body = operation.requestBody;
     if (body === null) {
@@ -74,8 +75,88 @@ export function validateBody(operationId: string): RequestHandler {
     }
 
     const validate = getSchemaValidator(name);
-    return next(validate(req.body) ? undefined : bodyViolation(operation, validate.errors));
+    if (!validate(req.body)) {
+      next(bodyViolation(operation, validate.errors));
+      return;
+    }
+
+    // The validated body is published the same way `validateParams` publishes
+    // its parameters, so handlers read one place (`res.locals.body`) instead of
+    // reaching back into `req.body` — which `useDefaults: false` leaves as the
+    // client sent it, defaults included only when the client wrote them.
+    res.locals.body = req.body;
+    next();
   };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Coerces one raw parameter to the type its schema declares, or returns
+ * `undefined` when the value is not of that type.
+ *
+ * `error-model.md` §4 puts "a query parameter has the wrong type" in 400
+ * `MALFORMED_REQUEST`, and the declaration that decides the type is the
+ * parameter's own schema — so a `boolean` is `true`/`false` and a `uuid` must be
+ * a UUID, not merely a string.
+ */
+function coerce(raw: unknown, schema: { type?: string; format?: string }): unknown {
+  if (typeof raw !== 'string') return undefined;
+
+  if (schema.type === 'integer' || schema.type === 'number') {
+    if (!/^-?\d+$/.test(raw)) return undefined;
+    return Number(raw);
+  }
+
+  if (schema.type === 'boolean') {
+    if (raw !== 'true' && raw !== 'false') return undefined;
+    return raw === 'true';
+  }
+
+  if (schema.format === 'uuid' && !UUID.test(raw)) return undefined;
+
+  return raw;
+}
+
+/**
+ * The Problem for a parameter that is absent or of the wrong type.
+ *
+ * CL-09's mirror, and the same principle: the status comes from the operation's
+ * declared response set, never from its id.
+ *
+ *  - An operation that declares 400 gets 400 `MALFORMED_REQUEST`, which is what
+ *    `error-model.md` §4 calls a wrongly typed parameter. §3's catalog is
+ *    explicit about the scope of that row: 400 belongs to "all operations that
+ *    accept a body or query parameters".
+ *  - An operation that does *not* declare 400 but does declare 404 is one that
+ *    identifies a resource by its path alone. An identifier that is not a valid
+ *    `uuid` names no resource, so the answer is 404 `NOT_FOUND` — inside the
+ *    declared set, with no contract change and no new clarification.
+ *
+ * The second branch exists because `getMasterAdmin`, `getServiceAdmin` and
+ * `getMaterialAdmin` declare `200, 401, 403, 404, 500` and no 400: answering 400
+ * there would be a response the contract does not define. The declared set is
+ * read here rather than special-cased per operation, so a later contract change
+ * is followed without editing this function.
+ */
+function parameterProblem(
+  operation: ConvertedOperation,
+  parameter: ConvertedParameter,
+  detail: string,
+): HttpProblem {
+  if (operation.responseCodes.includes(400)) {
+    return new HttpProblem('MALFORMED_REQUEST', detail);
+  }
+
+  if (parameter.in === 'path' && operation.responseCodes.includes(404)) {
+    return new HttpProblem('NOT_FOUND', 'No resource is defined with this id.');
+  }
+
+  // Neither declared: the contract leaves no answer for this mistake. 400 is the
+  // reading `error-model.md` §4 gives a malformed parameter, and reaching this
+  // branch for an operation in the approved contract would be a gap to clarify,
+  // not a case to design around.
+  return new HttpProblem('MALFORMED_REQUEST', detail);
 }
 
 /**
@@ -85,10 +166,11 @@ export function validateBody(operationId: string): RequestHandler {
  */
 export function validateParams(operationId: string): RequestHandler {
   return (req, res, next) => {
+    const operation = getOperation(operationId);
     const params: Record<string, unknown> = {};
     const query: Record<string, unknown> = {};
 
-    for (const parameter of getOperation(operationId).parameters) {
+    for (const parameter of operation.parameters) {
       if (parameter.in !== 'path' && parameter.in !== 'query') continue;
       const target = parameter.in === 'path' ? params : query;
       const raw = ((parameter.in === 'path' ? req.params : req.query) as Record<string, unknown>)[
@@ -97,17 +179,21 @@ export function validateParams(operationId: string): RequestHandler {
 
       if (raw === undefined) {
         if (parameter.required) {
-          return next(new HttpProblem('MALFORMED_REQUEST', `${parameter.name} is required.`));
+          return next(
+            parameterProblem(operation, parameter, `${parameter.name} is required.`),
+          );
         }
         continue;
       }
 
-      const type = (parameter.schema as { type?: string }).type;
-      if (typeof raw !== 'string' || (type === 'integer' && !/^-?\d+$/.test(raw))) {
-        return next(new HttpProblem('MALFORMED_REQUEST', `${parameter.name} has the wrong type.`));
+      const value = coerce(raw, parameter.schema as { type?: string; format?: string });
+      if (value === undefined) {
+        return next(
+          parameterProblem(operation, parameter, `${parameter.name} has the wrong type.`),
+        );
       }
 
-      target[parameter.name] = type === 'integer' ? Number(raw) : raw;
+      target[parameter.name] = value;
     }
 
     res.locals.params = params;

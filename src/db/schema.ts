@@ -39,7 +39,17 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { boolean, check, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  doublePrecision,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Staff accounts: masters and the single administrator.
@@ -65,4 +75,103 @@ export const masters = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check('masters_role_check', sql`${table.role} in ('master', 'admin')`)],
+);
+
+/**
+ * Service categories (REQ-F-024, D-27).
+ *
+ * Columns declared in the SMS-14 TEST-GATE §6 before the seed fixture wrote to
+ * them. `name` is unique because that is the identity the contract exposes and
+ * the fixture's `on conflict (name)` relies on; `seeded` is true exactly for
+ * Hair, Coloring and Barbering and is never changed afterwards.
+ *
+ * No operation creates, renames or deletes a category. A custom category comes
+ * into existence as a side effect of saving a service with it (D-27), which is
+ * why `modules/catalog` writes here from the service path and R9 only reads.
+ */
+export const categories = pgTable('categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  seeded: boolean('seeded').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Services (REQ-F-018, REQ-F-024).
+ *
+ * `category` is the category *name*, which is what `Service.category` exposes;
+ * it is not a foreign key, so a service keeps its category label even if the
+ * categories table is rebuilt. No uniqueness on `name`: error-model.md §3 names
+ * no such constraint, and CL-10 states that the declared 409 on R6/R8 has no
+ * trigger (D-24).
+ */
+export const services = pgTable(
+  'services',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    category: text('category').notNull(),
+    baseDurationMinutes: integer('base_duration_minutes').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check('services_duration_check', sql`${table.baseDurationMinutes} > 0`)],
+);
+
+/**
+ * Master-service links with a price (REQ-F-018).
+ *
+ * The unique pair is the second of the three uniqueness constraints named in
+ * error-model.md §3; a second link for the same pair is 409 `DUPLICATE_RESOURCE`
+ * (asserted by R11). Money is stored in integer minor units plus its currency,
+ * exactly as the `Money` schema defines it.
+ *
+ * `on delete` is deliberately absent: nothing in this stage deletes a master or
+ * a service (REQ-F-018 deactivates instead), so a cascading rule would describe
+ * behaviour no operation can reach.
+ */
+export const masterServices = pgTable(
+  'master_services',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    masterId: uuid('master_id')
+      .notNull()
+      .references(() => masters.id),
+    serviceId: uuid('service_id')
+      .notNull()
+      .references(() => services.id),
+    priceAmountMinor: integer('price_amount_minor').notNull(),
+    priceCurrency: text('price_currency').notNull().default('UAH'),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('master_services_master_service_unique').on(table.masterId, table.serviceId),
+    check('master_services_price_check', sql`${table.priceAmountMinor} >= 0`),
+  ],
+);
+
+/**
+ * Materials with a unit of measure (REQ-F-018, REQ-F-025).
+ *
+ * `name` is unique — the third of the three constraints error-model.md §3 names,
+ * and the trigger for the 409 assertions on R14 and R16. `unit` is free text:
+ * the five standard units are a fixed list offered by R17 (`UnitList.standard`),
+ * not a column constraint, and REQ-F-025 allows a custom unit. `stockQuantity`
+ * is fractional because ml, l, g and kg are measured, not counted.
+ */
+export const materials = pgTable(
+  'materials',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull().unique(),
+    unit: text('unit').notNull(),
+    stockQuantity: doublePrecision('stock_quantity').notNull().default(0),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check('materials_stock_check', sql`${table.stockQuantity} >= 0`)],
 );
