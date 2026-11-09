@@ -174,12 +174,35 @@ running the built artefact rather than trusting the suite.
 written when `adminAccess` was its only caller: "This operation requires the
 **administrator** role." S1.3 is the first `requireRole('master')`, so an
 administrator refused on `/me/availability` was told the operation needs the role
-they already have. The status was right and the sentence contradicted it. The
-detail is now derived from `role` through a map that is exhaustive over
+they already have. The status was right and the sentence contradicted it.
+
+This is what the first control run — before the fix — actually answered. The
+body is quoted from that run's output; the record is the one at `12:45:23.490`
+whose `traceId` matches the body's:
+
+```
+--- M3 with an administrator token ---
+status: 403 | code: FORBIDDEN
+body: {"type":"https://api.salon.example/problems/forbidden","title":"Forbidden",
+       "status":403,"instance":"/api/v1/me/availability","code":"FORBIDDEN",
+       "traceId":"edea7c50-d713-4860-9844-832073fe481c",
+       "detail":"This operation requires the administrator role."}
+
+{"ts":"2026-11-09T12:45:23.490Z","level":"warn","event":"http.request","traceId":"edea7c50-d713-4860-9844-832073fe481c","method":"GET","path":"/api/v1/me/availability","status":403,"durationMs":0.650186}
+```
+
+An administrator holding the administrator role, refused by an operation and told
+in the same response that the operation requires the administrator role. The
+suite was green over this: it asserts status, `code`, content-type and a
+`traceId` of the right shape, and no test pins `detail`.
+
+The detail is now derived from `role` through a map that is exhaustive over
 `PrincipalRole` (`'master' | 'admin'`), so a third role would fail to compile
-until it is named. The suite could not have caught this: it asserts status, code
-and content-type, and no test pinned the free-text `detail`. Only reading the
-built artifact's body showed it.
+until it is named. The same request after the fix answers the body quoted in §2,
+with `detail: "This operation requires the master role."` Both trees were built
+with `npm run build` and driven over the same socket by the same script; the body
+above and the body in §2 differ in the `detail` string and, because the two runs
+were separate, in `traceId` and duration.
 
 **(b) Two order dependences in the test file — the second found by shuffle.**
 The gate signs 43 assertions, and those 43 are the count that must not move; but
@@ -223,8 +246,11 @@ file, so they belong in a `test:` commit before the `feat:` one.
 400.** `validateParams` coerces a query parameter to the type its schema
 declares, and had branches for `integer`, `number`, `boolean` and `format: uuid`
 — but none for `format: date`, so `date=not-a-date` was passed through as a
-string, reached PostgreSQL, and failed the cast. The suite's RED for this
-assertion was a 500 where the contract requires 400.
+string, reached PostgreSQL, and failed the cast with SQLSTATE 22P02. The
+assertion's first GREEN attempt answered **500** where the contract requires 400;
+the suite reported `expected 500 to be 400`. This is a defect in code written for
+this stage, not a property of the design: the correct answer was known from the
+contract and the code fell short of it.
 
 `coerce` now rejects a value that is not a real calendar date, using
 `parseCalendarDate` from `src/lib/time.ts` — so `2026-02-30` is refused too, not
@@ -238,10 +264,12 @@ is in `src/middleware/validate.ts`, which the SMS-15 manifest already lists unde
 
 **Also removed, not a defect: two unused exports.** `normaliseAvailability` was
 never called — the route persists the body as validated, and the schema already
-enforces `HH:MM` — and `isValidWindow` in `lib/time.ts` was used by
-`lib/availability.ts` only, which duplicated the check `modules/availability/
-rules.ts` had been made the single source of. `rules.ts` now calls `isValidWindow`
-and the duplicate is gone. No assertion changed; 156 stayed 156 throughout.
+enforces `HH:MM` — and `isValidWindow` in `lib/time.ts` was imported by
+`lib/availability.ts` and unused there; when `hasOnlyValidWindows` was removed
+from `lib` so `modules/availability/rules.ts` became the single source, the import
+stayed and `rules.ts` re-spelled the comparison inline. `rules.ts` now calls
+`isValidWindow` and `lib` no longer imports it. No assertion changed; 156 stayed
+156 throughout.
 
 ## 5. Log records written for those requests
 
@@ -269,7 +297,9 @@ The fifteen records of the control run, taken from
 
 **Correlation.** Fifteen records, fifteen distinct `traceId`s, one per request
 the script issued. The 403 record's `traceId` (`a4cd75d3…`) is the one in the
-response body quoted in §2, so the body's id and the record's agree.
+response body quoted in §2, so the body's id and the record's agree — and it is a
+*different* id from the pre-fix 403 quoted in §4(a) (`edea7c50…`), which is what
+distinguishes the two runs in the log.
 
 **The template, not the path.** Every `/api/v1/masters/{masterId}/availability`
 record carries the contract template with the concrete master id nowhere in the

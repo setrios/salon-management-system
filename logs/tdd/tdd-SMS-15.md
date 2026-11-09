@@ -400,13 +400,24 @@ that as an open item rather than a decision to start asserting prose.
 **(b) A query `date` of the wrong type reached PostgreSQL — 500 where the
 contract requires 400.** `coerce()` in `validate.ts` handled `integer`, `number`,
 `boolean` and `format: uuid` but not `format: date`, so `date=not-a-date` passed
-validation and failed the database cast. Now rejected with `parseCalendarDate`
-from `lib/time.ts`, which also refuses `2026-02-30` — a string of the right shape
-naming no day. Contract-safe: all eleven `date` query parameters in the contract
-sit on operations that declare 400, so the resulting MALFORMED_REQUEST is inside
-every declared set (the CL-09 principle, parameter side). The 400 in runs-04 §2
-is this fix's evidence, and the absence of an `error`-level record in that run's
-log window is its after-state.
+validation and failed the database cast with SQLSTATE 22P02. This is a defect in
+this stage's own code, not a design property to be documented: the contract's
+answer was known before the code was written (P7 declares 400, and
+`error-model.md` §3 puts an ill-typed query parameter there) and the code fell
+short of it. The GREEN attempt reported, verbatim:
+
+```
+× … > P7 refusals > answers 400 MALFORMED_REQUEST for a date that is not a calendar date
+  → AssertionError: expected 500 to be 400 // Object.is equality
+```
+
+The fix rejects such a value with `parseCalendarDate` from `lib/time.ts`, which
+also refuses `2026-02-30` — a string of the right shape naming no day.
+Contract-safe: all eleven `date` query parameters in the contract sit on
+operations that declare 400, so the resulting MALFORMED_REQUEST is inside every
+declared set (the CL-09 principle, parameter side). The 400 in runs-04 §2 is the
+after-state; the absence of an `error`-level record in that run's log window is
+the same fix seen from the logger.
 
 **(c) Two order dependences in the test file** — §9 above.
 
