@@ -82,6 +82,87 @@
         "src/middleware/authorize.ts",
         "src/middleware/validate.ts"
       ]
+    },
+    {
+      "ticket": "SMS-25 (test) → SMS-25 (implementation)",
+      "test": "tests/api/public-catalogue.test.ts",
+      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-014", "REQ-F-024", "SCN-08"],
+      "implementation": [
+        "src/modules/public/routes.ts",
+        "src/modules/public/service.ts"
+      ],
+      "touches": [
+        "src/routes.ts",
+        "tests/manifest.json",
+        "tests/helpers/booking.ts"
+      ]
+    },
+    {
+      "ticket": "SMS-8 (test) → SMS-25 (implementation)",
+      "test": "tests/api/booking.test.ts",
+      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-003", "REQ-F-004", "REQ-F-005", "REQ-F-010", "REQ-F-011", "REQ-NF-008", "SCN-01"],
+      "implementation": [
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/rules.ts",
+        "src/modules/appointments/reminders.ts"
+      ],
+      "touches": [
+        "src/app.ts",
+        "src/routes.ts",
+        "src/db/schema.ts",
+        "src/db/migrations/0003_booking.sql",
+        "src/modules/availability/routes.ts",
+        "src/modules/availability/service.ts",
+        "src/lib/availability.ts",
+        "tests/manifest.json",
+        "tests/helpers/booking.ts"
+      ]
+    },
+    {
+      "ticket": "SMS-19 (test) → SMS-25 (implementation)",
+      "test": "tests/api/rounding.test.ts",
+      "sources": ["REQ-F-031", "REQ-NF-008", "SCN-13"],
+      "implementation": [
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/rules.ts",
+        "src/modules/appointments/reminders.ts"
+      ],
+      "touches": [
+        "src/app.ts",
+        "src/routes.ts",
+        "src/db/schema.ts",
+        "src/db/migrations/0003_booking.sql",
+        "src/modules/availability/routes.ts",
+        "src/modules/availability/service.ts",
+        "src/lib/availability.ts",
+        "tests/manifest.json",
+        "tests/helpers/booking.ts"
+      ]
+    },
+    {
+      "ticket": "SMS-8 (test) → SMS-25 (implementation)",
+      "test": "tests/api/occupancy.test.ts",
+      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-031", "REQ-NF-008", "SCN-01"],
+      "implementation": [
+        "src/lib/occupancy.ts",
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/rules.ts",
+        "src/modules/appointments/reminders.ts"
+      ],
+      "touches": [
+        "src/app.ts",
+        "src/routes.ts",
+        "src/db/schema.ts",
+        "src/db/migrations/0003_booking.sql",
+        "src/modules/availability/routes.ts",
+        "src/modules/availability/service.ts",
+        "src/lib/availability.ts",
+        "tests/manifest.json",
+        "tests/helpers/booking.ts"
+      ]
     }
   ]
 }

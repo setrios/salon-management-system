@@ -40,18 +40,24 @@
  *    with the offset that zone has on that date: +02:00 in winter, +03:00 in
  *    summer. The two Monday dates below are one of each on purpose.
  *
- * 3. Occupancy at this stage. P7 computes slots from availability windows and
- *    the requested services' durations. It does NOT subtract booked
- *    appointments: there is no `appointments` table until S2.1. Consequently
- *    `available` is `true` for every slot here — that is the absence of bookings,
- *    not evidence that the stage asks whether a slot is free. S2.1 must revisit
- *    this file. See the TEST-GATE's "what this stage does not compute" line.
+ * 3. Occupancy. At S1.3 P7 did not subtract booked appointments, because no
+ *    `appointments` table existed; the case that asserted "every slot is
+ *    available" was a statement about that stage. S2.1 adds the table, so the
+ *    assertion moved to `occupancy.test.ts` (O10), where it is made *after* a
+ *    booking and therefore distinguishes "filtered out" from "hard-coded true".
+ *    This file no longer asserts anything about `available`.
+ *
+ * 4. Master↔service links (S2.1, decision D5). P7 answers 422
+ *    `BUSINESS_RULE_VIOLATION` for a service the master does not offer, so every
+ *    master this file asks P7 about must be linked to every service it asks
+ *    about — otherwise a case would fail for the wrong reason. The links are
+ *    arranged in `beforeAll` and in `createService`, before any case runs.
  *
  * The fixture writes staff accounts and nothing else. Services are created
- * through the S1.2 administrator operation and availability through M4 itself,
- * because a contract operation exists for each: arrangement uses the API where
- * the API can express it, and direct SQL only where no operation exists (the
- * two accounts, as in S1.1).
+ * through the S1.2 administrator operation, links through R11 and availability
+ * through M4 itself, because a contract operation exists for each: arrangement
+ * uses the API where the API can express it, and direct SQL only where no
+ * operation exists (the two accounts, as in S1.1).
  */
 
 import { randomUUID } from 'node:crypto';
@@ -199,7 +205,25 @@ describe('S1.3 availability — P7, M3, M4', () => {
       .send({ name, category: 'Hair', baseDurationMinutes });
 
     expect(response.status).toBe(201);
-    return response.body.id as string;
+    const id = response.body.id as string;
+
+    // D5: P7 answers 422 for a service the master does not offer, so every
+    // service this file asks P7 about is linked to both masters that P7 is
+    // asked about. Arranged here rather than per case, so a case cannot forget.
+    await linkService(petroId, id);
+    await linkService(ihorId, id);
+
+    return id;
+  }
+
+  /** Links a service to a master through R11, at a price the cases never read. */
+  async function linkService(masterId: string, serviceId: string): Promise<void> {
+    const response = await request(app)
+      .post('/api/v1/admin/master-services')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ masterId, serviceId, price: { amountMinor: 30000, currency: 'UAH' } });
+
+    expect(response.status).toBe(201);
   }
 
   function expectProblem(
@@ -770,32 +794,44 @@ describe('S1.3 availability — P7, M3, M4', () => {
         fullName: 'Empty Availability',
       });
 
+      // D5: the service must be one this master offers, or the answer would be
+      // 422 for the link rather than 200 with an empty list — a failure for the
+      // wrong reason.
+      await linkService(empty.id, service30);
+
       const response = await getSlots(empty.id, '2027-07-06', service30);
 
       expectJson(response, 200, isAvailabilityResponse);
       expect(response.body.slots).toEqual([]);
       expect(response.body).toMatchObject({ masterId: empty.id, totalDurationMinutes: 30 });
     });
-  });
 
-  // ================================================ what "available" means here
+    it('answers 422 BUSINESS_RULE_VIOLATION for a service the master does not offer', async () => {
+      // D5. The service exists and is active; the link between it and Petro does
+      // not. P7 declares 422 `BUSINESS_RULE_VIOLATION`, and this is the input
+      // that reaches it: a schema-valid request for a service that is not the
+      // master's to book. Without this case the code would be declared and never
+      // exercised, and a booking could be offered for a service the master
+      // cannot perform.
+      const unoffered = await request(app)
+        .post('/api/v1/admin/services')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Availability Unoffered', category: 'Hair', baseDurationMinutes: 30 });
 
-  describe('P7 — occupancy is not computed at this stage', () => {
-    it('marks every slot available, because no appointment can exist yet', async () => {
-      // This is a statement about the stage, not about bookings. `appointments`
-      // arrives in S2.1; until then nothing can make a slot unavailable, so the
-      // field the schema requires is a constant. S2.1 must replace this
-      // assertion with the real subtraction — reading it as "slots are free of
-      // appointments" today would be wrong. TEST-GATE records the same line.
-      await arrangeAvailability(petroToken, [
-        { dayOfWeek: 1, startTime: '10:00', endTime: '18:00' },
-      ]);
+      expect(unoffered.status).toBe(201);
 
-      const response = await getSlots(petroId, WINTER_MONDAY, `${service45},${service30}`);
-      const slots = response.body.slots as { available: boolean }[];
+      const response = await getSlots(petroId, WINTER_MONDAY, unoffered.body.id as string);
 
-      expect(slots.length).toBeGreaterThan(0);
-      expect(slots.every((slot) => slot.available === true)).toBe(true);
+      expectProblem(response, { status: 422, code: 'BUSINESS_RULE_VIOLATION' });
     });
   });
+
+  // ================================================ what "available" means now
+
+  // The S1.3 case "marks every slot available, because no appointment can exist
+  // yet" was a statement about that stage, and S2.1 ends it: `appointments`
+  // exists, so a slot can be taken. The assertion moved to `occupancy.test.ts`
+  // (O10), where it is made after a booking — the only state in which
+  // "filtered out" and "hard-coded true" give different answers. Keeping it here
+  // would assert a constant that is no longer true of the system.
 });
