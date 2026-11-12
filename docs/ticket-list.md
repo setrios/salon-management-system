@@ -34,7 +34,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Backlog |
 | SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-3 | Coding Agent | Backlog |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Backlog |
-| SMS-20 | Test non-functional acceptance criteria | Test | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
+| SMS-20 | Test non-functional acceptance criteria | Verification | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
 | SMS-21 | Test auth and reference-data CRUD checks | Test | REQ-F-012, 013, 014, 017, 018, 019, 020, 025 | SMS-3 | Coding Agent | Done |
 | SMS-22 | Feature: authentication (master + single admin) | Feature | REQ-F-012, 017 | SMS-21 | Coding Agent | Done |
 | SMS-23 | Feature: reference data (masters, services/categories, MasterService, materials/units, deactivate) | Feature | REQ-F-018, 024, 025 | SMS-14, SMS-21 | Coding Agent | Done |
@@ -59,6 +59,10 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent | Done |
 | SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human | Done |
 | SMS-44 | Test S1.0 infrastructure: 404, 405, malformed JSON → 400, Problem shape, trace propagation, log line shape (415 moves to SMS-21, plan §8.2) | Test | Plan §8, §8.2; error-model.md §3 | SMS-43 | Coding Agent | Done |
+| SMS-45 | Spec addendum (step 4): choose one change and gate it | Addendum | Plan §8.1 | SMS-7, SMS-46 | Human | Backlog |
+| SMS-46 | Refactoring of the base implementation (step 3) | Feature | Plan §9 | SMS-7 | Coding Agent | Backlog |
+| SMS-47 | Component split, README and log samples | Documentation | Task step 1 (logging); component split | SMS-24, SMS-25 | Joint | Backlog |
+| SMS-48 | Human validation record (step 7) | Validation | Plan §10 | SMS-45, SMS-46, SMS-47 | Human | Backlog |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
