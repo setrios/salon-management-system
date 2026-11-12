@@ -30,10 +30,10 @@
  *       are the two cells of that table this stage owns.
  *   F2  Reminders on a cancelled record are **not asserted** and not changed:
  *       SRS v1.3 does not define them, contract's P10 example shows `skipped`,
- *       the code currently computes `scheduled`, and plan decision D-11
+ *       the code currently stores `scheduled`, and plan decision D-11
  *       (logs/2026-11-08-implementation-plan.md:85) sends the decision to an
  *       addendum, not to code. This file therefore asserts nothing about
- *       `reminders[]` after cancellation; the gap is register row 3.
+ *       `reminders[]` after cancellation; the gap is register row 10.
  *   F3  A `completed` record is arranged out of band, by one `update`, because
  *       the operation that produces that state (R23, `completeAppointment`) is
  *       SMS-34 / S5.3. This is arrangement, not an assertion about storage —

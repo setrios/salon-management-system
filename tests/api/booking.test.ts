@@ -45,6 +45,9 @@
  *       not a stored row at this stage. A consequence, stated rather than
  *       discovered: the same appointment read later can report a different
  *       reminder status once the corresponding moment has passed.
+ *       **Superseded by S3.2 (H1):** the reminders are stored rows now, and a
+ *       due one becomes `sent` on the next read. The cases below assert the
+ *       booking's own answer, which is the same either way.
  *   D8  A repeated service id is counted twice — twice in `services[]`, and
  *       twice in the duration and price sums. The schema declares `minItems: 1`
  *       and `maxItems: 20` and does **not** declare `uniqueItems`, so a

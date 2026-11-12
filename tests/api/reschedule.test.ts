@@ -53,7 +53,9 @@
  *       REQ-F-007 allows rescheduling any number of times (R17).
  *   G7  Reminders are computed at read time (D6), so recalculation and
  *       reactivation are automatic. R15 and R16 prove it; no code is written
- *       for it.
+ *       for it. **Superseded by S3.2 (H1, H6):** the rows are stored and the
+ *       reschedule recalculates them in place. R15 and R16 still pass, and the
+ *       recalculation is asserted in `reminders.test.ts` (R7, R8).
  *   G8  When the master changes, the lines are re-priced from the new master's
  *       links and `totalPrice` follows (REQ-F-001; `MasterService` carries
  *       "that master's individual price"). When the master does not change, the
