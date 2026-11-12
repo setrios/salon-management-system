@@ -70,6 +70,7 @@ interface NotificationRow {
   readonly eventType: string;
   readonly channel: string;
   readonly status: string;
+  readonly createdAt: string;
 }
 
 /** The instant every case treats as "now" (D9). Kyiv is +02:00 in November. */
@@ -210,15 +211,21 @@ describe('S4.1 the caller\'s own notification records (M7)', () => {
       const created = await book(master.id);
       expect(created.status).toBe(201);
 
-      const sameDay = expectPage(
-        await myNotifications(master.token, '?from=2026-11-12&to=2026-11-12'),
-      );
+      const all = expectPage(await myNotifications(master.token));
+      expect(all.length).toBe(2);
+
+      // `createdAt` is the database's clock, not the injected one: the row is
+      // written by `defaultNow()`, so the case reads the date back rather than
+      // assuming it.
+      const day = all[0]?.createdAt.slice(0, 10) ?? '';
+
+      const sameDay = expectPage(await myNotifications(master.token, `?from=${day}&to=${day}`));
       expect(sameDay.length).toBe(2);
 
-      const later = expectPage(await myNotifications(master.token, '?from=2026-11-13'));
+      const later = expectPage(await myNotifications(master.token, '?from=2099-01-01'));
       expect(later).toEqual([]);
 
-      const earlier = expectPage(await myNotifications(master.token, '?to=2026-11-11'));
+      const earlier = expectPage(await myNotifications(master.token, '?to=2000-01-01'));
       expect(earlier).toEqual([]);
     });
 

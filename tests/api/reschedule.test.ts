@@ -208,6 +208,21 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
   }
 
   /** R24 — the message records of one appointment, as the administrator sees them. */
+  /**
+   * The client's rows of a page.
+   *
+   * S4.1 writes the master's and the administrator's rows for the same event,
+   * so the page's `total` is no longer a statement about the client's message.
+   * These five cases are about the client's message, so they count it by
+   * predicate — the treatment `notification.test.ts` already uses for
+   * REQ-F-005.
+   */
+  function clientRows(response: JsonResponse): { audience: string; eventType: string }[] {
+    return (response.body.items as { audience: string; eventType: string }[]).filter(
+      (row) => row.audience === 'client',
+    );
+  }
+
   async function notifications(appointmentId: string): Promise<JsonResponse> {
     return request(app)
       .get(`/api/v1/admin/appointments/${appointmentId}/notifications`)
@@ -262,10 +277,11 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
 
       const rows = await notifications(created.body.id as string);
       expect(rows.status).toBe(200);
-      // One `new`, one `reschedule`, and the two reminder rows S3.2 records
-      // (H1). The reminder rows are asserted in `reminders.test.ts`; here the
-      // total is the sanity check that the reschedule wrote exactly one row.
-      expect(rows.body.total).toBe(4);
+      // The client's rows: one `new`, one `reschedule`, and the two reminders
+      // S3.2 records (H1). The reminder rows are asserted in
+      // `reminders.test.ts`; here the count is the sanity check that the
+      // reschedule wrote exactly one client row.
+      expect(clientRows(rows)).toHaveLength(4);
       expect(rows.body.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -315,10 +331,11 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expectAppointment(await reschedule(token, { startAt: onMonday('16:00') }));
 
       const rows = await notifications(created.body.id as string);
-      // One `new`, two `reschedule`, and the two reminder rows (H1).
-      expect(rows.body.total).toBe(5);
-      const reschedules = (rows.body.items as { eventType: string }[]).filter(
-        (item) => item.eventType === 'reschedule',
+      // The client's rows: one `new`, two `reschedule`, and the two reminders
+      // (H1).
+      expect(clientRows(rows)).toHaveLength(5);
+      const reschedules = (rows.body.items as { audience: string; eventType: string }[]).filter(
+        (item) => item.audience === 'client' && item.eventType === 'reschedule',
       );
       expect(reschedules).toHaveLength(2);
     });
@@ -338,8 +355,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(response.body.updatedAt).toBe(NOW);
 
       const rows = await notifications(created.body.id as string);
-      // One `new`, one `reschedule`, and the two reminder rows (H1).
-      expect(rows.body.total).toBe(4);
+      // The client's rows: one `new`, one `reschedule`, and the two reminders
+      // (H1).
+      expect(clientRows(rows)).toHaveLength(4);
     });
   });
 
@@ -394,9 +412,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(read.body).toMatchObject({ status: 'cancelled', startAt: onMonday('10:00') });
 
       const rows = await notifications(created.body.id as string);
-      // One `new` and the two reminder rows (H1): the refused reschedule wrote
-      // nothing.
-      expect(rows.body.total).toBe(3);
+      // The client's rows: one `new` and the two reminders (H1). The refused
+      // reschedule wrote nothing.
+      expect(clientRows(rows)).toHaveLength(3);
     });
 
     it('R6 answers 409 INVALID_STATE_TRANSITION for a completed record and writes nothing', async () => {
@@ -418,9 +436,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(read.body).toMatchObject({ status: 'completed', startAt: onMonday('10:00') });
 
       const rows = await notifications(created.body.id as string);
-      // One `new` and the two reminder rows (H1): the refused reschedule wrote
-      // nothing.
-      expect(rows.body.total).toBe(3);
+      // The client's rows: one `new` and the two reminders (H1). The refused
+      // reschedule wrote nothing.
+      expect(clientRows(rows)).toHaveLength(3);
     });
   });
 

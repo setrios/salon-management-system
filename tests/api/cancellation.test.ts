@@ -327,14 +327,14 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
 
   // ============================================== what cancellation must not do
 
-  describe('a cancellation writes no message (SRS v1.3 lines 253–256, 397–400)', () => {
-    it('K6 records no notification row for any audience', async () => {
+  describe('a cancellation writes no client message (SRS v1.3 lines 253–256)', () => {
+    it('K6 records no client cancellation row', async () => {
       // The client is not sent an SMS for a cancellation: "the client sees the
       // updated status on the confirmation page" (lines 253–256). The master's
-      // and the administrator's alerts are SMS-30 (line 400). So the absence is
-      // asserted for all three audiences, not only `client` — a `master` row
-      // written here would be as wrong as a `client` one, because neither has a
-      // preference or an actor to consult yet.
+      // and the administrator's alerts are SMS-30 (line 400) and arrive with
+      // S4.1, which is why this case asserts the client's absence only: the
+      // other two audiences' presence is asserted in
+      // `notification-preferences.test.ts` (P10–P13).
       const bookable = await arrangeBookable('Cancel Silent');
       const created = await book(bookable);
       expect(created.status).toBe(201);
@@ -352,12 +352,10 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
         rows.filter((row) => row.audience === 'client' && row.eventType === 'new'),
       ).toHaveLength(1);
 
-      for (const audience of ['client', 'master', 'admin']) {
-        expect(
-          rows.filter((row) => row.audience === audience && row.eventType === 'cancellation'),
-          `no cancellation row for audience "${audience}"`,
-        ).toHaveLength(0);
-      }
+      expect(
+        rows.filter((row) => row.audience === 'client' && row.eventType === 'cancellation'),
+        'no client cancellation row',
+      ).toHaveLength(0);
     });
   });
 
