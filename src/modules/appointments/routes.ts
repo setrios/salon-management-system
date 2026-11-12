@@ -86,6 +86,7 @@ import {
   findByToken,
   findBookableServices,
   findBookingMaster,
+  loadAppointment,
   rescheduleAppointment,
   type Executor,
 } from './service.js';
@@ -252,8 +253,8 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
         createdAt: created.createdAt,
         updatedAt: created.updatedAt,
         lines: created.lines,
+        reminders: created.reminders,
       },
-      now,
     ),
   );
 }
@@ -275,12 +276,14 @@ async function getAppointmentByTokenHandler(req: Request, res: Response): Promis
   const { token } = res.locals.params as { token: string };
   const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
 
-  const record = await findByToken(token);
+  // H3: the read is what dispatches a due reminder, so the record is loaded
+  // through `loadAppointment`, not `findByToken`.
+  const record = await loadAppointment(token, now);
   if (record === undefined) {
     throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
   }
 
-  sendJson(res, 200, 'Appointment', appointmentBody(record, now));
+  sendJson(res, 200, 'Appointment', appointmentBody(record));
 }
 
 /**
@@ -313,7 +316,7 @@ async function cancelAppointmentByTokenHandler(req: Request, res: Response): Pro
     );
   }
 
-  sendJson(res, 200, 'Appointment', appointmentBody(result.record, now));
+  sendJson(res, 200, 'Appointment', appointmentBody(result.record));
 }
 
 /** `AppointmentReschedule` as the contract declares it (closed body, D-22). */
@@ -428,7 +431,7 @@ async function rescheduleAppointmentByTokenHandler(req: Request, res: Response):
     );
   }
 
-  sendJson(res, 200, 'Appointment', appointmentBody(result.record, now));
+  sendJson(res, 200, 'Appointment', appointmentBody(result.record));
 }
 
 /** Registers P8, P9, P10 and P11 on the API router. None of the paths takes authentication. */

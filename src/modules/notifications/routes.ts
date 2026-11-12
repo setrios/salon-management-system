@@ -24,6 +24,11 @@
  * a booking always writes its confirmation record (E2), and a later stage that
  * writes none must still answer 200 with an empty page rather than suggesting the
  * appointment does not exist.
+ *
+ * **R24 dispatches the due reminders before it lists them** (H3). A read is the
+ * only trigger the system has, and the page is where a reminder's `sentAt` is
+ * observable. The dispatch's own `exists` clause keeps a cancelled or completed
+ * record from being dispatched (H5), so no status check is repeated here.
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -33,11 +38,11 @@ import { adminAccess } from '../../middleware/authorize.js';
 import { validateParams } from '../../middleware/validate.js';
 import { salonDateTime } from '../../lib/occupancy.js';
 import { asyncRoute, pageBody, pageRequest, sendJson } from '../reference-data/http.js';
-import { appointmentExists, listNotifications } from './service.js';
+import { appointmentExists, dispatchDueReminders, listNotifications } from './service.js';
 
 /** R24 — one page of an appointment's notification records. */
 async function listAppointmentNotificationsHandler(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
@@ -45,6 +50,9 @@ async function listAppointmentNotificationsHandler(
   if (!(await appointmentExists(appointmentId))) {
     throw new HttpProblem('NOT_FOUND', 'No appointment is defined with this id.');
   }
+
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  await dispatchDueReminders(appointmentId, now);
 
   const request = pageRequest(res);
   const { items, total } = await listNotifications(

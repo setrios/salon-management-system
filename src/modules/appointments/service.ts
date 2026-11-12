@@ -48,6 +48,13 @@ import type { BookableService } from './rules.js';
 import { isAppointmentStatus, stateOutcome } from './state.js';
 import type { AppointmentLine } from './view.js';
 import { isUniqueViolation } from '../reference-data/http.js';
+import {
+  dispatchDueReminders,
+  insertReminders,
+  readReminders,
+  recalculateReminders,
+} from '../notifications/service.js';
+import type { ReminderRow } from '../notifications/reminders.js';
 
 /**
  * A Drizzle handle: the pool-backed instance or a transaction.
@@ -229,6 +236,8 @@ export interface CreatedAppointment {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly lines: readonly ServiceLineInput[];
+  /** The two reminder rows the booking wrote, in the order they occur (H1). */
+  readonly reminders: readonly ReminderRow[];
 }
 
 /**
@@ -312,6 +321,10 @@ export async function createAppointment(
         sentAt: input.now,
       });
 
+      // REQ-F-010, REQ-F-011: the two reminders, in the same transaction (H1).
+      // Their status is decided here, against the booking's clock (H2).
+      const reminders = await insertReminders(tx, row.id, row.startAt, input.now);
+
       return {
         id: row.id,
         accessToken: row.accessToken,
@@ -325,6 +338,7 @@ export async function createAppointment(
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         lines: input.lines,
+        reminders,
       };
     });
   } catch (error) {
@@ -355,6 +369,8 @@ export interface StoredAppointment {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly lines: readonly AppointmentLine[];
+  /** The two reminder rows, in the order they occur (S3.2, H1). */
+  readonly reminders: readonly ReminderRow[];
 }
 
 /**
@@ -407,7 +423,34 @@ export async function findByToken(token: string): Promise<StoredAppointment | un
     .where(eq(appointmentServices.appointmentId, row.id))
     .orderBy(appointmentServices.position);
 
-  return { ...row, lines };
+  const reminders = await readReminders(db, row.id);
+
+  return { ...row, lines, reminders };
+}
+
+/**
+ * P9's read, with the reminder dispatch in front of it (H3).
+ *
+ * The dispatch is a write, and a read is the only trigger the system has: the
+ * lab has no scheduler. It runs only for a `confirmed` record — a cancelled or
+ * completed one is not dispatched (H5) — and only when something is due, so a
+ * read of a record whose reminders are still ahead issues no `update` at all.
+ *
+ * The rows are re-read only when the dispatch changed something, so the common
+ * case is one read of the appointment and one of its reminders.
+ */
+export async function loadAppointment(
+  token: string,
+  now: Date,
+): Promise<StoredAppointment | undefined> {
+  const record = await findByToken(token);
+  if (record === undefined) return undefined;
+  if (record.status !== 'confirmed') return record;
+
+  const dispatched = await dispatchDueReminders(record.id, now);
+  if (dispatched === 0) return record;
+
+  return { ...record, reminders: await readReminders(getDb(), record.id) };
 }
 
 /** What P10's cancellation did, as the route needs to answer it. */
@@ -442,7 +485,7 @@ export type CancelByTokenResult =
  * a cancellation, and the master's and administrator's alerts are SMS-30.
  *
  * `now` is the injected clock (D9): the transition writes it to `updated_at`,
- * and the re-read computes `reminders[]` from it.
+ * and the re-read reads the reminder rows the dispatch may have changed.
  */
 export async function cancelByToken(token: string, now: Date): Promise<CancelByTokenResult> {
   const db = getDb();
@@ -468,6 +511,11 @@ export async function cancelByToken(token: string, now: Date): Promise<CancelByT
   if (outcome.kind === 'rejected') return { kind: 'rejected', code: outcome.code };
 
   if (outcome.kind === 'transition') {
+    // H3: a reminder that fell due while the record was still live was sent
+    // then, so the dispatch runs before the state changes. A repeat cancel
+    // (already `cancelled`) does not dispatch: H5.
+    await dispatchDueReminders(current.id, now);
+
     await db
       .update(appointments)
       .set({ status: outcome.to, updatedAt: now })
@@ -525,6 +573,10 @@ export type RescheduleAppointmentResult =
  *
  * **The lines are re-priced only when the master changed** (G8). When it did
  * not, the snapshot is the booking's and is left alone.
+ *
+ * **The reminder rows are recalculated in the same transaction** (H6): the new
+ * `startAt` moves both moments, and a moment that is now past is `skipped`
+ * rather than left `scheduled` for a dispatch that would never come.
  *
  * The re-read is `findByToken` **after** the transaction commits, so it sees the
  * committed row; reading inside the transaction through the pool would be a
@@ -590,6 +642,12 @@ export async function rescheduleAppointment(
             );
         }
       }
+
+      // REQ-F-029, SCN-11: the two reminder rows follow the new time, in place
+      // (H6). A moment that is now past becomes `skipped`; one that is now
+      // ahead becomes `scheduled` again, which is the reactivation SCN-11
+      // describes.
+      await recalculateReminders(tx, input.appointmentId, input.startAt, input.now);
 
       // REQ-F-009: exactly one reschedule SMS per successful reschedule.
       await tx.insert(notifications).values({
