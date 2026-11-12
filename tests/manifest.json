@@ -276,6 +276,20 @@
         "tests/api/reschedule.test.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-31 (test) → SMS-31 (implementation)",
+      "test": "tests/api/master-calendar.test.ts",
+      "sources": ["REQ-F-013", "REQ-F-014"],
+      "implementation": ["src/modules/appointments/staff-view.ts"],
+      "touches": [
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/routes.ts",
+        "src/modules/master-services/routes.ts",
+        "src/modules/master-services/service.ts",
+        "src/modules/notifications/service.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
