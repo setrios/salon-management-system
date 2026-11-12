@@ -3,8 +3,10 @@
 Status: **FINAL** — built in Part 2 (step 2.3), finalised in Part 4 (step 4.1)
 after the mock scenarios ran on 2026-10-26. Extended on 2026-11-09 with §6, which
 adds a **Test** and a **Code** location per operation delivered by stages S1.1–S1.3
-(G1 exit criterion 4, `logs/2026-11-08-implementation-plan.md` §8.3). Sections 1–5
-are unchanged by that extension.
+(G1 exit criterion 4, `logs/2026-11-08-implementation-plan.md` §8.3). Extended
+again on 2026-11-12 with §6.5–§6.7 for the operations delivered by S2.1–S2.3
+(G2 exit criterion 4, same plan section). Sections 1–5 and §6.1–§6.3 are
+unchanged by both extensions.
 
 Links every SRS v1.3 requirement to the operations that expose it, the BDD
 scenario that motivated it, and the API scenario that will verify it on the
@@ -180,7 +182,7 @@ verified; all are deferred to the next phase.
 
 ---
 
-## 6. Test and Code locations for the operations delivered by S1.1–S1.3
+## 6. Test and Code locations for the operations delivered by S1.1–S1.3 and S2.1–S2.3
 
 G1 exit criterion 4 (`logs/2026-11-08-implementation-plan.md` §8.3) requires this
 file to name a **Test** and a **Code** location for every operation the gate's
@@ -197,7 +199,7 @@ numbers are not.
 **Shape of a Code entry:** the route module that declares the operation. The
 storage half of each module is its sibling `service.ts`, and shared transport is
 `src/modules/reference-data/http.ts`; those are cited once below rather than
-repeated in 22 rows.
+repeated in 32 rows.
 
 ### 6.1 S1.1 — authentication (SMS-21 → SMS-22)
 
@@ -238,16 +240,41 @@ repeated in 22 rows.
 
 ### 6.4 Count, and what the two columns do not say
 
-**22 operations**, one per row: 2 from S1.1, 17 from S1.2, 3 from S1.3. That is
-the set the gate S1.1–S1.3 delivered; the remaining 28 of the contract's 50 have
-no row here yet and belong to later gates (S2.1 onwards), as the plan's stage
-table assigns them.
+**32 operations**, one per row: 2 from S1.1, 17 from S1.2, 3 from S1.3, 7 from
+S2.1, 2 from S2.2, 1 from S2.3. That is the set the gates S1.1–S1.3 and S2
+delivered; the remaining 18 of the contract's 50 have no row here yet and belong
+to later gates (S3.1 onwards), as the plan's stage table assigns them.
 
 The **Test** column points at the assertion that states the operation's normal
-behaviour. It does not enumerate negatives: each of the 22 also has refusals
+behaviour. It does not enumerate negatives: each of the 32 also has refusals
 asserted in the same file (400/401/403/404/409/415/422 as the contract declares
 them), and §2 of each TEST-GATE record is the place those are counted. A row here
 is "this operation is tested", not "this operation is tested exhaustively".
+
+### 6.5 S2.1 — booking and the public catalogue (SMS-8, SMS-19, SMS-25 → SMS-25)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `listServices` (P1) | `GET /services` | `tests/api/public-catalogue.test.ts` — "lists an active service with its duration and category" | `src/modules/public/routes.ts` |
+| `getService` (P2) | `GET /services/{serviceId}` | `tests/api/public-catalogue.test.ts` — "returns one service by id" | `src/modules/public/routes.ts` |
+| `listCategories` (P3) | `GET /categories` | `tests/api/public-catalogue.test.ts` — "lists the three seeds as seeded and a saved custom category as not" | `src/modules/public/routes.ts` |
+| `listMasters` (P4) | `GET /masters` | `tests/api/public-catalogue.test.ts` — "lists a master with an id and a full name and nothing else" | `src/modules/public/routes.ts` |
+| `getMaster` (P5) | `GET /masters/{masterId}` | `tests/api/public-catalogue.test.ts` — "returns the public representation of a master" | `src/modules/public/routes.ts` |
+| `listMasterServices` (P6) | `GET /masters/{masterId}/services` | `tests/api/public-catalogue.test.ts` — "lists an active link with its price" | `src/modules/public/routes.ts` |
+| `createAppointment` (P8) | `POST /appointments` | `tests/api/booking.test.ts` — "answers 201 with status confirmed: there is no approval state" | `src/modules/appointments/routes.ts` |
+
+### 6.6 S2.2 — confirmation page and SMS (SMS-26 → SMS-26)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `getAppointmentByToken` (P9) | `GET /appointments/{token}` | `tests/api/confirmation.test.ts` — "C1 returns the appointment P8 created, with the same fields" | `src/modules/appointments/routes.ts` |
+| `listAppointmentNotifications` (R24) | `GET /admin/appointments/{appointmentId}/notifications` | `tests/api/notification.test.ts` — "N1 records exactly one client SMS with eventType new and status sent" | `src/modules/notifications/routes.ts` |
+
+### 6.7 S2.3 — client cancellation (SMS-27 → SMS-27)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `cancelAppointmentByToken` (P10) | `POST /appointments/{token}/cancel` | `tests/api/cancellation.test.ts` — "K1 cancels a confirmed appointment: 200, status cancelled, everything else kept" | `src/modules/appointments/routes.ts` |
 
 The **Code** column points at the module that declares the operation. Behaviour
 is split between that file and its `service.ts`, and a few shared pieces sit
