@@ -260,7 +260,10 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
 
       const rows = await notifications(created.body.id as string);
       expect(rows.status).toBe(200);
-      expect(rows.body.total).toBe(2);
+      // One `new`, one `reschedule`, and the two reminder rows S3.2 records
+      // (H1). The reminder rows are asserted in `reminders.test.ts`; here the
+      // total is the sanity check that the reschedule wrote exactly one row.
+      expect(rows.body.total).toBe(4);
       expect(rows.body.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -310,7 +313,8 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expectAppointment(await reschedule(token, { startAt: onMonday('16:00') }));
 
       const rows = await notifications(created.body.id as string);
-      expect(rows.body.total).toBe(3);
+      // One `new`, two `reschedule`, and the two reminder rows (H1).
+      expect(rows.body.total).toBe(5);
       const reschedules = (rows.body.items as { eventType: string }[]).filter(
         (item) => item.eventType === 'reschedule',
       );
@@ -332,7 +336,8 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(response.body.updatedAt).toBe(NOW);
 
       const rows = await notifications(created.body.id as string);
-      expect(rows.body.total).toBe(2);
+      // One `new`, one `reschedule`, and the two reminder rows (H1).
+      expect(rows.body.total).toBe(4);
     });
   });
 
@@ -387,7 +392,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(read.body).toMatchObject({ status: 'cancelled', startAt: onMonday('10:00') });
 
       const rows = await notifications(created.body.id as string);
-      expect(rows.body.total).toBe(1);
+      // One `new` and the two reminder rows (H1): the refused reschedule wrote
+      // nothing.
+      expect(rows.body.total).toBe(3);
     });
 
     it('R6 answers 409 INVALID_STATE_TRANSITION for a completed record and writes nothing', async () => {
@@ -409,7 +416,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(read.body).toMatchObject({ status: 'completed', startAt: onMonday('10:00') });
 
       const rows = await notifications(created.body.id as string);
-      expect(rows.body.total).toBe(1);
+      // One `new` and the two reminder rows (H1): the refused reschedule wrote
+      // nothing.
+      expect(rows.body.total).toBe(3);
     });
   });
 

@@ -224,6 +224,22 @@
         "tests/api/booking.test.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-11, SMS-17 (test) → SMS-29 (implementation)",
+      "test": "tests/api/reminders.test.ts",
+      "sources": ["REQ-F-010", "REQ-F-011", "REQ-F-029", "SCN-04", "SCN-05", "SCN-11"],
+      "implementation": ["src/modules/notifications/reminders.ts"],
+      "touches": [
+        "src/modules/appointments/reminders.ts",
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/view.ts",
+        "src/modules/appointments/routes.ts",
+        "src/modules/notifications/service.ts",
+        "src/modules/notifications/routes.ts",
+        "tests/api/reschedule.test.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
