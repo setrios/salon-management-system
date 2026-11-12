@@ -53,8 +53,8 @@
  *       alone (manifest entry below).
  *   F7  Cancelling an appointment whose `startAt` is in the past is allowed:
  *       REQ-F-006's AC says "at any time", and P10 has no notice period to
- *       check. K8 books such a record (P8 accepts a past start — the open G2
- *       register row 4) and cancels it.
+ *       check. K8 books a future record, moves it into the past out of band
+ *       (CL-11 refuses a past start through P8) and cancels it.
  *
  * What this file does *not* assert:
  *
@@ -138,8 +138,7 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
     });
     await arrangeLink(app, admin.token, master.id, service.id, 45000);
     // M4 replaces the whole rule set (resource-model §4), so this is one PUT.
-    // Monday 10:00–18:00 covers both the future start of most cases and the past
-    // start of K8, which is a Monday too.
+    // Monday 10:00–18:00 covers the future start every case books.
     const windows = await request(app)
       .put('/api/v1/me/availability')
       .set('Authorization', `Bearer ${master.token}`)
@@ -397,14 +396,16 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
     it('K8 cancels an appointment whose start is already in the past', async () => {
       // REQ-F-006's AC: "Cancelling at any time, including minutes before the
       // appointment, succeeds without a fee or error". P10 has no clock to
-      // compare against and must not invent one. P8 accepts the past start —
-      // that acceptance is the open G2 register row 4, stated in the gate and
-      // not tested here; K8 asserts only what P10 does with such a record.
+      // compare against and must not invent one. The record is booked in the
+      // future and then moved into the past out of band: CL-11 refuses a past
+      // start through P8, and K8 is about P10, not about P8's acceptance.
       const bookable = await arrangeBookable('Cancel Past');
-      const created = await book(bookable, onPastMonday('10:00'));
+      const created = await book(bookable, onMonday('10:00'));
       expect(created.status).toBe(201);
-      expect(new Date(created.body.startAt as string).getTime()).toBeLessThan(
-        new Date(NOW).getTime(),
+
+      await getPool().query(
+        'update appointments set start_at = $2, end_at = $3 where id = $1',
+        [created.body.id, onPastMonday('10:00'), onPastMonday('10:30')],
       );
 
       const cancelled = await cancel(created.body.accessToken as string);
@@ -412,6 +413,9 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
       expectAppointment(cancelled);
       expect(cancelled.body.status).toBe('cancelled');
       expect(cancelled.body.totalPrice).toEqual(created.body.totalPrice);
+      expect(new Date(cancelled.body.startAt as string).getTime()).toBeLessThan(
+        new Date(NOW).getTime(),
+      );
     });
   });
 });
