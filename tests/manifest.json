@@ -240,6 +240,42 @@
         "tests/api/reschedule.test.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-12 (test) → SMS-30 (implementation)",
+      "test": "tests/api/notification-preferences.test.ts",
+      "sources": ["REQ-F-016", "REQ-F-023", "REQ-F-026", "SCN-06"],
+      "implementation": [
+        "src/modules/notifications/preferences.ts",
+        "src/db/migrations/0005_notification_preferences.sql",
+        "src/db/migrations/meta/0005_snapshot.json"
+      ],
+      "touches": [
+        "src/modules/notifications/service.ts",
+        "src/modules/notifications/routes.ts",
+        "src/db/schema.ts",
+        "src/modules/appointments/service.ts",
+        "tests/api/reschedule.test.ts",
+        "tests/manifest.json"
+      ]
+    },
+    {
+      "ticket": "SMS-12 (test) → SMS-30 (implementation)",
+      "test": "tests/api/my-notifications.test.ts",
+      "sources": ["REQ-F-016", "REQ-F-023"],
+      "implementation": [
+        "src/modules/notifications/preferences.ts",
+        "src/db/migrations/0005_notification_preferences.sql",
+        "src/db/migrations/meta/0005_snapshot.json"
+      ],
+      "touches": [
+        "src/modules/notifications/service.ts",
+        "src/modules/notifications/routes.ts",
+        "src/db/schema.ts",
+        "src/modules/appointments/service.ts",
+        "tests/api/reschedule.test.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
