@@ -1,6 +1,6 @@
 # Clarification and addendum register — Salon Management System API
 
-Status: CLOSED — eleven rows. CL-06..CL-08 added 2026-11-08; their dispositions were confirmed in logs/gates/2026-11-08-plan-gate.md before the first TEST-GATE. CL-09 added 2026-11-08 at the S1.1 TEST-GATE (SMS-21). CL-10 added 2026-11-08 at the S1.2 TEST-GATE (SMS-14). CL-11 added 2026-11-12 at G2 (SMS-5).
+Status: CLOSED — twelve rows. CL-06..CL-08 added 2026-11-08; their dispositions were confirmed in logs/gates/2026-11-08-plan-gate.md before the first TEST-GATE. CL-09 added 2026-11-08 at the S1.1 TEST-GATE (SMS-21). CL-10 added 2026-11-08 at the S1.2 TEST-GATE (SMS-14). CL-11 added 2026-11-12 at G2 (SMS-5). CL-12 added 2026-11-12 at the S3.1 inventory (SMS-28).
 
 Purpose (step 14): behaviour discovered during API design or mock
 verification that is **not** in SRS v1.3 must not enter the contract silently.
@@ -30,12 +30,13 @@ It is routed here, given a type and a disposition.
 | CL-09 | 2026-11-08 | S1.1 TEST-GATE (SMS-21) | `login` declares no 422 response (`openapi.yaml` `/auth/login` lists 200, 400, 401, 415, 500), while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body". Both statements are in the approved contract; `login` is the only one of the 17 body-taking operations for which they disagree. | clarification — internal contract inconsistency, response-code scope | Accepted, no contract change. A body that violates `LoginRequest` is answered with `400 MALFORMED_REQUEST`: the operation's response set is closed, and 422 would be an undocumented response. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation. | none |
 | CL-10 | 2026-11-08 | S1.2 TEST-GATE (SMS-14) | Three contract-declared responses cannot be produced by any allowed request. (a) R4, R6, R8 and R12 declare `409 DUPLICATE_RESOURCE`, but `MasterPatch` has no `username`, the R8/R12 patch bodies contain no field able to violate the three uniqueness constraints named in `error-model.md` §3, and `Service.name` is not unique there. (b) `GET /categories` declares `400 MALFORMED_REQUEST` but takes no parameter, and `resource-model.md` §5 (P3) lists no 400 for it. | clarification — declared but unreachable responses | Accepted, no contract change. These declarations are not implemented and not tested; the implementation must not invent a uniqueness or validation rule to satisfy them. Dropping the declarations would change the approved contract and therefore requires its own gate. | none |
 | CL-11 | 2026-11-12 | G2 (SMS-5) | P8 accepts a `startAt` in the past; no document defines "past", and P11 declares 422 and faces the same question for a rescheduled time. | clarification — undefined boundary | Decided at G2: a requested `startAt` earlier than or equal to the injected clock is 422 `BUSINESS_RULE_VIOLATION` on P8 and P11. Fixed in S3.1 (SMS-28), once, with tests for both operations; deadline before step 7 (validation). The contract is not edited: both operations already declare 422. | none |
+| CL-12 | 2026-11-12 | S3.1 inventory (SMS-28) | P11 declares 409 through the `SlotUnavailable` response object (example `SLOT_UNAVAILABLE`) and 422 through `ValidationFailed` (example `VALIDATION_ERROR`), while `error-model.md` §3 assigns P11 `INVALID_STATE_TRANSITION` and `BUSINESS_RULE_VIOLATION`. The statuses are declared; the examples show different codes. | clarification — example vs catalog | Accepted, no contract change. The catalog is normative for the code; a response object's example is illustrative, as it is for every operation that can return more than one code at a status. P11 answers 409 `INVALID_STATE_TRANSITION` for a cancelled or completed record and 422 `BUSINESS_RULE_VIOLATION` for a past `startAt`; both are schema-valid `Problem` bodies. | none |
 
 ## Status summary
 
 | Open | Clarified | Addendum required | Rejected |
 |---:|---:|---:|---:|
-| 0 | 11 | 0 | 0 |
+| 0 | 12 | 0 | 0 |
 
 ## Open items to be added during Parts 1–4
 

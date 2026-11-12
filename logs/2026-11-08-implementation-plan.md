@@ -22,6 +22,8 @@ Revision 4 — 2026-11-12: the eight SDD ticket types were five in use. Refactor
 
 Revision 5 — 2026-11-12: G2 corrections. §8's stage table places R24 (listAppointmentNotifications) in S2.2, where it had no row (register row 8). §7 adds CL-11: a requested startAt earlier than or equal to the injected clock is rejected with 422 BUSINESS_RULE_VIOLATION on P8 and P11, implemented once in S3.1 (SMS-28); CL-11 records the deadline (before step 7). §8's stage table records that S3.1 carries that shared rule for both operations. Scope, stage order, tickets and decisions are otherwise unchanged.
 
+Revision 6 — 2026-11-12: §7 extended with CL-12; scope, stages, tickets and decisions unchanged.
+
 ---
 
 ## 1. Repository state at plan time
@@ -285,7 +287,7 @@ This is a stated limit, not a passing check, and it is what the final validation
 
 ## 7. Known contract issues carried into implementation
 
-Recorded in `spec/api/clarifications.md` as CL-06..CL-11. None of them changes
+Recorded in `spec/api/clarifications.md` as CL-06..CL-12. None of them changes
 the contract.
 
 | ID | Issue | Handling |
@@ -296,6 +298,7 @@ the contract.
 | CL-09 | `login` declares no 422 response, while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body"; `login` is the only one of the 17 body-taking operations where the two statements disagree | A body that violates `LoginRequest` is answered **400 `MALFORMED_REQUEST`**; **the contract is not changed**. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation |
 | CL-10 | Three declared responses cannot be produced by any allowed request: R4/R6/R8/R12 declare 409 `DUPLICATE_RESOURCE`, but `MasterPatch` has no `username`, the R8/R12 bodies cannot violate the three uniqueness constraints of `error-model.md` §3, and `Service.name` is not unique there; `GET /categories` (P3) declares 400 but takes no parameter, and `resource-model.md` §5 lists no 400 for it | **Accepted, no contract change.** The declarations are not implemented and not tested; no uniqueness or validation rule is invented. Dropping them would change the approved contract and requires its own gate |
 | CL-11 | P8 accepts a `startAt` in the past; no document defines "past", and P11 declares 422 and faces the same question for a rescheduled time | Decided at G2, 2026-11-12: a requested `startAt` earlier than or equal to the injected clock is 422 `BUSINESS_RULE_VIOLATION` on P8 and P11. Fixed in S3.1 (SMS-28), once, with tests for both operations; deadline before step 7 (validation). The contract is not edited: both operations already declare 422 |
+| CL-12 | P11 declares 409 through the `SlotUnavailable` response object and 422 through `ValidationFailed`, while `error-model.md` §3 assigns P11 `INVALID_STATE_TRANSITION` and `BUSINESS_RULE_VIOLATION`; the statuses are declared, the examples show other codes | **Accepted, no contract change.** The catalog is normative for the code; the example is illustrative. P11 answers 409 `INVALID_STATE_TRANSITION` for a cancelled or completed record and 422 `BUSINESS_RULE_VIOLATION` for a past `startAt` |
 
 ---
 

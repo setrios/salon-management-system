@@ -110,6 +110,11 @@ function onMonday(time: string): string {
   return `${FAR_MONDAY}T${time}:00${WINTER_OFFSET}`;
 }
 
+/** A wall-clock instant on the Thursday NOW falls on (2026-11-12). */
+function onThursday(time: string): string {
+  return `2026-11-12T${time}:00${WINTER_OFFSET}`;
+}
+
 describe('S2.1 booking — P8 createAppointment', () => {
   const app = createApp({ now: () => new Date(NOW) });
 
@@ -544,6 +549,50 @@ describe('S2.1 booking — P8 createAppointment', () => {
       expectProblem(second, { status: 409, code: 'SLOT_UNAVAILABLE' });
       expect(String(second.body.detail)).toMatch(/slot/i);
       expect(String(second.body.detail)).toMatch(/master/i);
+    });
+  });
+
+  // ============================================ the past start (CL-11)
+
+  describe('a startAt at or before now (CL-11)', () => {
+    // Olena's Thursday window is 08:00–18:00 (`beforeAll`), and NOW is 09:00 on
+    // that Thursday. The three starts below are on the boundary and inside the
+    // window, so the only thing that separates them is the clock. No fixture is
+    // added: `arrangeWeeklyWindow` replaces the whole rule set, and a second
+    // call would erase the Monday window the other cases use.
+    //
+    // The Thursday bookings already in this file are 12:00 and 10:00, both
+    // haircut (30 min). B3 takes [09:30, 10:00); the 10:00 booking takes
+    // [10:00, 10:30). Half-open intervals, so they do not overlap.
+
+    it('B1 answers 422 BUSINESS_RULE_VIOLATION for a start in the past inside a free window', async () => {
+      // 08:30 is inside 08:00–18:00 and on the boundary; it is refused because
+      // it is not in the future, not because the slot is unavailable.
+      expectProblem(await book({ startAt: onThursday('08:30') }), {
+        status: 422,
+        code: 'BUSINESS_RULE_VIOLATION',
+      });
+    });
+
+    it('B2 answers 422 BUSINESS_RULE_VIOLATION for a start exactly at now', async () => {
+      // CL-11's boundary is `<=`, not `<`: a start that is not in the future is
+      // refused. With `<`, booking at 09:00 when it is 09:00 would be allowed —
+      // a client booking a slot that has already begun.
+      expectProblem(await book({ startAt: onThursday('09:00') }), {
+        status: 422,
+        code: 'BUSINESS_RULE_VIOLATION',
+      });
+    });
+
+    it('B3 accepts the first start after now: 09:30 is 201', async () => {
+      // The guard against over-rejection. This case is green at RED because it
+      // asserts behaviour P8 already has; it is not a RED failure and not a
+      // defect. It exists so that a rule that refuses every Thursday start
+      // cannot pass B1 and B2.
+      const response = await book({ startAt: onThursday('09:30') });
+
+      expectAppointment(response);
+      expect(response.body.startAt).toBe(onThursday('09:30'));
     });
   });
 });
