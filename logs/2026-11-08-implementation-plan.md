@@ -18,6 +18,8 @@ Revision 2 — 2026-11-08: §2, §7, §8.3 and §10 corrected before S1.1 implem
 
 Revision 3 — 2026-11-08: §7 extended with CL-10; scope, stages, tickets and decisions unchanged.
 
+Revision 4 — 2026-11-12: the eight SDD ticket types were five in use. Refactoring (§9), the addendum (§8.1) and validation (§10) were already mandated but carried no ticket. SMS-45…48 add them, with their numbers and their position in the step order unchanged: SMS-45 keeps the reservation in §8.1, and both it and SMS-48 sit after the base implementation, not inside S1–S5. SMS-20 is re-typed Test → Verification in the repository copies, matching the label the tracker already carried. Scope, stages, gates and decisions are otherwise unchanged.
+
 ---
 
 ## 1. Repository state at plan time
