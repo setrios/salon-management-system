@@ -185,6 +185,34 @@ describe('S2.1 booking — P8 createAppointment', () => {
       });
   }
 
+  /**
+   * A master with the two SCN-01 services linked, working Monday 10:00–18:00.
+   *
+   * The SCN-01 block below has eight cases that each book the *same* 10:00 slot
+   * for the *same* pair of services. They are separate cases, so each must start
+   * from a calendar that does not already contain the previous one's booking —
+   * otherwise the second case onwards is answered 409 and proves nothing about
+   * the totals it claims. A master per case is the arrangement that says so,
+   * rather than a file whose cases depend on their order.
+   */
+  async function freshPairMaster(): Promise<MasterFixture> {
+    const master = await arrangeMaster(app, unique('Booking Pair'));
+    await arrangeLink(app, admin.token, master.id, haircut.id, 40000);
+    await arrangeLink(app, admin.token, master.id, blowDry.id, 25000);
+    await arrangeWeeklyWindow(app, master.token, 1, '10:00', '18:00');
+    return master;
+  }
+
+  /** Books both SCN-01 services for a master of this case's own, at 10:00. */
+  async function bookPair(overrides: Record<string, unknown> = {}): Promise<JsonResponse> {
+    const master = await freshPairMaster();
+    return book({
+      masterId: master.id,
+      serviceIds: [haircut.id, blowDry.id],
+      ...overrides,
+    });
+  }
+
   function expectProblem(
     response: JsonResponse,
     expected: { status: number; code: string },
@@ -210,14 +238,14 @@ describe('S2.1 booking — P8 createAppointment', () => {
 
   describe('SCN-01 — two services in one visit (REQ-F-001, REQ-F-003)', () => {
     it('answers 201 with status confirmed: there is no approval state', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       expect(response.body.status).toBe('confirmed');
     });
 
     it('sums the durations: 30 + 30 is 60', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       expect(response.body).toMatchObject({
@@ -227,14 +255,14 @@ describe('S2.1 booking — P8 createAppointment', () => {
     });
 
     it('sums the prices the master charges into totalPrice', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       expect(response.body.totalPrice).toEqual({ amountMinor: 65000, currency: 'UAH' });
     });
 
     it('snapshots each service line with its name, duration and price', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       const lines = response.body.services as Record<string, any>[];
@@ -259,7 +287,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
     });
 
     it('sets endAt to startAt plus the occupied block', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       expect(response.body.startAt).toBe(onMonday('10:00'));
@@ -267,7 +295,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
     });
 
     it('returns a Location header naming the created appointment', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       const location = response.headers.location;
@@ -279,7 +307,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
       // REQ-F-004/REQ-F-005 need a page and a link; S2.1 provides the credential
       // and the URL the page will be served at. Serving the page and recording
       // the SMS is S2.2 (SMS-26) — G2 carry-forward register, row 1.
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       expect(response.body.accessToken).toMatch(UUID_V4);
@@ -297,7 +325,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
     });
 
     it('schedules the 24 h and 2 h reminders when the booking is days ahead', async () => {
-      const response = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const response = await bookPair();
 
       expectAppointment(response);
       const reminders = (
@@ -502,10 +530,17 @@ describe('S2.1 booking — P8 createAppointment', () => {
       // sentence nowhere, which is how the S1.3 403 defect (runs-04 §4a)
       // reached a signed stage. This is the one case that compares the
       // sentence, so the class cannot regress silently here.
-      const first = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const master = await freshPairMaster();
+      const first = await book({
+        masterId: master.id,
+        serviceIds: [haircut.id, blowDry.id],
+      });
       expectAppointment(first);
 
-      const second = await book({ serviceIds: [haircut.id, blowDry.id] });
+      const second = await book({
+        masterId: master.id,
+        serviceIds: [haircut.id, blowDry.id],
+      });
       expectProblem(second, { status: 409, code: 'SLOT_UNAVAILABLE' });
       expect(String(second.body.detail)).toMatch(/slot/i);
       expect(String(second.body.detail)).toMatch(/master/i);

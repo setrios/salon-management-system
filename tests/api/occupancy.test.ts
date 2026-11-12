@@ -213,7 +213,11 @@ describe('S2.1 occupancy — booked time is not offered, and cannot be double-bo
     const after = startsOf(await getSlots(master.id));
 
     expect(after).not.toContain(onMonday('10:00'));
-    expect(after).toEqual(before.filter((start) => start !== onMonday('10:00')));
+    // The "rest" is the starts outside the booked block. The block is 90
+    // minutes (45 + 30 rounded up), so it covers 10:00–11:30 and removes 10:30
+    // and 11:00 as well — O4 states that directly, and this case must not
+    // contradict it. What this case adds is that nothing *else* moved.
+    expect(after).toEqual(before.filter((start) => start >= onMonday('11:30')));
   });
 
   it('O4 removes every start the booked block overlaps, not only its own', async () => {
