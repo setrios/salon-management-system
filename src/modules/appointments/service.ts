@@ -1,5 +1,5 @@
 /**
- * Appointments — database access for P8.
+ * Appointments — database access for P8, P9 and P10.
  *
  * Knows Drizzle, the two appointment tables and the reads a booking needs. The
  * routes layer turns a refusal into a status; nothing here raises one.
@@ -26,9 +26,11 @@
  * master) wait for a booking to finish, so two unrelated actions would block
  * each other, and every booking would leave a new row version in `masters`.
  *
- * Source: REQ-F-001, REQ-F-002, REQ-F-003, REQ-F-004, REQ-F-031, REQ-NF-001;
- *         `resource-model.md` §4 (only `cancelled` frees a block), §5.1 (P8);
- *         `error-model.md` §3 (409 `SLOT_UNAVAILABLE`).
+ * Source: REQ-F-001, REQ-F-002, REQ-F-003, REQ-F-004, REQ-F-006, REQ-F-031,
+ *         REQ-NF-001; `resource-model.md` §4 (only `cancelled` frees a block),
+ *         §5.1 (P8, P9, P10), line 165 (POST actions are idempotent in effect);
+ *         `error-model.md` §3 (409 `SLOT_UNAVAILABLE`), §3.1 (the state table);
+ *         D15.
  */
 
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
@@ -43,6 +45,7 @@ import {
   services,
 } from '../../db/schema.js';
 import type { BookableService } from './rules.js';
+import { isAppointmentStatus, stateOutcome } from './state.js';
 import type { AppointmentLine } from './view.js';
 import { isUniqueViolation } from '../reference-data/http.js';
 
@@ -398,4 +401,76 @@ export async function findByToken(token: string): Promise<StoredAppointment | un
     .orderBy(appointmentServices.position);
 
   return { ...row, lines };
+}
+
+/** What P10's cancellation did, as the route needs to answer it. */
+export type CancelByTokenResult =
+  | { readonly kind: 'not-found' }
+  | { readonly kind: 'rejected'; readonly code: 'INVALID_STATE_TRANSITION' }
+  | { readonly kind: 'cancelled'; readonly record: StoredAppointment };
+
+/**
+ * P10 — cancel the appointment the token names.
+ *
+ * The decision is `state.ts`'s (`error-model.md` §3.1); this function only
+ * carries it out. Three outcomes:
+ *
+ *   - the token names nothing → `not-found` (the route answers 404);
+ *   - the record is `completed` → `rejected` (the route answers 409);
+ *   - the record is `confirmed` → one guarded `update`, then a re-read;
+ *   - the record is already `cancelled` → no write at all, then a re-read.
+ *
+ * **The `update` is guarded by `status = 'confirmed'`** (F5). A concurrent
+ * cancellation that wins the race leaves this one with zero rows instead of
+ * writing a second `updated_at`; the re-read then answers the state the winner
+ * wrote, which is the same 200 the table gives a repeat. The guard is the same
+ * precondition the table names, so the two cannot disagree.
+ *
+ * **No advisory lock** (F4): cancellation only frees a block, it never takes
+ * one, so it cannot create a double booking. The partial unique index
+ * `appointments_master_start_unique` is what makes the freed slot bookable
+ * again, and it is the database's, not this function's.
+ *
+ * **No `notifications` row** (K6): SRS v1.3 lines 253–256 say no SMS is sent for
+ * a cancellation, and the master's and administrator's alerts are SMS-30.
+ *
+ * `now` is the injected clock (D9): the transition writes it to `updated_at`,
+ * and the re-read computes `reminders[]` from it.
+ */
+export async function cancelByToken(token: string, now: Date): Promise<CancelByTokenResult> {
+  const db = getDb();
+
+  const [current] = await db
+    .select({ id: appointments.id, status: appointments.status })
+    .from(appointments)
+    .where(eq(appointments.accessToken, token));
+
+  if (current === undefined) return { kind: 'not-found' };
+
+  // The column has `appointments_status_check` behind it, so a value outside the
+  // enum is a broken invariant, not a client mistake: it becomes a 500 rather
+  // than a status the contract does not define.
+  if (!isAppointmentStatus(current.status)) {
+    throw new Error(
+      `appointment ${current.id} has status "${current.status}", which error-model.md §3.1 does not define`,
+    );
+  }
+
+  const outcome = stateOutcome(current.status, 'cancel');
+
+  if (outcome.kind === 'rejected') return { kind: 'rejected', code: outcome.code };
+
+  if (outcome.kind === 'transition') {
+    await db
+      .update(appointments)
+      .set({ status: outcome.to, updatedAt: now })
+      .where(and(eq(appointments.id, current.id), eq(appointments.status, 'confirmed')));
+  }
+
+  const record = await findByToken(token);
+  if (record === undefined) {
+    throw new Error(`appointment ${current.id} disappeared between the update and the read`);
+  }
+
+  return { kind: 'cancelled', record };
 }

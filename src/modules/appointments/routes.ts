@@ -1,22 +1,28 @@
 /**
- * Appointments — P8 `createAppointment` and P9 `getAppointmentByToken`.
+ * Appointments — P8 `createAppointment`, P9 `getAppointmentByToken` and P10
+ * `cancelAppointmentByToken`.
  *
- *   P8 POST /appointments          createAppointment      (public, `security: []`)
- *   P9 GET  /appointments/{token}  getAppointmentByToken  (public, `security: []`)
+ *   P8  POST /appointments                createAppointment          (public, `security: []`)
+ *   P9  GET  /appointments/{token}        getAppointmentByToken      (public, `security: []`)
+ *   P10 POST /appointments/{token}/cancel cancelAppointmentByToken   (public, `security: []`)
  *
  * Source: REQ-F-001 (one or more services; totals are the sums), REQ-F-002
  *         (only a slot inside availability and not already booked), REQ-F-003
  *         (confirmed on creation; no approval state), REQ-F-004 and REQ-F-005
  *         (the record carries the token and the confirmation URL; the page is
- *         reachable again by it), REQ-F-010 and REQ-F-011 (reminders 24 h and
+ *         reachable again by it), REQ-F-006 (the client cancels by the link, free
+ *         of charge, at any time), REQ-F-010 and REQ-F-011 (reminders 24 h and
  *         2 h ahead, skipped when already past), REQ-NF-001 (the access token is
  *         the credential), REQ-NF-008 (30-minute boundaries), REQ-F-031 (the
- *         rounded block is what is reserved); SCN-01, SCN-13; POS-01, POS-13,
- *         NEG-01, NEG-02, NEG-08, NEG-14, NEG-15, NEG-17; `error-model.md` §3,
- *         §4; `resource-model.md` §4 (`cancelled` frees a block), §5.1 (P8, P9).
+ *         rounded block is what is reserved); SCN-01, SCN-02, SCN-13; POS-01,
+ *         POS-13, NEG-01, NEG-02, NEG-08, NEG-14, NEG-15, NEG-17;
+ *         `error-model.md` §3, §3.1 (the state table), §4; `resource-model.md` §4
+ *         (`cancelled` frees a block), §5.1 (P8, P9, P10), line 165 (POST
+ *         actions are idempotent in effect).
  * Contract: openapi.yaml#/paths/~1appointments/post,
- *           ~1appointments~1{token}; schemas AppointmentCreate, Appointment,
- *           AppointmentService, Reminder, Problem.
+ *           ~1appointments~1{token}, ~1appointments~1{token}~1cancel; schemas
+ *           AppointmentCreate, Appointment, AppointmentService, Reminder,
+ *           Problem.
  *
  * The refusal order is fixed, and each answer is inside P8's declared set
  * (400/409/415/422/500):
@@ -33,8 +39,8 @@
  *      genuinely outside availability or taken. Decided inside the transaction,
  *      because that is the only place the answer is not stale (D2).
  *
- * Nothing here writes a status other than `confirmed`: REQ-F-003 gives creation
- * no other outcome, and `AppointmentCreate` declares no `status` field (D-22).
+ * P8 writes no status other than `confirmed`: REQ-F-003 gives creation no other
+ * outcome, and `AppointmentCreate` declares no `status` field (D-22).
  *
  * P9 answers 200 for **every** stored record its token names, whatever the
  * status: SRS v1.3's glossary says the page and its access token stay valid,
@@ -42,6 +48,14 @@
  * `status: cancelled`, not 404. The only 404 is a token that names nothing —
  * which includes a token that is not a uuid at all, because P9 declares no 400
  * (E6).
+ *
+ * P10 is the only operation in this module that writes a status other than
+ * `confirmed`. Its decision is `state.ts`'s (`error-model.md` §3.1), not this
+ * file's: a `confirmed` record becomes `cancelled`; an already `cancelled` record
+ * answers 200 unchanged and is not written; a `completed` record answers 409
+ * `INVALID_STATE_TRANSITION` and is not written. The 200 body is P9's body —
+ * `findByToken` re-read and `appointmentBody` — so the cancellation answer cannot
+ * drift from the read that follows it.
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -59,6 +73,7 @@ import { asyncRoute, sendJson } from '../reference-data/http.js';
 import { offBoundary, serviceRejection, totalsFor, type BookableService } from './rules.js';
 import {
   bookedBlocks,
+  cancelByToken,
   createAppointment,
   findByToken,
   findBookableServices,
@@ -253,7 +268,40 @@ async function getAppointmentByTokenHandler(req: Request, res: Response): Promis
   sendJson(res, 200, 'Appointment', appointmentBody(record, now));
 }
 
-/** Registers P8 and P9 on the API router. Neither path takes authentication. */
+/**
+ * P10 — cancel the appointment a token names.
+ *
+ * The state decision is `state.ts`'s; this handler maps its three outcomes to
+ * the contract's declared set (200 `Appointment`, 404, 409, 500) and nothing
+ * else. A non-uuid token never reaches here: `validateParams` answers it with
+ * 404, because P10 declares no 400 (the same branch P9 takes).
+ *
+ * The 200 body is `appointmentBody` over the record `cancelByToken` re-read
+ * through `findByToken` — the same mapper P8's 201 and P9's 200 use. There is no
+ * second mapper, so the cancellation answer and the read that follows it cannot
+ * disagree.
+ */
+async function cancelAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
+  const { token } = res.locals.params as { token: string };
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+
+  const result = await cancelByToken(token, now);
+
+  if (result.kind === 'not-found') {
+    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+  }
+
+  if (result.kind === 'rejected') {
+    throw new HttpProblem(
+      result.code,
+      'A completed appointment cannot be cancelled.',
+    );
+  }
+
+  sendJson(res, 200, 'Appointment', appointmentBody(result.record, now));
+}
+
+/** Registers P8, P9 and P10 on the API router. None of the paths takes authentication. */
 export function appointmentRoutes(router: Router): void {
   router.post(
     '/appointments',
@@ -264,5 +312,10 @@ export function appointmentRoutes(router: Router): void {
     '/appointments/:token',
     validateParams('getAppointmentByToken'),
     asyncRoute(getAppointmentByTokenHandler),
+  );
+  router.post(
+    '/appointments/:token/cancel',
+    validateParams('cancelAppointmentByToken'),
+    asyncRoute(cancelAppointmentByTokenHandler),
   );
 }

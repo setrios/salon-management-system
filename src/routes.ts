@@ -95,7 +95,8 @@ export function registerRoutes(app: Express): void {
   // without an account (SRS §2 Actors).
   availabilityRoutes(api);
 
-  // The public catalogue (P1–P6) and client booking (P8) are `security: []`:
+  // The public catalogue (P1–P6) and client booking (P8), the confirmation read
+  // (P9) and cancellation by token (P10) are `security: []`:
   // a client books without an account (SRS §2 Actors), so neither is mounted
   // behind a gate. They are registered after `admin` and availability because
   // their paths (`/services`, `/masters`, `/appointments`) do not collide with
