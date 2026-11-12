@@ -1,5 +1,5 @@
 /**
- * Appointments — database access for P8, P9 and P10.
+ * Appointments — database access for P8, P9, P10 and P11.
  *
  * Knows Drizzle, the two appointment tables and the reads a booking needs. The
  * routes layer turns a refusal into a status; nothing here raises one.
@@ -161,12 +161,16 @@ export interface BookedBlock {
  * `executor` is the transaction when the check runs under the advisory lock, so
  * the read sees the same snapshot the insert will extend. Reading through the
  * pool instead would be a second connection and a second snapshot.
+ *
+ * `excludeAppointmentId` is P11's need: a reschedule must not see the record it
+ * is moving as a block against itself. P8 passes nothing.
  */
 export async function bookedBlocks(
   masterId: string,
   from: Date,
   to: Date,
   executor: Executor = getDb(),
+  excludeAppointmentId?: string,
 ): Promise<BookedBlock[]> {
   const rows = await executor
     .select({ startAt: appointments.startAt, endAt: appointments.endAt })
@@ -177,6 +181,9 @@ export async function bookedBlocks(
         ne(appointments.status, 'cancelled'),
         sql`${appointments.startAt} < ${to}`,
         sql`${appointments.endAt} > ${from}`,
+        excludeAppointmentId === undefined
+          ? undefined
+          : ne(appointments.id, excludeAppointmentId),
       ),
     );
 
@@ -473,4 +480,145 @@ export async function cancelByToken(token: string, now: Date): Promise<CancelByT
   }
 
   return { kind: 'cancelled', record };
+}
+
+/** Everything a reschedule writes, already decided by `reschedule.ts`. */
+export interface RescheduleAppointmentInput {
+  readonly appointmentId: string;
+  readonly masterId: string;
+  readonly startAt: Date;
+  readonly endAt: Date;
+  readonly lines: readonly ServiceLineInput[];
+  /** True when the master changed, so the line prices follow the new links (G8). */
+  readonly reprice: boolean;
+  readonly totalPriceAmountMinor: number;
+  readonly totalPriceCurrency: string;
+  /** The injected clock: `updated_at` and the reschedule message's `sent_at`. */
+  readonly now: Date;
+}
+
+/** What P11's write did, as the route needs to answer it. */
+export type RescheduleAppointmentResult =
+  | { readonly kind: 'slot-unavailable' }
+  | { readonly kind: 'rejected'; readonly code: 'INVALID_STATE_TRANSITION' }
+  | { readonly kind: 'moved'; readonly record: StoredAppointment };
+
+/**
+ * P11 — move the record to the decided values, inside one transaction.
+ *
+ * **The advisory lock is on the new master** (D2, G5), taken before the caller's
+ * `recheck` runs. A reschedule takes a block on the new master's calendar, so it
+ * is the same check-then-write race P8 has, and the same lock answers it. The
+ * partial unique index `appointments_master_start_unique` is the backstop for
+ * the exact-start race, and its violation is mapped to `slot-unavailable`, not
+ * left to the 500 branch.
+ *
+ * **The `update` is guarded by `status = 'confirmed'`** (the same precondition
+ * `state.ts` names for `edit`). The state was checked before the transaction;
+ * the guard is what makes a concurrent cancel or complete win cleanly — zero
+ * rows, and the route answers 409 rather than writing over the winner.
+ *
+ * **The `reschedule` row is written here, not after the commit** (G6, the same
+ * reasoning as E2 for the confirmation): one transaction, one commit, or
+ * neither. There is no unique index for it, because REQ-F-007 allows any number
+ * of reschedules (R17).
+ *
+ * **The lines are re-priced only when the master changed** (G8). When it did
+ * not, the snapshot is the booking's and is left alone.
+ *
+ * The re-read is `findByToken` **after** the transaction commits, so it sees the
+ * committed row; reading inside the transaction through the pool would be a
+ * second connection and would not see the uncommitted update.
+ */
+export async function rescheduleAppointment(
+  input: RescheduleAppointmentInput,
+  recheck: (tx: Executor) => Promise<boolean>,
+): Promise<RescheduleAppointmentResult> {
+  const db = getDb();
+
+  type Outcome =
+    | { readonly kind: 'slot-unavailable' }
+    | { readonly kind: 'rejected' }
+    | { readonly kind: 'moved'; readonly accessToken: string };
+
+  let outcome: Outcome;
+
+  try {
+    outcome = await db.transaction(async (tx): Promise<Outcome> => {
+      // Transaction-scoped, keyed on the new master: released on commit or
+      // rollback, and two reschedules for different masters do not wait.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`);
+
+      if (!(await recheck(tx))) return { kind: 'slot-unavailable' };
+
+      const updated = await tx
+        .update(appointments)
+        .set({
+          masterId: input.masterId,
+          startAt: input.startAt,
+          endAt: input.endAt,
+          totalPriceAmountMinor: input.totalPriceAmountMinor,
+          totalPriceCurrency: input.totalPriceCurrency,
+          updatedAt: input.now,
+        })
+        .where(
+          and(
+            eq(appointments.id, input.appointmentId),
+            eq(appointments.status, 'confirmed'),
+          ),
+        )
+        .returning({ accessToken: appointments.accessToken });
+
+      const row = updated[0];
+      // A concurrent cancel or complete won the race: the record is no longer
+      // editable, and the route answers the state the winner wrote.
+      if (row === undefined) return { kind: 'rejected' };
+
+      if (input.reprice) {
+        for (const [position, line] of input.lines.entries()) {
+          await tx
+            .update(appointmentServices)
+            .set({
+              priceAmountMinor: line.priceAmountMinor,
+              priceCurrency: line.priceCurrency,
+            })
+            .where(
+              and(
+                eq(appointmentServices.appointmentId, input.appointmentId),
+                eq(appointmentServices.position, position),
+              ),
+            );
+        }
+      }
+
+      // REQ-F-009: exactly one reschedule SMS per successful reschedule.
+      await tx.insert(notifications).values({
+        appointmentId: input.appointmentId,
+        audience: 'client',
+        eventType: 'reschedule',
+        channel: 'sms',
+        status: 'sent',
+        sentAt: input.now,
+      });
+
+      return { kind: 'moved', accessToken: row.accessToken };
+    });
+  } catch (error) {
+    if (isUniqueViolation(error, APPOINTMENT_SLOT_CONSTRAINT)) {
+      return { kind: 'slot-unavailable' };
+    }
+    throw error;
+  }
+
+  if (outcome.kind === 'slot-unavailable') return { kind: 'slot-unavailable' };
+  if (outcome.kind === 'rejected') {
+    return { kind: 'rejected', code: 'INVALID_STATE_TRANSITION' };
+  }
+
+  const record = await findByToken(outcome.accessToken);
+  if (record === undefined) {
+    throw new Error(`appointment ${input.appointmentId} disappeared after the reschedule`);
+  }
+
+  return { kind: 'moved', record };
 }

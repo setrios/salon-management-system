@@ -1,10 +1,11 @@
 /**
- * Appointments — P8 `createAppointment`, P9 `getAppointmentByToken` and P10
- * `cancelAppointmentByToken`.
+ * Appointments — P8 `createAppointment`, P9 `getAppointmentByToken`, P10
+ * `cancelAppointmentByToken` and P11 `rescheduleAppointmentByToken`.
  *
- *   P8  POST /appointments                createAppointment          (public, `security: []`)
- *   P9  GET  /appointments/{token}        getAppointmentByToken      (public, `security: []`)
- *   P10 POST /appointments/{token}/cancel cancelAppointmentByToken   (public, `security: []`)
+ *   P8  POST /appointments                    createAppointment            (public, `security: []`)
+ *   P9  GET  /appointments/{token}            getAppointmentByToken        (public, `security: []`)
+ *   P10 POST /appointments/{token}/cancel     cancelAppointmentByToken     (public, `security: []`)
+ *   P11 POST /appointments/{token}/reschedule rescheduleAppointmentByToken (public, `security: []`)
  *
  * Source: REQ-F-001 (one or more services; totals are the sums), REQ-F-002
  *         (only a slot inside availability and not already booked), REQ-F-003
@@ -70,7 +71,14 @@ import { HttpProblem } from '../../middleware/error-handler.js';
 import { validateBody, validateParams } from '../../middleware/validate.js';
 import { readAvailability } from '../availability/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
-import { offBoundary, serviceRejection, totalsFor, type BookableService } from './rules.js';
+import { rescheduleDecision } from './reschedule.js';
+import {
+  offBoundary,
+  serviceRejection,
+  startInPast,
+  totalsFor,
+  type BookableService,
+} from './rules.js';
 import {
   bookedBlocks,
   cancelByToken,
@@ -78,6 +86,7 @@ import {
   findByToken,
   findBookableServices,
   findBookingMaster,
+  rescheduleAppointment,
   type Executor,
 } from './service.js';
 import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
@@ -129,6 +138,12 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
   // database read — a start off it can never become bookable.
   if (offBoundary(startAt)) {
     throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'startAt must fall on a 30-minute boundary.');
+  }
+
+  // CL-11: a start at or before the injected clock is refused. The rule is
+  // `rules.ts`'s, shared with P11, so the two operations cannot disagree.
+  if (startInPast(startAt, now)) {
+    throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'startAt must be in the future.');
   }
 
   const master = await findBookingMaster(body.masterId);
@@ -301,7 +316,122 @@ async function cancelAppointmentByTokenHandler(req: Request, res: Response): Pro
   sendJson(res, 200, 'Appointment', appointmentBody(result.record, now));
 }
 
-/** Registers P8, P9 and P10 on the API router. None of the paths takes authentication. */
+/** `AppointmentReschedule` as the contract declares it (closed body, D-22). */
+interface AppointmentRescheduleBody {
+  readonly startAt: string;
+  readonly masterId?: string;
+}
+
+/**
+ * P11 — reschedule the appointment a token names.
+ *
+ * The decision is `reschedule.ts`'s; this handler reads what it needs, maps a
+ * refusal to the contract's declared set (400/404/409/422/415/500) and a move to
+ * 200 `Appointment`. The order is the gate's (§3): token → state → past →
+ * master → coverage → slot. The first five are decided before the transaction;
+ * only the slot check runs inside it, under the advisory lock (D2).
+ *
+ * A non-uuid token never reaches here: P11 declares 400, so `validateParams`
+ * answers it with `MALFORMED_REQUEST` (unlike P9 and P10, which declare no 400
+ * and answer 404).
+ *
+ * The 200 body is `appointmentBody` over the record `rescheduleAppointment`
+ * re-read through `findByToken` — the same mapper P8's 201, P9's 200 and P10's
+ * 200 use.
+ */
+async function rescheduleAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
+  const { token } = res.locals.params as { token: string };
+  const body = res.locals.body as AppointmentRescheduleBody;
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+
+  // 1. The token. Without a record there is nothing to decide.
+  const record = await findByToken(token);
+  if (record === undefined) {
+    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+  }
+
+  const startAt = new Date(body.startAt);
+
+  // The new master is resolved only when the body names one. When it names the
+  // record's own master, the decision ignores the resolution (G4 applies to a
+  // change), so resolving it is harmless and keeps the branch simple.
+  const newMaster =
+    body.masterId === undefined ? undefined : await findBookingMaster(body.masterId);
+  const newMasterServices =
+    body.masterId === undefined
+      ? []
+      : await findBookableServices(
+          body.masterId,
+          record.lines.map((line) => line.serviceId),
+        );
+
+  // 2–5. The state, the past, the master and the coverage.
+  const decision = rescheduleDecision(
+    record,
+    { startAt, masterId: body.masterId },
+    now,
+    newMaster,
+    newMasterServices,
+  );
+
+  if (decision.kind === 'rejected') {
+    throw new HttpProblem(decision.code, decision.detail);
+  }
+
+  const date = salonDateOfInstant(decision.startAt);
+  const dateKey = dateKeyOf(date);
+  const startMinute = minutesOnDate(date, decision.startAt);
+  const windows = windowsOn(dateKey, await readAvailability(decision.masterId));
+
+  // 6. The slot, inside the transaction and under the advisory lock (D2, G5).
+  const result = await rescheduleAppointment(
+    {
+      appointmentId: record.id,
+      masterId: decision.masterId,
+      startAt: decision.startAt,
+      endAt: decision.endAt,
+      lines: decision.lines,
+      reprice: decision.reprice,
+      totalPriceAmountMinor: decision.totalPriceAmountMinor,
+      totalPriceCurrency: decision.totalPriceCurrency,
+      now,
+    },
+    async (tx: Executor): Promise<boolean> => {
+      const fits = startOffered(
+        startMinute,
+        windows,
+        record.occupiedDurationMinutes,
+        [],
+      );
+      if (!fits) return false;
+      // The record itself is excluded: a reschedule must not see its own block
+      // as a conflict (R18, the same-time case).
+      const blocks = await bookedBlocks(
+        decision.masterId,
+        decision.startAt,
+        decision.endAt,
+        tx,
+        record.id,
+      );
+      return blocks.length === 0;
+    },
+  );
+
+  if (result.kind === 'slot-unavailable') {
+    throw new HttpProblem('SLOT_UNAVAILABLE', SLOT_UNAVAILABLE_DETAIL);
+  }
+
+  if (result.kind === 'rejected') {
+    throw new HttpProblem(
+      result.code,
+      'A cancelled or completed appointment cannot be rescheduled.',
+    );
+  }
+
+  sendJson(res, 200, 'Appointment', appointmentBody(result.record, now));
+}
+
+/** Registers P8, P9, P10 and P11 on the API router. None of the paths takes authentication. */
 export function appointmentRoutes(router: Router): void {
   router.post(
     '/appointments',
@@ -317,5 +447,11 @@ export function appointmentRoutes(router: Router): void {
     '/appointments/:token/cancel',
     validateParams('cancelAppointmentByToken'),
     asyncRoute(cancelAppointmentByTokenHandler),
+  );
+  router.post(
+    '/appointments/:token/reschedule',
+    validateParams('rescheduleAppointmentByToken'),
+    validateBody('rescheduleAppointmentByToken'),
+    asyncRoute(rescheduleAppointmentByTokenHandler),
   );
 }

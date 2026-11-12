@@ -41,6 +41,25 @@ export function offBoundary(startAt: Date): boolean {
   return ((minutes % SLOT_GRANULARITY_MINUTES) + SLOT_GRANULARITY_MINUTES) % SLOT_GRANULARITY_MINUTES !== 0;
 }
 
+/**
+ * True when a requested start is not in the future (CL-11).
+ *
+ * The boundary is `<=`, not `<`: a start that is not in the future is refused.
+ * With `<`, booking at 09:00 when it is 09:00 would be allowed — a client
+ * booking a slot that has already begun.
+ *
+ * **One rule, one place.** P8 (`createAppointment`) and P11
+ * (`rescheduleAppointmentByToken`) both call this, so the two operations cannot
+ * disagree about what "past" means. The clock is the injected one (D9), never
+ * `Date.now()`.
+ *
+ * Source: CL-11 (`spec/api/clarifications.md`); `error-model.md` §3 (422
+ *         `BUSINESS_RULE_VIOLATION`).
+ */
+export function startInPast(startAt: Date, now: Date): boolean {
+  return startAt.getTime() <= now.getTime();
+}
+
 /** One requested service as the booking rule needs it. */
 export interface BookableService {
   readonly id: string;
