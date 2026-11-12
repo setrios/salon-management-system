@@ -182,7 +182,7 @@ verified; all are deferred to the next phase.
 
 ---
 
-## 6. Test and Code locations for the operations delivered by S1.1–S1.3 and S2.1–S2.3
+## 6. Test and Code locations for the operations delivered by S1.1–S1.3, S2.1–S2.3 and S3.1
 
 G1 exit criterion 4 (`logs/2026-11-08-implementation-plan.md` §8.3) requires this
 file to name a **Test** and a **Code** location for every operation the gate's
@@ -240,13 +240,13 @@ repeated in 32 rows.
 
 ### 6.4 Count, and what the two columns do not say
 
-**32 operations**, one per row: 2 from S1.1, 17 from S1.2, 3 from S1.3, 7 from
-S2.1, 2 from S2.2, 1 from S2.3. That is the set the gates S1.1–S1.3 and S2
-delivered; the remaining 18 of the contract's 50 have no row here yet and belong
-to later gates (S3.1 onwards), as the plan's stage table assigns them.
+**33 operations**, one per row: 2 from S1.1, 17 from S1.2, 3 from S1.3, 7 from
+S2.1, 2 from S2.2, 1 from S2.3, 1 from S3.1. That is the set the gates S1.1–S1.3,
+S2 and S3.1 delivered; the remaining 17 of the contract's 50 have no row here yet
+and belong to later gates (S3.2 onwards), as the plan's stage table assigns them.
 
 The **Test** column points at the assertion that states the operation's normal
-behaviour. It does not enumerate negatives: each of the 32 also has refusals
+behaviour. It does not enumerate negatives: each of the 33 also has refusals
 asserted in the same file (400/401/403/404/409/415/422 as the contract declares
 them), and §2 of each TEST-GATE record is the place those are counted. A row here
 is "this operation is tested", not "this operation is tested exhaustively".
@@ -284,6 +284,27 @@ arithmetic and Kyiv offsets), `src/middleware/{validate,auth,authorize}.ts`
 (contract validation, bearer token, role gate), `src/modules/availability/rules.ts`
 (the window rule). Naming one file per row keeps the table readable; naming all
 of them would turn each row into a dependency list.
+
+### 6.8 S3.1 — client reschedule (SMS-10 → SMS-28)
+
+| Operation | Method and path | Test | Code |
+|---|---|---|---|
+| `rescheduleAppointmentByToken` (P11) | `POST /appointments/{token}/reschedule` | `tests/api/reschedule.test.ts` — "R1 moves a confirmed appointment to a free slot and records one reschedule SMS" | `src/modules/appointments/routes.ts` |
+
+### 6.9 S3.2 — reminder engine (SMS-11, SMS-17 → SMS-29)
+
+S3.2 adds **no operation**. It changes what four existing ones write and read:
+P8 and P11 write the two reminder rows, P9 and R24 dispatch a due one. The rows
+are asserted in `tests/api/reminders.test.ts`, and the operations themselves keep
+the rows §6.5–§6.8 already give them.
+
+| Behaviour | Operation | Test |
+|---|---|---|
+| the two rows a booking writes | `createAppointment` (P8) | `tests/api/reminders.test.ts` — "R1 records two scheduled rows when the booking is far enough ahead" |
+| the skip rules | `createAppointment` (P8) | "R2 … under 24 hours ahead (SCN-04)", "R3 … under two hours ahead (SCN-05)" |
+| the dispatch on read | `getAppointmentByToken` (P9) | "R4 turns a due reminder into sent on the next read" |
+| the dispatch on the page | `listAppointmentNotifications` (R24) | "R6 dispatches on R24 and shows sentAt" |
+| the reactivation | `rescheduleAppointmentByToken` (P11) | "R7 reactivates a skipped 24 h reminder when the new time is far enough ahead (SCN-11)" |
 
 **What this section is for.** Criterion 4 is a file-path criterion, not a
 judgement: a reader who doubts that `updateMasterService` is delivered can open

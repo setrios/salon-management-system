@@ -19,19 +19,19 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-2 | Populate traceability matrix Ticket column | Documentation | SRS v1.3 §8 (matrix) | SMS-1 | Joint | Done |
 | SMS-3 | PLAN-GATE: approve decomposition, dependencies, plan, risks | Gate | This plan §9 | SMS-1, SMS-2 | Human | Done (GO, 2026-10-22) |
 | SMS-4 | G1: approve stage S1 (foundations) exit | Gate | Plan §6 | SMS-3 | Human | Done |
-| SMS-5 | G2: approve stage S2 (client booking core) exit | Gate | Plan §6 | SMS-4 | Human | Backlog |
+| SMS-5 | G2: approve stage S2 (client booking core) exit | Gate | Plan §6 | SMS-4 | Human | Done (GO, 2026-11-12) |
 | SMS-6 | G3: approve stages S3+S4 (reschedule/reminders, notifications) exit | Gate | Plan §6 | SMS-5 | Human | Backlog |
 | SMS-7 | G4: approve stage S5 (admin & payment) exit | Gate | Plan §6 | SMS-6 | Human | Backlog |
 | SMS-8 | Test multi-service booking flow (SCN-01) | Test | REQ-F-001…005, SCN-01 | SMS-3 | Coding Agent | Done |
 | SMS-9 | Test free cancellation (SCN-02) | Test | REQ-F-006, SCN-02 | SMS-3 | Coding Agent | Done |
-| SMS-10 | Test reschedule + reminder recalc + SMS (SCN-03) | Test | REQ-F-007…009, SCN-03 | SMS-3 | Coding Agent | Backlog |
-| SMS-11 | Test reminder skip rules (SCN-04, SCN-05) | Test | REQ-F-010, 011, SCN-04, SCN-05 | SMS-3 | Coding Agent | Backlog |
+| SMS-10 | Test reschedule + reminder recalc + SMS (SCN-03) | Test | REQ-F-007…009, SCN-03 | SMS-3 | Coding Agent | Done |
+| SMS-11 | Test reminder skip rules (SCN-04, SCN-05) | Test | REQ-F-010, 011, SCN-04, SCN-05 | SMS-3 | Coding Agent | Done |
 | SMS-12 | Test per-channel notification preferences (SCN-06) | Test | REQ-F-016, 023, 026, SCN-06 | SMS-3 | Coding Agent | Backlog |
 | SMS-13 | Test payment only after completion (SCN-07) | Test | REQ-F-021, 027, SCN-07 | SMS-3 | Coding Agent | Backlog |
 | SMS-14 | Test custom service category + seeds (SCN-08) | Test | REQ-F-024, SCN-08 | SMS-3 | Coding Agent | Done |
 | SMS-15 | Test master availability modes (SCN-09) | Test | REQ-F-015, SCN-09 | SMS-3 | Coding Agent | Done |
 | SMS-16 | Test reports: revenue, popular services, stock (SCN-10/14/15) | Test | REQ-F-022, 032, 033, SCN-10, SCN-14, SCN-15 | SMS-3 | Coding Agent | Backlog |
-| SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Backlog |
+| SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Done |
 | SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-3 | Coding Agent | Backlog |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Done |
 | SMS-20 | Test non-functional acceptance criteria | Verification | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
@@ -42,8 +42,8 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-25 | Feature: booking flow (multi-service sum, slot picking, auto-confirm, 30-min rounding) | Feature | REQ-F-001, 002, 003, 031; REQ-NF-008 | SMS-8, SMS-19, SMS-23, SMS-24 | Coding Agent | Done |
 | SMS-26 | Feature: confirmation page + confirmation SMS + unguessable token | Feature | REQ-F-004, 005; REQ-NF-001 | SMS-25 | Coding Agent | Done |
 | SMS-27 | Feature: client cancellation | Feature | REQ-F-006 | SMS-9, SMS-26 | Coding Agent | Done |
-| SMS-28 | Feature: client reschedule (recalc + reschedule SMS) | Feature | REQ-F-007, 008, 009 | SMS-10, SMS-26 | Coding Agent | Backlog |
-| SMS-29 | Feature: reminder engine (24h/2h, skip rule, reactivation) | Feature | REQ-F-010, 011, 029 | SMS-11, SMS-17, SMS-28 | Coding Agent | Backlog |
+| SMS-28 | Feature: client reschedule (recalc + reschedule SMS) | Feature | REQ-F-007, 008, 009 | SMS-10, SMS-26 | Coding Agent | Done |
+| SMS-29 | Feature: reminder engine (24h/2h, skip rule, reactivation) | Feature | REQ-F-010, 011, 029 | SMS-11, SMS-17, SMS-28 | Coding Agent | Done |
 | SMS-30 | Feature: notification service (channels, per-event prefs, admin self-notify suppression) | Feature | REQ-F-016, 023, 026, 030 | SMS-12, SMS-18, SMS-26, SMS-27, SMS-28 | Coding Agent | Backlog |
 | SMS-31 | Feature: master calendar + own services/prices | Feature | REQ-F-013, 014 | SMS-21, SMS-22 | Coding Agent | Backlog |
 | SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | Backlog |
