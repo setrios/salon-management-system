@@ -372,9 +372,13 @@ describe('S2.1 public catalogue — P1–P6', () => {
       expect(ids).not.toContain(admin.id);
     });
 
-    it('filters by active=false and still omits the administrator', async () => {
-      // REQ-F-018: deactivated masters stay on record. The filter reaches them;
-      // the administrator is not a master record under any filter.
+    it('filters by active=false and returns the retired master', async () => {
+      // REQ-F-018: deactivated masters stay on record, and the filter reaches
+      // them. The second assertion is a guard, not a proof of D10: the
+      // administrator is created active (`masters.active` defaults to true), so
+      // under `active=false` it is absent for its own reason. D10 rests on C14,
+      // C19 and C24. The guard stays because it is cheap and catches a leak if
+      // an administrator is ever created inactive.
       const retired = await arrangeMaster(app, 'Retired Catalogue');
       await request(app)
         .patch(`/api/v1/admin/masters/${retired.id}`)
