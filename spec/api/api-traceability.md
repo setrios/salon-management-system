@@ -5,8 +5,9 @@ after the mock scenarios ran on 2026-10-26. Extended on 2026-11-09 with §6, whi
 adds a **Test** and a **Code** location per operation delivered by stages S1.1–S1.3
 (G1 exit criterion 4, `logs/2026-11-08-implementation-plan.md` §8.3). Extended
 again on 2026-11-12 with §6.5–§6.7 for the operations delivered by S2.1–S2.3
-(G2 exit criterion 4, same plan section). Sections 1–5 and §6.1–§6.3 are
-unchanged by both extensions.
+(G2 exit criterion 4, same plan section), and on 2026-11-13 with §6.8–§6.10 for
+S3.1, S3.2 and S4.1 (G3 exit criterion 4). Sections 1–5 and §6.1–§6.3 are
+unchanged by all three extensions.
 
 Links every SRS v1.3 requirement to the operations that expose it, the BDD
 scenario that motivated it, and the API scenario that will verify it on the
@@ -305,6 +306,26 @@ the rows §6.5–§6.8 already give them.
 | the dispatch on read | `getAppointmentByToken` (P9) | "R4 turns a due reminder into sent on the next read" |
 | the dispatch on the page | `listAppointmentNotifications` (R24) | "R6 dispatches on R24 and shows sentAt" |
 | the reactivation | `rescheduleAppointmentByToken` (P11) | "R7 reactivates a skipped 24 h reminder when the new time is far enough ahead (SCN-11)" |
+
+### 6.10 S4.1 — notification service (SMS-12 → SMS-30)
+
+S4.1 adds three operations and the service behind them.
+
+| Operation | Test | Code |
+|---|---|---|
+| `getMyNotificationPreferences` (M5) | `tests/api/notification-preferences.test.ts` — P1, P2, P9 | `src/modules/notifications/routes.ts` (`getMyNotificationPreferencesHandler`), `src/modules/notifications/service.ts` (`readPreferences`), `src/modules/notifications/preferences.ts` (`preferenceViews`) |
+| `updateMyNotificationPreference` (M6) | `tests/api/notification-preferences.test.ts` — P3–P8 | `src/modules/notifications/routes.ts` (`updateMyNotificationPreferenceHandler`), `src/modules/notifications/service.ts` (`setPreference`), `src/db/schema.ts` (`notificationPreferences`) |
+| `listMyNotifications` (M7) | `tests/api/my-notifications.test.ts` — N1–N8 | `src/modules/notifications/routes.ts` (`listMyNotificationsHandler`), `src/modules/notifications/service.ts` (`listMyNotifications`) |
+
+The rows the three operations read and write are written by
+`recordAppointmentEvent` (`src/modules/notifications/service.ts`), called from
+P8, P10 and P11; that behaviour is asserted in
+`tests/api/notification-preferences.test.ts` P10–P13.
+
+**REQ-F-030 is not asserted here.** The suppression is implemented — the
+`actor !== 'admin'` guard in `recordAppointmentEvent` — but it has no operation
+to drive it until R21 arrives in S5.1. SMS-18 carries the test there, and the
+gate's §5 records the carry-forward.
 
 **What this section is for.** Criterion 4 is a file-path criterion, not a
 judgement: a reader who doubts that `updateMasterService` is delivered can open
