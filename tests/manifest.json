@@ -142,6 +142,39 @@
       ]
     },
     {
+      "ticket": "SMS-26 (test) → SMS-26 (implementation)",
+      "test": "tests/api/confirmation.test.ts",
+      "sources": ["REQ-F-004", "REQ-NF-001", "REQ-NF-005", "SCN-01"],
+      "implementation": [
+        "src/modules/appointments/view.ts"
+      ],
+      "touches": [
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "src/routes.ts",
+        "tests/manifest.json",
+        "tests/helpers/booking.ts"
+      ]
+    },
+    {
+      "ticket": "SMS-26 (test) → SMS-26 (implementation)",
+      "test": "tests/api/notification.test.ts",
+      "sources": ["REQ-F-005", "REQ-F-003", "SCN-01"],
+      "implementation": [
+        "src/modules/notifications/routes.ts",
+        "src/modules/notifications/service.ts",
+        "src/db/migrations/0004_notifications.sql",
+        "src/db/migrations/meta/0004_snapshot.json"
+      ],
+      "touches": [
+        "src/db/schema.ts",
+        "src/db/migrations/meta/_journal.json",
+        "src/modules/appointments/service.ts",
+        "src/routes.ts",
+        "tests/manifest.json"
+      ]
+    },
+    {
       "ticket": "SMS-8 (test) → SMS-25 (implementation)",
       "test": "tests/api/occupancy.test.ts",
       "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-031", "REQ-NF-008", "SCN-01"],
