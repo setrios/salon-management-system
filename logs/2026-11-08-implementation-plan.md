@@ -20,6 +20,8 @@ Revision 3 — 2026-11-08: §7 extended with CL-10; scope, stages, tickets and d
 
 Revision 4 — 2026-11-12: the eight SDD ticket types were five in use. Refactoring (§9), the addendum (§8.1) and validation (§10) were already mandated but carried no ticket. SMS-45…48 add them, with their numbers and their position in the step order unchanged: SMS-45 keeps the reservation in §8.1, and both it and SMS-48 sit after the base implementation, not inside S1–S5. SMS-20 is re-typed Test → Verification in the repository copies, matching the label the tracker already carried. Scope, stages, gates and decisions are otherwise unchanged.
 
+Revision 5 — 2026-11-12: G2 corrections. §8's stage table places R24 (listAppointmentNotifications) in S2.2, where it had no row (register row 8). §7 adds CL-11: a requested startAt earlier than or equal to the injected clock is rejected with 422 BUSINESS_RULE_VIOLATION on P8 and P11, implemented once in S3.1 (SMS-28); CL-11 records the deadline (before step 7). §8's stage table records that S3.1 carries that shared rule for both operations. Scope, stage order, tickets and decisions are otherwise unchanged.
+
 ---
 
 ## 1. Repository state at plan time
@@ -283,7 +285,7 @@ This is a stated limit, not a passing check, and it is what the final validation
 
 ## 7. Known contract issues carried into implementation
 
-Recorded in `spec/api/clarifications.md` as CL-06..CL-10. None of them changes
+Recorded in `spec/api/clarifications.md` as CL-06..CL-11. None of them changes
 the contract.
 
 | ID | Issue | Handling |
@@ -293,6 +295,7 @@ the contract.
 | CL-08 | OpenAPI 3.0 `exclusiveMinimum: true` plus `minimum: 0` is rejected by AJV 8 (draft-07 semantics) | `src/contract/convert.mjs` rewrites it to `exclusiveMinimum: 0`; the published contract stays OpenAPI 3.0.3 |
 | CL-09 | `login` declares no 422 response, while `error-model.md` §3 assigns `VALIDATION_ERROR` (422) to "every operation with a request body"; `login` is the only one of the 17 body-taking operations where the two statements disagree | A body that violates `LoginRequest` is answered **400 `MALFORMED_REQUEST`**; **the contract is not changed**. The implementation derives the choice from the contract — 422 when the operation declares it, 400 when it does not — never from the operation id, so the rule stays correct for any future operation |
 | CL-10 | Three declared responses cannot be produced by any allowed request: R4/R6/R8/R12 declare 409 `DUPLICATE_RESOURCE`, but `MasterPatch` has no `username`, the R8/R12 bodies cannot violate the three uniqueness constraints of `error-model.md` §3, and `Service.name` is not unique there; `GET /categories` (P3) declares 400 but takes no parameter, and `resource-model.md` §5 lists no 400 for it | **Accepted, no contract change.** The declarations are not implemented and not tested; no uniqueness or validation rule is invented. Dropping them would change the approved contract and requires its own gate |
+| CL-11 | P8 accepts a `startAt` in the past; no document defines "past", and P11 declares 422 and faces the same question for a rescheduled time | Decided at G2, 2026-11-12: a requested `startAt` earlier than or equal to the injected clock is 422 `BUSINESS_RULE_VIOLATION` on P8 and P11. Fixed in S3.1 (SMS-28), once, with tests for both operations; deadline before step 7 (validation). The contract is not edited: both operations already declare 422 |
 
 ---
 
@@ -308,9 +311,9 @@ move a gate to GO.
 | S1.2 | Reference data: masters, services, categories with three seeds, MasterService prices, materials, units | SMS-14, SMS-21 | SMS-23 | G1 |
 | S1.3 | Availability: weekly pattern and date-specific rules | SMS-15 | SMS-24 | G1 |
 | S2.1 | Booking: multi-service sums, slot selection, immediate confirmation, 30-minute rounding | SMS-8, SMS-19 | SMS-25 | G2 |
-| S2.2 | Confirmation page, access token, exactly one confirmation SMS | SMS-8 | SMS-26 | G2 |
+| S2.2 | Confirmation page, access token, exactly one confirmation SMS, and the appointment's own notification records (R24) | SMS-8 | SMS-26 | G2 |
 | S2.3 | Client cancellation | SMS-9 | SMS-27 | G2 |
-| S3.1 | Reschedule with reminder recalculation and reschedule SMS | SMS-10 | SMS-28 | — |
+| S3.1 | Reschedule with reminder recalculation and reschedule SMS; and the shared past-`startAt` rule for P8 and P11 (CL-11) | SMS-10 | SMS-28 | — |
 | S3.2 | Reminder engine: 24h/2h, skip-if-past, reactivation | SMS-11, SMS-17 | SMS-29 | G3 |
 | S4.1 | Notification service: channel × event preferences, acting-administrator suppression | SMS-12, SMS-18 | SMS-30 | G3 |
 | S4.2 | Master calendar and own services/prices | SMS-21 | SMS-31 | G3 |
