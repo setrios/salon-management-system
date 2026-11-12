@@ -145,6 +145,23 @@ export function salonInstant(date: CalendarDate, minutesFromMidnight: number): s
 }
 
 /**
+ * The calendar date `days` after `date`.
+ *
+ * A calendar increment, not an instant one: adding 24 hours to a Kyiv midnight
+ * lands on 23:00 or 01:00 across a DST change, while the next day's midnight is
+ * still the next day's midnight. `Date.UTC` is used only as a day counter — the
+ * result is read back as a calendar triple, never as an instant.
+ */
+export function addCalendarDays(date: CalendarDate, days: number): CalendarDate {
+  const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+  };
+}
+
+/**
  * Compares two wall-clock minute values; a window is valid when the end is
  * strictly after the start.
  *

@@ -18,6 +18,13 @@
  * due `scheduled` row into `sent`, and its `exists` clause is what keeps a
  * cancelled or completed record from being dispatched by any caller (H5).
  *
+ * **The preference statements are S4.1's** (I1–I11). `readPreferences` and
+ * `setPreference` are M5 and M6; `recordAppointmentEvent` is the one place an
+ * appointment event becomes rows for the master and the administrator, and
+ * `listMyNotifications` is M7. The client's own rows are not written here: the
+ * confirmation SMS (E2) and the reminders (H1) belong to the booking and the
+ * reminder engine, and REQ-F-016 is about the master's notifications (I7).
+ *
  * Source: REQ-F-005 (the record a successful booking leaves), REQ-F-009,
  *         REQ-F-010, REQ-F-011, REQ-F-023, REQ-F-029 (later stages' rows on the
  *         same table); `resource-model.md:264` (R24's response set), `:99`
@@ -25,10 +32,23 @@
  *         channel and status); decisions E2–E4, H1–H6.
  */
 
-import { and, asc, count, eq, exists, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, count, eq, exists, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 
 import { getDb, type Database } from '../../db/client.js';
-import { appointments, notifications } from '../../db/schema.js';
+import {
+  appointments,
+  masters,
+  notificationPreferences,
+  notifications,
+} from '../../db/schema.js';
+import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time.js';
+import {
+  enabledChannels,
+  preferenceViews,
+  type PreferenceChannel,
+  type PreferenceEvent,
+  type PreferenceView,
+} from './preferences.js';
 import {
   eventTypeOf,
   isDue,
@@ -289,4 +309,235 @@ export async function readReminders(
     // contract enumerates, so the cast is the schema's guarantee, not a guess.
     return [{ type, scheduledAt: row.scheduledAt, status: row.status as ReminderStatus }];
   });
+}
+
+// ============================================ preferences (S4.1, I1–I11)
+
+/**
+ * The caller's six combinations, with the stored overrides applied (M5).
+ *
+ * A sparse table is read as a whole and filled by `preferenceViews`: the
+ * caller's settings are six combinations, and the table is how some of them are
+ * remembered (I2).
+ */
+export async function readPreferences(
+  executor: Executor,
+  principalId: string,
+): Promise<PreferenceView[]> {
+  const rows = await executor
+    .select({
+      channel: notificationPreferences.channel,
+      eventType: notificationPreferences.eventType,
+      enabled: notificationPreferences.enabled,
+    })
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.principalId, principalId));
+
+  return preferenceViews(rows);
+}
+
+/**
+ * Changes exactly one combination (M6, I4).
+ *
+ * An upsert, not an insert: the unique index on the three columns is what makes
+ * a second toggle of the same combination an update rather than a duplicate
+ * row, and REQ-F-026 is what makes it touch nothing else.
+ */
+export async function setPreference(
+  executor: Executor,
+  principalId: string,
+  input: {
+    readonly channel: PreferenceChannel;
+    readonly eventType: PreferenceEvent;
+    readonly enabled: boolean;
+  },
+  now: Date,
+): Promise<PreferenceView> {
+  await executor
+    .insert(notificationPreferences)
+    .values({
+      principalId,
+      channel: input.channel,
+      eventType: input.eventType,
+      enabled: input.enabled,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [
+        notificationPreferences.principalId,
+        notificationPreferences.channel,
+        notificationPreferences.eventType,
+      ],
+      set: { enabled: input.enabled, updatedAt: now },
+    });
+
+  return {
+    channel: input.channel,
+    eventType: input.eventType,
+    enabled: input.enabled,
+  };
+}
+
+/**
+ * Writes the rows one appointment event implies for the master and the
+ * administrator (REQ-F-016, REQ-F-023; I5, I8).
+ *
+ * One row per **enabled** channel: a combination that is off contributes no
+ * channel, so no row is written for it. That is REQ-F-016's AC read literally,
+ * and it is why the rows are written per preference rather than written and
+ * filtered on read — a row that exists is a message that was handed to the
+ * channel.
+ *
+ * `actor` is the principal that caused the event. S4.1's three call sites all
+ * pass `client`; S5.1's administrator paths pass `admin`, and the suppression
+ * REQ-F-030 asks for is the `actor !== 'admin'` guard below. It is a parameter
+ * from the start so the rule lives in one place rather than in each route.
+ *
+ * Runs on the caller's executor, so a booking that fails writes no notification.
+ */
+export async function recordAppointmentEvent(
+  executor: Executor,
+  input: {
+    readonly appointmentId: string;
+    readonly eventType: PreferenceEvent;
+    readonly actor: 'client' | 'admin';
+    readonly now: Date;
+  },
+): Promise<void> {
+  const [appointment] = await executor
+    .select({ masterId: appointments.masterId })
+    .from(appointments)
+    .where(eq(appointments.id, input.appointmentId));
+  if (appointment === undefined) return;
+
+  const [administrator] = await executor
+    .select({ id: masters.id })
+    .from(masters)
+    .where(eq(masters.role, 'admin'));
+
+  const rows: {
+    appointmentId: string;
+    audience: string;
+    eventType: string;
+    channel: string;
+    status: string;
+    sentAt: Date;
+  }[] = [];
+
+  const masterChannels = enabledChannels(
+    await readPreferences(executor, appointment.masterId),
+    input.eventType,
+  );
+  for (const channel of masterChannels) {
+    rows.push({
+      appointmentId: input.appointmentId,
+      audience: 'master',
+      eventType: input.eventType,
+      channel,
+      status: 'sent',
+      sentAt: input.now,
+    });
+  }
+
+  // REQ-F-030: the administrator is not notified about their own action. The
+  // master's rows above are unaffected, which is the second half of the AC.
+  if (administrator !== undefined && input.actor !== 'admin') {
+    const adminChannels = enabledChannels(
+      await readPreferences(executor, administrator.id),
+      input.eventType,
+    );
+    for (const channel of adminChannels) {
+      rows.push({
+        appointmentId: input.appointmentId,
+        audience: 'admin',
+        eventType: input.eventType,
+        channel,
+        status: 'sent',
+        sentAt: input.now,
+      });
+    }
+  }
+
+  if (rows.length > 0) await executor.insert(notifications).values(rows);
+}
+
+/** M7's filters, as the contract declares them. */
+export interface MyNotificationFilters {
+  readonly status?: string;
+  readonly eventType?: string;
+  readonly from?: string;
+  readonly to?: string;
+}
+
+/**
+ * One page of the caller's own records (M7, I9–I11).
+ *
+ * "The caller's rows" is derived, not stored: the table carries no principal
+ * column, so a master's list is the `audience = 'master'` rows of appointments
+ * assigned to them, and the administrator's is the `audience = 'admin'` rows.
+ * The join is always present — the administrator's rows are joined too, and the
+ * predicate simply does not narrow by master.
+ *
+ * `from` and `to` filter on `created_at`, inclusive of the whole day: it is the
+ * only column every row has, since `scheduled_at` is null for the confirmation
+ * and the reschedule rows (I10).
+ */
+export async function listMyNotifications(
+  principal: { readonly id: string; readonly role: string },
+  filters: MyNotificationFilters,
+  limit: number,
+  offset: number,
+): Promise<NotificationPageResult> {
+  const db = getDb();
+  const isAdmin = principal.role === 'admin';
+
+  const conditions = [eq(notifications.audience, isAdmin ? 'admin' : 'master')];
+  if (!isAdmin) conditions.push(eq(appointments.masterId, principal.id));
+  if (filters.status !== undefined) {
+    conditions.push(eq(notifications.status, filters.status));
+  }
+  if (filters.eventType !== undefined) {
+    conditions.push(eq(notifications.eventType, filters.eventType));
+  }
+
+  const from = filters.from === undefined ? null : parseCalendarDate(filters.from);
+  if (from !== null) {
+    conditions.push(gte(notifications.createdAt, new Date(salonInstant(from, 0))));
+  }
+
+  const to = filters.to === undefined ? null : parseCalendarDate(filters.to);
+  if (to !== null) {
+    conditions.push(
+      lt(notifications.createdAt, new Date(salonInstant(addCalendarDays(to, 1), 0))),
+    );
+  }
+
+  const where = and(...conditions);
+
+  const rows = await db
+    .select({
+      id: notifications.id,
+      appointmentId: notifications.appointmentId,
+      audience: notifications.audience,
+      eventType: notifications.eventType,
+      channel: notifications.channel,
+      status: notifications.status,
+      scheduledAt: notifications.scheduledAt,
+      sentAt: notifications.sentAt,
+      createdAt: notifications.createdAt,
+    })
+    .from(notifications)
+    .innerJoin(appointments, eq(notifications.appointmentId, appointments.id))
+    .where(where)
+    .orderBy(asc(notifications.createdAt), asc(notifications.id))
+    .limit(limit)
+    .offset(offset);
+
+  const [totals] = await db
+    .select({ total: count() })
+    .from(notifications)
+    .innerJoin(appointments, eq(notifications.appointmentId, appointments.id))
+    .where(where);
+
+  return { items: rows, total: Number(totals?.total ?? 0) };
 }

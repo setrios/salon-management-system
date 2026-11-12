@@ -53,6 +53,7 @@ import {
   insertReminders,
   readReminders,
   recalculateReminders,
+  recordAppointmentEvent,
 } from '../notifications/service.js';
 import type { ReminderRow } from '../notifications/reminders.js';
 
@@ -325,6 +326,16 @@ export async function createAppointment(
       // Their status is decided here, against the booking's clock (H2).
       const reminders = await insertReminders(tx, row.id, row.startAt, input.now);
 
+      // REQ-F-016, REQ-F-023: the master's and the administrator's rows, one per
+      // enabled channel (S4.1, I5). The client's own rows are above (E2, H1) and
+      // are not governed by preferences (I7).
+      await recordAppointmentEvent(tx, {
+        appointmentId: row.id,
+        eventType: 'new',
+        actor: 'client',
+        now: input.now,
+      });
+
       return {
         id: row.id,
         accessToken: row.accessToken,
@@ -520,6 +531,17 @@ export async function cancelByToken(token: string, now: Date): Promise<CancelByT
       .update(appointments)
       .set({ status: outcome.to, updatedAt: now })
       .where(and(eq(appointments.id, current.id), eq(appointments.status, 'confirmed')));
+
+    // REQ-F-016, REQ-F-023: the cancellation reaches the master and the
+    // administrator, per their preferences (S4.1, I5). The client's own row is
+    // still not written: SRS v1.3 lines 253–256 say no SMS is sent for a
+    // cancellation (K6).
+    await recordAppointmentEvent(db, {
+      appointmentId: current.id,
+      eventType: 'cancellation',
+      actor: 'client',
+      now,
+    });
   }
 
   const record = await findByToken(token);
@@ -657,6 +679,15 @@ export async function rescheduleAppointment(
         channel: 'sms',
         status: 'sent',
         sentAt: input.now,
+      });
+
+      // REQ-F-016, REQ-F-023: the master's and the administrator's rows for the
+      // new time (S4.1, I5).
+      await recordAppointmentEvent(tx, {
+        appointmentId: input.appointmentId,
+        eventType: 'reschedule',
+        actor: 'client',
+        now: input.now,
       });
 
       return { kind: 'moved', accessToken: row.accessToken };

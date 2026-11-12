@@ -41,8 +41,12 @@
  * because that stage is the first to record a message: REQ-F-005 says exactly
  * one confirmation SMS is *recorded* per booking, and R24
  * (`listAppointmentNotifications`) is the operation that exposes what was
- * recorded. `reminders` and `notification_preferences` remain deferred to
- * SMS-29/SMS-30.
+ * recorded. `reminders` is no longer deferred either: SMS-29 (S3.2) made the
+ * 24 h and 2 h reminders stored rows of the same table.
+ *
+ * **`notification_preferences` is no longer deferred.** It arrives with SMS-30
+ * (S4.1): REQ-F-016 gives a master a notification "per their own preferences",
+ * and M5/M6 are the operations that read and change them.
  */
 
 import { sql } from 'drizzle-orm';
@@ -403,5 +407,47 @@ export const notifications = pgTable(
       .where(
         sql`${table.eventType} = 'new' and ${table.audience} = 'client' and ${table.channel} = 'sms'`,
       ),
+  ],
+);
+
+/**
+ * Notification preferences (REQ-F-016, REQ-F-023, REQ-F-026; S4.1, I1–I2).
+ *
+ * One row per combination the caller has **toggled**: the table is a sparse
+ * override, and a missing row means `enabled: true` (I2). The principal is a
+ * `masters` row — the administrator is one, with `role = 'admin'` (REQ-F-017) —
+ * so one table serves both roles.
+ *
+ * The unique index is what makes M6 an upsert rather than a second row: the
+ * operation changes exactly one combination (REQ-F-026), and a duplicate would
+ * make "the caller's setting" ambiguous.
+ */
+export const notificationPreferences = pgTable(
+  'notification_preferences',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    principalId: uuid('principal_id')
+      .notNull()
+      .references(() => masters.id),
+    channel: text('channel').notNull(),
+    eventType: text('event_type').notNull(),
+    enabled: boolean('enabled').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      'notification_preferences_channel_check',
+      sql`${table.channel} in ('sms', 'in_app')`,
+    ),
+    check(
+      'notification_preferences_event_type_check',
+      sql`${table.eventType} in ('new', 'reschedule', 'cancellation')`,
+    ),
+    uniqueIndex('notification_preferences_principal_channel_event_unique').on(
+      table.principalId,
+      table.channel,
+      table.eventType,
+    ),
   ],
 );

@@ -101,30 +101,40 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * parameter's own schema — so a `boolean` is `true`/`false` and a `uuid` must be
  * a UUID, not merely a string.
  */
-function coerce(raw: unknown, schema: { type?: string; format?: string }): unknown {
+function coerce(
+  raw: unknown,
+  schema: { type?: string; format?: string; enum?: readonly unknown[] },
+): unknown {
   if (typeof raw !== 'string') return undefined;
+
+  let value: unknown = raw;
 
   if (schema.type === 'integer' || schema.type === 'number') {
     if (!/^-?\d+$/.test(raw)) return undefined;
-    return Number(raw);
-  }
-
-  if (schema.type === 'boolean') {
+    value = Number(raw);
+  } else if (schema.type === 'boolean') {
     if (raw !== 'true' && raw !== 'false') return undefined;
-    return raw === 'true';
+    value = raw === 'true';
+  } else if (schema.format === 'uuid' && !UUID.test(raw)) {
+    return undefined;
+  } else if (schema.format === 'date' && parseCalendarDate(raw) === null) {
+    // `date` is a *calendar* date, not merely a string of the right shape:
+    // `2026-02-30` matches the pattern and names no day. AJV's `date` format
+    // already agrees with this reading on bodies; query parameters are coerced
+    // here because Express hands them over as strings. Every query parameter the
+    // contract declares as `date` sits on an operation that declares 400, so
+    // rejecting it here stays inside each operation's declared set (CL-09).
+    return undefined;
   }
 
-  if (schema.format === 'uuid' && !UUID.test(raw)) return undefined;
+  // An `enum` is part of the parameter's declared type, not a business rule: a
+  // value outside it is the same mistake as a `boolean` that is not
+  // `true`/`false`, and `error-model.md` §4 puts that in 400. Every operation
+  // with an enum query parameter declares 400, so the answer stays inside its
+  // declared set (CL-09's rule again).
+  if (schema.enum !== undefined && !schema.enum.includes(value)) return undefined;
 
-  // `date` is a *calendar* date, not merely a string of the right shape:
-  // `2026-02-30` matches the pattern and names no day. AJV's `date` format
-  // already agrees with this reading on bodies; query parameters are coerced
-  // here because Express hands them over as strings. Every query parameter the
-  // contract declares as `date` sits on an operation that declares 400, so
-  // rejecting it here stays inside each operation's declared set (CL-09).
-  if (schema.format === 'date' && parseCalendarDate(raw) === null) return undefined;
-
-  return raw;
+  return value;
 }
 
 /**
@@ -195,7 +205,10 @@ export function validateParams(operationId: string): RequestHandler {
         continue;
       }
 
-      const value = coerce(raw, parameter.schema as { type?: string; format?: string });
+      const value = coerce(
+        raw,
+        parameter.schema as { type?: string; format?: string; enum?: readonly unknown[] },
+      );
       if (value === undefined) {
         return next(
           parameterProblem(operation, parameter, `${parameter.name} has the wrong type.`),
