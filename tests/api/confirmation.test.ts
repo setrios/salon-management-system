@@ -270,12 +270,14 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
 
   // =========================================== what a later read must show
 
-  describe('the record as it is now, not as it was booked (D6, REQ-NF-005)', () => {
-    it('C7 recomputes reminder status on read: the same record under a later clock', async () => {
-      // D6: reminders are computed from `startAt` and "now", not stored. A
-      // booking at Thursday 12:00 read at 09:00 has the 2 h moment (10:00)
-      // still ahead; read at 11:00 it has passed and is skipped. Both reads
-      // are 200 — the record did not change, the clock did.
+  describe('the record as it is now, not as it was booked (REQ-NF-005)', () => {
+    it('C7 dispatches a due reminder on read: the same record under a later clock', async () => {
+      // H3 (S3.2): the reminders are stored rows, and a read is what dispatches
+      // a due one. A booking at Thursday 12:00 read at 09:00 has the 2 h moment
+      // (10:00) still ahead; read at 11:00 it has passed and is `sent`. The
+      // 24 h moment (Wednesday 12:00) was already past at booking, so that row
+      // is `skipped` and stays `skipped` (H4). Both reads are 200 — the record
+      // did not change, the clock did.
       const bookable = await arrangeBookable('Confirmation Reminders');
       const created = await book(bookable, '2026-11-12T12:00:00+02:00');
       expect(created.status).toBe(201);
@@ -284,13 +286,15 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
       expectAppointment(atBooking);
       const before = atBooking.body.reminders as { type: string; status: string }[];
       expect(before.find((reminder) => reminder.type === '2h')?.status).toBe('scheduled');
+      expect(before.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
 
       const later = createApp({ now: () => new Date(LATER) });
       const atLater = await getByToken(created.body.accessToken as string, later);
       expectAppointment(atLater);
       const after = atLater.body.reminders as { type: string; status: string }[];
 
-      expect(after.find((reminder) => reminder.type === '2h')?.status).toBe('skipped');
+      expect(after.find((reminder) => reminder.type === '2h')?.status).toBe('sent');
+      expect(after.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
       expect(atLater.body.id).toBe(atBooking.body.id);
     });
 

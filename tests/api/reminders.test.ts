@@ -210,11 +210,18 @@ describe('S3.2 reminders — the 24 h and 2 h rows', () => {
     ).toBe(true);
   }
 
-  /** The reminder rows of an R24 page, in the order the page returns them. */
+  /**
+   * The reminder rows of an R24 page, in the order they occur.
+   *
+   * R24 orders by `created_at` then `id`, and the two reminder rows are written
+   * by one statement, so they share an instant and their relative order is the
+   * uuid's. The page's order is therefore stable but not the engine's, and this
+   * helper restores the engine's: earliest moment first, which is 24 h then 2 h.
+   */
   function reminderRows(page: JsonResponse): Record<string, any>[] {
-    return (page.body.items as Record<string, any>[]).filter((item) =>
-      String(item.eventType).startsWith('reminder_'),
-    );
+    return (page.body.items as Record<string, any>[])
+      .filter((item) => String(item.eventType).startsWith('reminder_'))
+      .sort((left, right) => String(left.scheduledAt).localeCompare(String(right.scheduledAt)));
   }
 
   // ============================================ the rows a booking writes
