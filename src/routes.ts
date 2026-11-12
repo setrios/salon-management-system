@@ -30,17 +30,29 @@ import type { Express } from 'express';
 import { Router } from 'express';
 
 import { authRoutes } from './modules/auth/routes.js';
+import { appointmentRoutes } from './modules/appointments/routes.js';
 import { availabilityRoutes } from './modules/availability/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
 import { masterRoutes } from './modules/masters/routes.js';
 import { masterServiceRoutes } from './modules/master-services/routes.js';
 import { materialRoutes } from './modules/materials/routes.js';
+import { publicRoutes } from './modules/public/routes.js';
 import { unitRoutes } from './modules/units/routes.js';
 
 export const API_PREFIX = '/api/v1';
 
 export function registerRoutes(app: Express): void {
   const api = Router();
+
+  // Every operation mounted below answers under the API prefix, and a create
+  // operation's `Location` header is built from it. Publishing it on the API
+  // router means one declaration instead of one per module; the admin router
+  // re-states it because it is mounted before this handler could rely on order
+  // for its own sub-paths.
+  api.use((_req, res, next) => {
+    res.locals.baseUrl = API_PREFIX;
+    next();
+  });
 
   api.use(authRoutes);
 
@@ -53,7 +65,9 @@ export function registerRoutes(app: Express): void {
 
   // `sendCreated` builds the `Location` the create operations declare from the
   // request's mount path, so the header is an absolute path (`/api/v1/...`)
-  // rather than a collection-relative one.
+  // rather than a collection-relative one. The API router already publishes it;
+  // this states the same value on the admin router so an administrator route
+  // does not depend on which handler ran first.
   admin.use((_req, res, next) => {
     res.locals.baseUrl = API_PREFIX;
     next();
@@ -75,10 +89,18 @@ export function registerRoutes(app: Express): void {
   // without an account (SRS §2 Actors).
   availabilityRoutes(api);
 
+  // The public catalogue (P1–P6) and client booking (P8) are `security: []`:
+  // a client books without an account (SRS §2 Actors), so neither is mounted
+  // behind a gate. They are registered after `admin` and availability because
+  // their paths (`/services`, `/masters`, `/appointments`) do not collide with
+  // either; an Express router matches in registration order, and putting the
+  // unauthenticated surface last keeps the guarded ones first in the trace.
+  publicRoutes(api);
+  appointmentRoutes(api);
+
   // TODO(ticket-driven): the remaining components are mounted here as their
   // first ticket reaches its `feat:` commit:
   //
-  //   api.use(appointmentsRoutes)    client booking, admin      SMS-10..
   //   api.use(paymentsRoutes)        payments                  SMS-22..
   //   api.use(reportsRoutes)         reports                   SMS-28..
   //

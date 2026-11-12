@@ -15,10 +15,16 @@
  *         replacement), §5.3 (M3, M4); `openapi.yaml` `Availability`.
  */
 
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
-import { availabilityDates, availabilityWeekly, masters, services } from '../../db/schema.js';
+import {
+  availabilityDates,
+  availabilityWeekly,
+  masterServices,
+  masters,
+  services,
+} from '../../db/schema.js';
 import type { AvailabilityInput } from '../../lib/availability.js';
 
 /** One service's id and base duration, for the duration sum of P7. */
@@ -61,6 +67,41 @@ export async function findServiceDurations(serviceIds: readonly string[]): Promi
   return serviceIds
     .map((id) => byId.get(id))
     .filter((row): row is ServiceDuration => row !== undefined);
+}
+
+/**
+ * The services among `serviceIds` the master does not currently offer.
+ *
+ * P7 requires an **active** master↔service link (decision D5): a schema-valid
+ * request for a service that is not the master's to book is the input that
+ * reaches the 422 `BUSINESS_RULE_VIOLATION` P7 has declared since S1.3 and had
+ * no trigger for (gate §5 G13). A service that exists but has no link, and a
+ * link that has been deactivated through R12, are both "not offered".
+ *
+ * Returns the offending service ids in the order they were asked for, so the
+ * route can answer about a specific one; an empty array means every id is
+ * offered.
+ */
+export async function unofferedServiceIds(
+  masterId: string,
+  serviceIds: readonly string[],
+): Promise<string[]> {
+  if (serviceIds.length === 0) return [];
+
+  const uniqueIds = [...new Set(serviceIds)];
+  const rows = await getDb()
+    .select({ serviceId: masterServices.serviceId })
+    .from(masterServices)
+    .where(
+      and(
+        eq(masterServices.masterId, masterId),
+        inArray(masterServices.serviceId, uniqueIds),
+        eq(masterServices.active, true),
+      ),
+    );
+
+  const offered = new Set(rows.map((row) => row.serviceId));
+  return serviceIds.filter((id) => !offered.has(id));
 }
 
 /** The caller's stored rule set, or two empty arrays when none was ever set. */

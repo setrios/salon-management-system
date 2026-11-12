@@ -16,8 +16,10 @@
  *
  * What this file deliberately does **not** do, because the specifications do not:
  *
- *   - it does not subtract booked appointments (`appointments` arrives in S2.1;
- *     the SMS-15 gate §4.4 records that `available` is a constant at S1.3);
+ *   - it does not re-state the booking rule. Subtracting booked time and the
+ *     fit test both live in `lib/occupancy.ts`, which P8 calls with the same
+ *     inputs, so P7 and P8 cannot diverge (O2). `slotsFor` here takes the
+ *     already-computed booked intervals and delegates;
  *   - it does not reject or merge two windows on the same weekday. Union,
  *     intersection and rejection are all defensible and no document chooses
  *     (SMS-15 gate §5 G4). The one thing it *must* do to produce an answer is
@@ -38,9 +40,14 @@ import {
   isoWeekday,
   type CalendarDate,
 } from './time.js';
+import {
+  SLOT_GRANULARITY_MINUTES,
+  offeredStarts,
+  type MinuteInterval,
+} from './occupancy.js';
 
 /** The granularity every bookable start falls on (`REQ-NF-008`). */
-export const SLOT_GRANULARITY_MINUTES = 30;
+export { SLOT_GRANULARITY_MINUTES } from './occupancy.js';
 
 /** One weekly rule as the contract writes it. */
 export interface WeeklyRuleInput {
@@ -70,6 +77,9 @@ export interface SlotView {
   available: boolean;
 }
 
+/** A half-open interval in minutes from midnight on one date: `[start, end)`. */
+export type { MinuteInterval };
+
 /** A wall-clock window in minutes from midnight. */
 interface Window {
   readonly start: number;
@@ -90,10 +100,17 @@ export function roundUpToBlock(totalMinutes: number): number {
   return totalMinutes + (SLOT_GRANULARITY_MINUTES - remainder);
 }
 
-/** The first 30-minute multiple at or after `minute`. */
-function ceilToBlock(minute: number): number {
-  const remainder = minute % SLOT_GRANULARITY_MINUTES;
-  return remainder === 0 ? minute : minute + (SLOT_GRANULARITY_MINUTES - remainder);
+/**
+ * The windows that apply on `date`, as wall-clock minute intervals.
+ *
+ * Exported because P8 needs the same windows P7 enumerates: the fit test for a
+ * requested start must be made against the same list, or the two operations
+ * could disagree about a window that opens at 10:15 (O2).
+ */
+export function windowsOn(dateKey: string, input: AvailabilityInput): MinuteInterval[] {
+  const date = parseCalendarDate(dateKey);
+  if (date === null) return [];
+  return windowsFor(date, dateKey, input);
 }
 
 /**
@@ -129,49 +146,40 @@ function windowsFor(date: CalendarDate, dateKey: string, input: AvailabilityInpu
 
 /**
  * `slots` for a date: every 30-minute start inside a window from which the
- * occupied block still fits.
+ * occupied block still fits **and** which no booking already covers.
  *
- * The fitting test is `start + occupied <= windowEnd`. `start` is snapped up to
- * the boundary first, because REQ-NF-008 makes a start off the boundary
- * unbookable — a window opening at 10:15 therefore begins at 10:30.
+ * The fitting test and the subtraction are not restated here: both live in
+ * `lib/occupancy.ts`, which P8 calls with the same inputs. That is what makes
+ * O2 ("P7 offers exactly the starts P8 accepts") a property of the code rather
+ * than of two implementations that happen to agree today.
  *
- * A window has no effect when the *distance from the boundary-snapped start to
- * the window end* is shorter than the block — that is the "window shorter than
- * the occupied block yields no slots" case.
+ * `booked` is the day's existing appointments as wall-clock intervals on this
+ * date. A start whose block overlaps one of them is removed, not reported with
+ * `available: false` (decision D1): the operation's description says it
+ * "filters out booked time", and filtering is removal.
  */
 export function slotsFor(
   dateKey: string,
   input: AvailabilityInput,
   occupiedMinutes: number,
+  booked: readonly MinuteInterval[] = [],
 ): SlotView[] {
   const date = parseCalendarDate(dateKey);
   if (date === null) return [];
 
   const block = Math.max(roundUpToBlock(occupiedMinutes), SLOT_GRANULARITY_MINUTES);
-  const slots: SlotView[] = [];
-  const seen = new Set<number>();
+  const windows = windowsFor(date, dateKey, input);
 
-  for (const window of windowsFor(date, dateKey, input)) {
-    let start = ceilToBlock(window.start);
-
-    while (start + block <= window.end) {
-      if (!seen.has(start)) {
-        seen.add(start);
-        slots.push({
-          startAt: salonInstant(date, start),
-          endAt: salonInstant(date, start + block),
-          durationMinutes: block,
-          // S1.3 computes availability, not occupancy: no appointment can exist
-          // until S2.1, so every slot this stage offers is available. See the
-          // SMS-15 gate §4.4 — S2.1 replaces this with the real subtraction.
-          available: true,
-        });
-      }
-      start += SLOT_GRANULARITY_MINUTES;
-    }
-  }
-
-  return slots;
+  return offeredStarts(windows, block, booked).map((start) => ({
+    startAt: salonInstant(date, start),
+    endAt: salonInstant(date, start + block),
+    durationMinutes: block,
+    // Every slot this function returns is bookable by construction: a blocked
+    // start was removed above. The field is required by `AvailabilitySlot`, so
+    // it is `true` here and O10 asserts it after a booking, which is the only
+    // state in which "filtered out" and "hard-coded true" differ.
+    available: true,
+  }));
 }
 
 /**

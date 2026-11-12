@@ -40,14 +40,23 @@ import {
   slotsFor,
   totalMinutes,
   type AvailabilityInput,
+  type MinuteInterval,
 } from '../../lib/availability.js';
+import {
+  MINUTES_PER_DAY,
+  instantAt,
+  minutesOnDate,
+} from '../../lib/occupancy.js';
+import { parseCalendarDate } from '../../lib/time.js';
 import { windowViolations } from './rules.js';
 import {
   findServiceDurations,
   masterExists,
   readAvailability,
   replaceAvailability,
+  unofferedServiceIds,
 } from './service.js';
+import { bookedBlocks } from '../appointments/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
 
 /** Any authenticated caller may read their own record; M3/M4 are JWT-M. */
@@ -92,8 +101,19 @@ async function getMasterAvailabilityHandler(_req: Request, res: Response): Promi
   const durations = await findServiceDurations(serviceIds);
   if (durations.length !== serviceIds.length) {
     // A uuid that names no service is an unknown id, which §3 puts at 404 for
-    // P7. This is NOT the declared-but-unreachable 422 (gate §5 G13).
+    // P7. This is NOT the declared 422 (gate §5 G13).
     throw new HttpProblem('NOT_FOUND', 'No service is defined with this id.');
+  }
+
+  // D5: the 422 P7 declares and had no trigger for at S1.3. A service that
+  // exists but is not linked to this master (or whose link is retired) is a
+  // schema-valid request for something that is not the master's to book.
+  const unoffered = await unofferedServiceIds(masterId, serviceIds);
+  if (unoffered.length > 0) {
+    throw new HttpProblem(
+      'BUSINESS_RULE_VIOLATION',
+      'The master does not offer every requested service.',
+    );
   }
 
   const total = totalMinutes(durations.map((duration) => duration.baseDurationMinutes));
@@ -106,8 +126,35 @@ async function getMasterAvailabilityHandler(_req: Request, res: Response): Promi
     serviceIds,
     totalDurationMinutes: total,
     occupiedDurationMinutes: occupied,
-    slots: slotsFor(query.date, availability, occupied),
+    slots: slotsFor(query.date, availability, occupied, await bookedOn(masterId, query.date)),
   });
+}
+
+/**
+ * The day's booked blocks as wall-clock minutes on `date`.
+ *
+ * A booking can start the previous evening and reach into this date (or start
+ * here and end after midnight), so the query takes the whole day widened by a
+ * day on each side and the conversion to minutes is deliberately unbounded
+ * (`minutesOnDate`): a block that began at 23:00 yesterday is negative, and one
+ * that ends at 00:30 tomorrow is past 1440. Clamping either side would turn an
+ * overlap into a gap.
+ */
+async function bookedOn(masterId: string, dateKey: string): Promise<MinuteInterval[]> {
+  const date = parseCalendarDate(dateKey);
+  if (date === null) return [];
+
+  const dayStart = instantAt(date, 0);
+  const blocks = await bookedBlocks(
+    masterId,
+    new Date(dayStart.getTime() - MINUTES_PER_DAY * 60_000),
+    new Date(dayStart.getTime() + MINUTES_PER_DAY * 60_000),
+  );
+
+  return blocks.map((block) => ({
+    start: minutesOnDate(date, block.start),
+    end: minutesOnDate(date, block.end),
+  }));
 }
 
 /** M3 — the caller's own rule set; two empty arrays when none was ever set. */

@@ -17,6 +17,13 @@
  *
  * `x-powered-by` is disabled: the contract exposes no such header and the
  * framework identity is not part of the API surface.
+ *
+ * **The clock is injected** (decision D9, `logs/tdd/tdd-SMS-25.md` §5). Reminder
+ * status depends on "now"; fake timers would have to intercept the driver's and
+ * the framework's timers as well, so the dependency is one optional argument
+ * instead. Its default is the real clock, which is what `index.ts` gets by
+ * calling `createApp()` with no argument — a booking made by the running server
+ * is judged against the actual time, never against a fixed test instant.
  */
 
 import express, { type Express } from 'express';
@@ -28,8 +35,18 @@ import { notFound } from './middleware/not-found.js';
 import { traceMiddleware } from './middleware/trace.js';
 import { registerRoutes } from './routes.js';
 
-export function createApp(): Express {
+/** What a caller may inject; every field has a production default. */
+export interface AppOptions {
+  /** Returns "now". Defaults to the real clock. */
+  readonly now?: () => Date;
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
+
+  // The one place "now" enters the application. Handlers read it from
+  // `req.app.locals.now`, so a request never reaches for `Date.now()` itself.
+  app.locals.now = options.now ?? ((): Date => new Date());
 
   // Express defaults are kept otherwise, including case-insensitive matching:
   // the contract defines no case rule, so the scaffold does not invent one.
