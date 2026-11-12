@@ -175,6 +175,21 @@
       ]
     },
     {
+      "ticket": "SMS-27 (test) → SMS-27 (implementation)",
+      "test": "tests/api/cancellation.test.ts",
+      "sources": ["REQ-F-006", "REQ-NF-005", "SCN-02"],
+      "implementation": [
+        "src/modules/appointments/state.ts"
+      ],
+      "touches": [
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "src/routes.ts",
+        "tests/api/confirmation.test.ts",
+        "tests/manifest.json"
+      ]
+    },
+    {
       "ticket": "SMS-8 (test) → SMS-25 (implementation)",
       "test": "tests/api/occupancy.test.ts",
       "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-031", "REQ-NF-008", "SCN-01"],

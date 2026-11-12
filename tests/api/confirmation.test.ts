@@ -26,11 +26,13 @@
  *     example (`https://salon.example`), and nothing serves it; runs-05 §8
  *     records that. C6 asserts only that P9 returns the same URL P8 did.
  *
- * Arrangement note (decision E7 in the S2.2 inventory): the `cancelled` record
- * C8 reads is put into that state out of band, by one `update`, because
- * cancellation (P10) is S2.3. This is arrangement, like `seedAccount` for the
- * administrator no operation creates — not an assertion about storage. C8's
- * subject is P9's answer for such a record.
+ * C8's arrangement **is P10** (cancellation, S2.3). When this file was first
+ * written the operation did not exist, and C8 put the record into `cancelled`
+ * out of band; S2.3 replaced that `update` with the contract's own call
+ * (`POST /appointments/{token}/cancel`), so there is one way to cancel a record
+ * and it is the operation the contract defines. C8's subject remains P9's
+ * answer for such a record — that the resource is readable, read-only, after
+ * cancellation (SRS v1.3 glossary "Confirmation Page", lines 378–384).
  */
 
 import { randomUUID } from 'node:crypto';
@@ -40,7 +42,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';
 import { getSchemaValidator } from '../../src/contract/validators.js';
-import { getPool } from '../../src/db/client.js';
 import {
   arrangeAdmin,
   arrangeLink,
@@ -296,14 +297,18 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
     it('C8 answers 200 for a cancelled appointment, with the same token and URL', async () => {
       // SRS v1.3 glossary: the page and its access token remain valid after
       // cancellation; the page shows the status. Not 404, not 409, not an empty
-      // body. The state is arranged out of band because P10 is S2.3 (E7).
+      // body. The state is produced by P10 (S2.3) — the operation the contract
+      // defines for it — and not by a direct write, so this case exercises the
+      // cancellation the API actually offers.
       const bookable = await arrangeBookable('Confirmation Cancelled');
       const created = await book(bookable);
       expect(created.status).toBe(201);
 
-      await getPool().query(`update appointments set status = 'cancelled' where id = $1`, [
-        created.body.id,
-      ]);
+      const cancelled = await request(app).post(
+        `/api/v1/appointments/${created.body.accessToken as string}/cancel`,
+      );
+      expect(cancelled.status).toBe(200);
+      expect(cancelled.body.status).toBe('cancelled');
 
       const read = await getByToken(created.body.accessToken as string);
 
