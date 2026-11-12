@@ -218,7 +218,7 @@ completed → { kind: 'rejected', code: 'INVALID_STATE_TRANSITION' }
 ```
 
 The other two columns are present because the table is one table: `complete` is
-R23 (S5.3 / SMS-34) and `edit` is R22 (S5.1 / SMS-32). Splitting it by stage
+R23 (S5.3 / SMS-34) and `edit` is R21 (S5.1 / SMS-32). Splitting it by stage
 would be three copies of one normative source.
 
 ## 7. The two halves of "unchanged"
@@ -268,7 +268,7 @@ process, on the built artifact.
    (`src/modules/appointments/state.ts`).
 2. **Register row 3 is reduced, not closed.** The `cancel` column of the §3.1
    table is closed at the resource level by P10; `complete` (R23, SMS-34) and
-   `PATCH` (R22, SMS-32) remain, and the administrator's cancel
+   `PATCH` (R21, SMS-32) remain, and the administrator's cancel
    (`cancelAppointmentAdmin`, S5.1 / SMS-32) is a separate operation that will
    reuse the same table.
 3. **Register row 10 — `reminders[]` of a cancelled record** is the addendum

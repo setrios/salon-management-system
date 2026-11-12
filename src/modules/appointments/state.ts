@@ -18,7 +18,7 @@
  *
  * Only the `cancel` column is used by S2.3 (P10). The other columns are here
  * because the table is one table: `complete` is R23 (S5.3 / SMS-34) and `edit`
- * is R22 (S5.1 / SMS-32), and splitting the table by stage would be three
+ * is R21 (S5.1 / SMS-32), and splitting the table by stage would be three
  * copies of one normative source.
  *
  * Source: `error-model.md` §3.1; REQ-F-006, REQ-F-027; D15.
