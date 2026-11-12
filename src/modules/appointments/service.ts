@@ -39,9 +39,11 @@ import {
   appointments,
   masterServices,
   masters,
+  notifications,
   services,
 } from '../../db/schema.js';
 import type { BookableService } from './rules.js';
+import type { AppointmentLine } from './view.js';
 import { isUniqueViolation } from '../reference-data/http.js';
 
 /**
@@ -199,6 +201,8 @@ export interface CreateAppointmentInput {
   readonly totalPriceAmountMinor: number;
   readonly totalPriceCurrency: string;
   readonly lines: readonly ServiceLineInput[];
+  /** The injected clock: the instant the confirmation message is recorded as sent. */
+  readonly now: Date;
 }
 
 /** The row a booking produced, as the response needs it. */
@@ -218,8 +222,8 @@ export interface CreatedAppointment {
 }
 
 /**
- * Writes the appointment and its lines inside one transaction, under the
- * master's advisory lock (D2).
+ * Writes the appointment, its lines and its confirmation message inside one
+ * transaction, under the master's advisory lock (D2).
  *
  * The lock is taken **before** the caller's overlap check would be meaningful,
  * so the caller passes a `recheck` callback that runs inside the transaction
@@ -227,9 +231,18 @@ export interface CreatedAppointment {
  * would be a check against a state another transaction can change between the
  * check and the insert.
  *
+ * **The `notifications` row is written here, not after the transaction
+ * (decision E2).** REQ-F-005 says exactly one confirmation SMS is *recorded* per
+ * successful booking; a row inserted after the commit could survive a failure of
+ * the appointment insert and report a message for a booking that does not exist,
+ * or be lost after a booking that does. One transaction, one commit, or neither.
+ * The partial unique index on `(appointment_id)` for
+ * `client`/`new`/`sms` is the backstop (E4): a second such row cannot exist, even
+ * if a future code path forgets this transaction.
+ *
  * Returns `undefined` when the recheck refuses — the caller maps that to 409.
- * A unique-index violation is *not* caught here: it propagates, and the route
- * maps it to the same 409 (O8), so the backstop and the lock produce one answer.
+ * A unique-index violation is caught and also returns `undefined`, so the
+ * backstop and the lock produce one answer (O8).
  */
 export async function createAppointment(
   input: CreateAppointmentInput,
@@ -278,6 +291,17 @@ export async function createAppointment(
         })),
       );
 
+      // REQ-F-005: exactly one client confirmation SMS per booking. `sent` is
+      // "handed to the simulated channel" (E3): delivery itself is simulated.
+      await tx.insert(notifications).values({
+        appointmentId: row.id,
+        audience: 'client',
+        eventType: 'new',
+        channel: 'sms',
+        status: 'sent',
+        sentAt: input.now,
+      });
+
       return {
         id: row.id,
         accessToken: row.accessToken,
@@ -294,10 +318,84 @@ export async function createAppointment(
       };
     });
   } catch (error) {
-    // The partial unique index is the backstop for the exact-start race (D2).
-    // It is mapped here, not left to the 500 branch, so a request that loses a
-    // race gets the same business refusal as one the lock serialised (O8).
+    // The partial unique index is the backstop for the exact-start race (D2)
+    // and the second half of REQ-F-005's "exactly one" (E4). It is mapped here,
+    // not left to the 500 branch, so a request that loses a race gets the same
+    // business refusal as one the lock serialised (O8).
     if (isUniqueViolation(error, APPOINTMENT_SLOT_CONSTRAINT)) return undefined;
     throw error;
   }
+}
+
+/** The stored appointment P9 returns, or `undefined` when the token names none. */
+export interface StoredAppointment {
+  readonly id: string;
+  readonly status: string;
+  readonly clientName: string;
+  readonly clientPhone: string;
+  readonly masterId: string;
+  readonly masterFullName: string;
+  readonly startAt: Date;
+  readonly endAt: Date;
+  readonly totalDurationMinutes: number;
+  readonly occupiedDurationMinutes: number;
+  readonly totalPriceAmountMinor: number;
+  readonly totalPriceCurrency: string;
+  readonly accessToken: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly lines: readonly AppointmentLine[];
+}
+
+/**
+ * P9 — the appointment the token names, with its master and its line snapshot.
+ *
+ * `access_token` is the credential (REQ-NF-001), so the lookup is by that column
+ * and by nothing else; an unknown token and a token that names a `cancelled`
+ * record are different answers, and only the first is 404 (SRS v1.3 glossary:
+ * the page and its token stay valid, read-only, after cancellation).
+ *
+ * The master's name is read through a join (E8): it is the current name, not a
+ * snapshot, and the archive of what was booked is the service lines.
+ */
+export async function findByToken(token: string): Promise<StoredAppointment | undefined> {
+  const db = getDb();
+
+  const [row] = await db
+    .select({
+      id: appointments.id,
+      status: appointments.status,
+      clientName: appointments.clientName,
+      clientPhone: appointments.clientPhone,
+      masterId: appointments.masterId,
+      masterFullName: masters.fullName,
+      startAt: appointments.startAt,
+      endAt: appointments.endAt,
+      totalDurationMinutes: appointments.totalDurationMinutes,
+      occupiedDurationMinutes: appointments.occupiedDurationMinutes,
+      totalPriceAmountMinor: appointments.totalPriceAmountMinor,
+      totalPriceCurrency: appointments.totalPriceCurrency,
+      accessToken: appointments.accessToken,
+      createdAt: appointments.createdAt,
+      updatedAt: appointments.updatedAt,
+    })
+    .from(appointments)
+    .innerJoin(masters, eq(masters.id, appointments.masterId))
+    .where(eq(appointments.accessToken, token));
+
+  if (row === undefined) return undefined;
+
+  const lines = await db
+    .select({
+      serviceId: appointmentServices.serviceId,
+      name: appointmentServices.name,
+      baseDurationMinutes: appointmentServices.baseDurationMinutes,
+      priceAmountMinor: appointmentServices.priceAmountMinor,
+      priceCurrency: appointmentServices.priceCurrency,
+    })
+    .from(appointmentServices)
+    .where(eq(appointmentServices.appointmentId, row.id))
+    .orderBy(appointmentServices.position);
+
+  return { ...row, lines };
 }

@@ -1,20 +1,22 @@
 /**
- * Appointments — P8 `createAppointment`.
+ * Appointments — P8 `createAppointment` and P9 `getAppointmentByToken`.
  *
- *   P8 POST /appointments   createAppointment   (public, `security: []`)
+ *   P8 POST /appointments          createAppointment      (public, `security: []`)
+ *   P9 GET  /appointments/{token}  getAppointmentByToken  (public, `security: []`)
  *
  * Source: REQ-F-001 (one or more services; totals are the sums), REQ-F-002
  *         (only a slot inside availability and not already booked), REQ-F-003
  *         (confirmed on creation; no approval state), REQ-F-004 and REQ-F-005
- *         (the record carries the token and the confirmation URL), REQ-F-010 and
- *         REQ-F-011 (reminders 24 h and 2 h ahead, skipped when already past),
- *         REQ-NF-001 (the access token is the credential), REQ-NF-008 (30-minute
- *         boundaries), REQ-F-031 (the rounded block is what is reserved);
- *         SCN-01, SCN-13; POS-01, POS-13, NEG-01, NEG-02, NEG-08, NEG-14,
- *         NEG-15, NEG-17; `error-model.md` §3, §4;
- *         `resource-model.md` §4 (only `cancelled` frees a block), §5.1 (P8).
- * Contract: openapi.yaml#/paths/~1appointments/post; schemas AppointmentCreate,
- *           Appointment, AppointmentService, Reminder, Problem.
+ *         (the record carries the token and the confirmation URL; the page is
+ *         reachable again by it), REQ-F-010 and REQ-F-011 (reminders 24 h and
+ *         2 h ahead, skipped when already past), REQ-NF-001 (the access token is
+ *         the credential), REQ-NF-008 (30-minute boundaries), REQ-F-031 (the
+ *         rounded block is what is reserved); SCN-01, SCN-13; POS-01, POS-13,
+ *         NEG-01, NEG-02, NEG-08, NEG-14, NEG-15, NEG-17; `error-model.md` §3,
+ *         §4; `resource-model.md` §4 (`cancelled` frees a block), §5.1 (P8, P9).
+ * Contract: openapi.yaml#/paths/~1appointments/post,
+ *           ~1appointments~1{token}; schemas AppointmentCreate, Appointment,
+ *           AppointmentService, Reminder, Problem.
  *
  * The refusal order is fixed, and each answer is inside P8's declared set
  * (400/409/415/422/500):
@@ -33,6 +35,13 @@
  *
  * Nothing here writes a status other than `confirmed`: REQ-F-003 gives creation
  * no other outcome, and `AppointmentCreate` declares no `status` field (D-22).
+ *
+ * P9 answers 200 for **every** stored record its token names, whatever the
+ * status: SRS v1.3's glossary says the page and its access token stay valid,
+ * read-only, after cancellation, so a `cancelled` record is 200 with
+ * `status: cancelled`, not 404. The only 404 is a token that names nothing —
+ * which includes a token that is not a uuid at all, because P9 declares no 400
+ * (E6).
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -41,22 +50,22 @@ import { windowsOn } from '../../lib/availability.js';
 import {
   minutesOnDate,
   salonDateOfInstant,
-  salonDateTime,
   startOffered,
 } from '../../lib/occupancy.js';
 import { HttpProblem } from '../../middleware/error-handler.js';
-import { validateBody } from '../../middleware/validate.js';
+import { validateBody, validateParams } from '../../middleware/validate.js';
 import { readAvailability } from '../availability/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
-import { remindersFor } from './reminders.js';
 import { offBoundary, serviceRejection, totalsFor, type BookableService } from './rules.js';
 import {
   bookedBlocks,
   createAppointment,
+  findByToken,
   findBookableServices,
   findBookingMaster,
   type Executor,
 } from './service.js';
+import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
 /** `AppointmentCreate` as the contract declares it (closed body, D-22). */
 interface AppointmentCreateBody {
   readonly client: { readonly name: string; readonly phone: string };
@@ -72,16 +81,6 @@ interface AppointmentCreateBody {
  */
 const SLOT_UNAVAILABLE_DETAIL =
   'The requested slot cannot be booked with this master: it is outside the master\'s availability or overlaps an existing appointment.';
-
-/**
- * The confirmation page's origin.
- *
- * The contract's own example is `https://salon.example/appointments/{token}` and
- * nothing in the contract or the SRS configures it; the page itself arrives with
- * S2.2 (SMS-26). Until then the URL is built from the contract's origin, so the
- * field is an absolute URI rather than a relative path dressed as one.
- */
-const CONFIRMATION_ORIGIN = 'https://salon.example';
 
 /** `YYYY-MM-DD` for a salon date. */
 function dateKeyOf(date: { year: number; month: number; day: number }): string {
@@ -173,6 +172,9 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
       occupiedDurationMinutes: booking.occupiedDurationMinutes,
       totalPriceAmountMinor: booking.totalPriceAmountMinor,
       totalPriceCurrency: booking.currency,
+      // The injected clock (D9): the instant the confirmation message is
+      // recorded as sent, in the same transaction (E2/E3).
+      now,
       lines: services.map((service) => ({
         serviceId: service.id,
         name: service.name,
@@ -198,39 +200,69 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
   // header set after it would be silently dropped.
   res.setHeader('Location', `${res.locals.baseUrl ?? '/api/v1'}/appointments/${created.id}`);
 
-  sendJson(res, 201, 'Appointment', {
-    id: created.id,
-    status: created.status,
-    client: booking.client,
-    master: booking.master,
-    services: created.lines.map((line) => ({
-      serviceId: line.serviceId,
-      name: line.name,
-      baseDurationMinutes: line.baseDurationMinutes,
-      price: { amountMinor: line.priceAmountMinor, currency: line.priceCurrency },
-    })),
-    startAt: salonDateTime(created.startAt),
-    endAt: salonDateTime(created.endAt),
-    totalDurationMinutes: created.totalDurationMinutes,
-    occupiedDurationMinutes: created.occupiedDurationMinutes,
-    totalPrice: {
-      amountMinor: created.totalPriceAmountMinor,
-      currency: created.totalPriceCurrency,
-    },
-    // D6: computed on read, from `startAt` and the injected clock (D9).
-    reminders: remindersFor(created.startAt, now),
-    accessToken: created.accessToken,
-    confirmationUrl: `${CONFIRMATION_ORIGIN}/appointments/${created.accessToken}`,
-    createdAt: salonDateTime(created.createdAt),
-    updatedAt: salonDateTime(created.updatedAt),
-  });
+  sendJson(
+    res,
+    201,
+    'Appointment',
+    appointmentBody(
+      {
+        id: created.id,
+        status: created.status,
+        clientName: booking.client.name,
+        clientPhone: booking.client.phone,
+        masterId: booking.master.id,
+        masterFullName: booking.master.fullName,
+        startAt: created.startAt,
+        endAt: created.endAt,
+        totalDurationMinutes: created.totalDurationMinutes,
+        occupiedDurationMinutes: created.occupiedDurationMinutes,
+        totalPriceAmountMinor: created.totalPriceAmountMinor,
+        totalPriceCurrency: created.totalPriceCurrency,
+        accessToken: created.accessToken,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+        lines: created.lines,
+      },
+      now,
+    ),
+  );
 }
 
-/** Registers P8 on the API router. The path takes no authentication. */
+/**
+ * P9 — the appointment a token names.
+ *
+ * One 404 and no other refusal: a token that names nothing. A uuid that names no
+ * row and a value that is not a uuid are the same answer, because the token is
+ * the credential and neither grants access (REQ-NF-001, E6). A record in any
+ * status — including `cancelled` — is 200, because SRS v1.3's glossary keeps the
+ * page and its token valid, read-only, after cancellation.
+ *
+ * `validateParams('getAppointmentByToken')` runs first and answers the non-uuid
+ * case itself: P9 declares no 400, so its shared-rule branch produces
+ * `NOT_FOUND` (see `middleware/validate.ts`), and this handler never sees it.
+ */
+async function getAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
+  const { token } = res.locals.params as { token: string };
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+
+  const record = await findByToken(token);
+  if (record === undefined) {
+    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+  }
+
+  sendJson(res, 200, 'Appointment', appointmentBody(record, now));
+}
+
+/** Registers P8 and P9 on the API router. Neither path takes authentication. */
 export function appointmentRoutes(router: Router): void {
   router.post(
     '/appointments',
     validateBody('createAppointment'),
     asyncRoute(createAppointmentHandler),
+  );
+  router.get(
+    '/appointments/:token',
+    validateParams('getAppointmentByToken'),
+    asyncRoute(getAppointmentByTokenHandler),
   );
 }

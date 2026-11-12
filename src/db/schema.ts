@@ -36,6 +36,13 @@
  * the reminder/notification subsystem, which the stage plan schedules after the
  * booking path (S4). Their shape is fixed by `Appointment.reminders[]`,
  * `Notification`, `NotificationPreference` in openapi.yaml.
+ *
+ * **`notifications` is no longer deferred.** It arrives with SMS-26 (S2.2),
+ * because that stage is the first to record a message: REQ-F-005 says exactly
+ * one confirmation SMS is *recorded* per booking, and R24
+ * (`listAppointmentNotifications`) is the operation that exposes what was
+ * recorded. `reminders` and `notification_preferences` remain deferred to
+ * SMS-29/SMS-30.
  */
 
 import { sql } from 'drizzle-orm';
@@ -335,5 +342,66 @@ export const appointmentServices = pgTable(
     ),
     check('appointment_services_duration_check', sql`${table.baseDurationMinutes} > 0`),
     check('appointment_services_price_check', sql`${table.priceAmountMinor} >= 0`),
+  ],
+);
+
+/**
+ * Notification records — the messages the system has decided to send (REQ-F-005).
+ *
+ * A row is written by the operation that causes the message, in the same
+ * transaction that causes it, so a booking and its confirmation message are
+ * created together or not at all. At S2.2 that is the booking transaction in
+ * `modules/appointments/service.ts`; S2.3 (cancellation), S3.1 (reschedule) and
+ * S4.1 (preferences) add their own rows through the same table.
+ *
+ * **`sent` means "handed to the simulated channel", not "delivered to a phone".**
+ * SMS delivery is simulated in this version (SRS §3, Assumptions and
+ * Dependencies), so the record states the system's decision, and `sent_at` is
+ * the instant it was made.
+ *
+ * **The partial unique index is decision E4, and it is the backstop that makes
+ * REQ-F-005 "exactly one" rather than "at least one".** One appointment can have
+ * at most one `client`/`new`/`sms` record; a second insert fails at the database.
+ * It is *partial* on those three predicates because a second reschedule must
+ * send a second SMS with `event_type = 'reschedule'` (REQ-F-009), and a full
+ * unique on the four columns would forbid it.
+ *
+ * `scheduled_at` is nullable: a record written now (status `sent`) has no future
+ * moment. The reminder engine (SMS-29) writes `scheduled` rows with it set.
+ */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    appointmentId: uuid('appointment_id')
+      .notNull()
+      .references(() => appointments.id),
+    audience: text('audience').notNull(),
+    eventType: text('event_type').notNull(),
+    channel: text('channel').notNull(),
+    status: text('status').notNull(),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      'notifications_audience_check',
+      sql`${table.audience} in ('client', 'master', 'admin')`,
+    ),
+    check(
+      'notifications_event_type_check',
+      sql`${table.eventType} in ('new', 'reschedule', 'cancellation', 'reminder_24h', 'reminder_2h')`,
+    ),
+    check('notifications_channel_check', sql`${table.channel} in ('sms', 'in_app')`),
+    check(
+      'notifications_status_check',
+      sql`${table.status} in ('scheduled', 'sent', 'skipped', 'failed')`,
+    ),
+    uniqueIndex('notifications_appointment_new_client_sms_unique')
+      .on(table.appointmentId)
+      .where(
+        sql`${table.eventType} = 'new' and ${table.audience} = 'client' and ${table.channel} = 'sms'`,
+      ),
   ],
 );
