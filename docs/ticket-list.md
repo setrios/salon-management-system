@@ -34,7 +34,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Done |
 | SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-30 | Coding Agent | Done |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Done |
-| SMS-20 | Test non-functional acceptance criteria | Verification | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
+| SMS-20 | Test non-functional acceptance criteria | Verification | REQ-NF-001…009 | SMS-3 | Coding Agent | Done |
 | SMS-21 | Test auth and reference-data CRUD checks | Test | REQ-F-012, 013, 014, 017, 018, 019, 020, 025 | SMS-3 | Coding Agent | Done |
 | SMS-22 | Feature: authentication (master + single admin) | Feature | REQ-F-012, 017 | SMS-21 | Coding Agent | Done |
 | SMS-23 | Feature: reference data (masters, services/categories, MasterService, materials/units, deactivate) | Feature | REQ-F-018, 024, 025 | SMS-14, SMS-21 | Coding Agent | Done |

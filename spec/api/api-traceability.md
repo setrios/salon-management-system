@@ -498,3 +498,26 @@ card), so the parts add up to the total; an empty window is `[]` (`R2`). R30 rea
 no query at all: a `period` parameter is ignored (`R4`, D17), which is the only
 reading compatible with REQ-F-033's "no period selection applies" and with R30's
 declared response set, which has no 422.
+
+### 6.17 S5.5 — NFR acceptance
+
+| NFR | Evidence | Where |
+|---|---|---|
+| REQ-NF-001 — unguessable token | `tests/api/appointments.test.ts` (S2.2), `tests/api/cancellation.test.ts` (S2.3); restated by N1 | SMS-26 |
+| REQ-NF-005 — no automatic deletion | N4 + the artifact scan in `logs/runs/runs-17.md` §2 | SMS-20 |
+| REQ-NF-006 — client data only to authorised parties | N2 + the same three-party/one-stranger matrix in `runs-17.md` | SMS-20 |
+| REQ-NF-007 — no location or time-zone selector | N3, N3b + the scan of the shipped contract in `runs-17.md` | SMS-20 |
+| REQ-NF-008 — 30-minute slots | S2.1's P8 cases; restated by N6 | SMS-25 |
+| REQ-NF-009 — no payment gateway | N5 + the artifact scan in `runs-17.md` §2 | SMS-20 |
+| REQ-NF-002, REQ-NF-003, REQ-NF-004 | **not verified here** — interface properties; SMS-36 | — |
+
+**The row for REQ-NF-007 in §3 (line "n/a (single salon)") predates this stage**
+and is left as the API-GATE record it is: the requirement is now positively
+verified — the contract declares no such control, and every instant on the wire
+carries the salon's offset — rather than treated as not applicable.
+
+**Absence constraints are read, not called.** REQ-NF-005 and REQ-NF-009 are claims
+about what the artifact does not contain, so the acceptance checks read `dist/`,
+the migrations and `package.json`. That is the only form in which "no purge job"
+and "no gateway" can be checked; an API call can only show absence at the moment
+it is asked.
