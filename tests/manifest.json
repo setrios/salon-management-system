@@ -302,6 +302,19 @@
         "src/modules/appointments/service.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-32 (test) → SMS-32 (implementation)",
+      "test": "tests/api/admin-appointment-actions.test.ts",
+      "sources": ["REQ-F-019", "REQ-F-027", "REQ-F-028", "REQ-F-030"],
+      "implementation": ["src/modules/appointments/admin-actions.ts"],
+      "touches": [
+        "src/modules/appointments/reschedule.ts",
+        "src/modules/appointments/service.ts",
+        "src/modules/appointments/routes.ts",
+        "src/routes.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
