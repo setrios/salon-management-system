@@ -343,6 +343,19 @@
         "src/routes.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-16 (test) → SMS-35 (implementation)",
+      "test": "tests/api/reports.test.ts",
+      "sources": ["REQ-F-022", "REQ-F-032", "REQ-F-033"],
+      "implementation": ["src/modules/reports/routes.ts"],
+      "touches": [
+        "src/modules/reports/service.ts",
+        "src/modules/reports/period.ts",
+        "src/lib/time.ts",
+        "src/routes.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
