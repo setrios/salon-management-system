@@ -367,23 +367,47 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
 
       // Check due reminder was dispatched to 'sent' (J5)
       const foundB = items[idxB];
-      const reminder24h = foundB.reminders.find((r: any) => r.type === '24h');
+      const reminder24h = foundB?.reminders.find((r: any) => r.type === '24h');
       expect(reminder24h?.status).toBe('sent');
     });
 
     it('L2 filters by masterId, status, and date range', async () => {
+      const fApptA = await request(app)
+        .post('/api/v1/admin/appointments')
+        .set('Authorization', `Bearer ${admin.token}`)
+        .send({
+          client: { name: 'Filter Client A', phone: '+380501112233' },
+          masterId: masterA.id,
+          serviceIds: [haircut.id],
+          startAt: onMonday('2026-12-28', '10:00'),
+        });
+      expect(fApptA.status).toBe(201);
+
+      const fApptB = await request(app)
+        .post('/api/v1/admin/appointments')
+        .set('Authorization', `Bearer ${admin.token}`)
+        .send({
+          client: { name: 'Filter Client B', phone: '+380501112233' },
+          masterId: masterB.id,
+          serviceIds: [haircut.id],
+          startAt: onMonday('2026-12-28', '11:00'),
+        });
+      expect(fApptB.status).toBe(201);
+
       // Filter by masterId
       const masterARes = await request(app)
-        .get(`/api/v1/admin/appointments?masterId=${masterA.id}&from=${SECOND_MONDAY}&to=${SECOND_MONDAY}`)
+        .get(`/api/v1/admin/appointments?masterId=${masterA.id}&from=2026-12-28&to=2026-12-28`)
         .set('Authorization', `Bearer ${admin.token}`);
       const masterAItems = expectPage(masterARes);
-      expect(masterAItems.every((r) => r.master.id === masterA.id)).toBe(true);
+      expect(masterAItems).toHaveLength(1);
+      expect(masterAItems[0]?.master.id).toBe(masterA.id);
 
       // Filter by status=confirmed
       const statusRes = await request(app)
-        .get(`/api/v1/admin/appointments?status=confirmed&from=${SECOND_MONDAY}&to=${SECOND_MONDAY}`)
+        .get('/api/v1/admin/appointments?status=confirmed&from=2026-12-28&to=2026-12-28')
         .set('Authorization', `Bearer ${admin.token}`);
       const statusItems = expectPage(statusRes);
+      expect(statusItems).toHaveLength(2);
       expect(statusItems.every((r) => r.status === 'confirmed')).toBe(true);
 
       // Filter by non-matching date range
@@ -396,11 +420,33 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
     });
 
     it('L3 pages through appointments with page and pageSize, returning total', async () => {
+      const pAppt1 = await request(app)
+        .post('/api/v1/admin/appointments')
+        .set('Authorization', `Bearer ${admin.token}`)
+        .send({
+          client: { name: 'Paging Client 1', phone: '+380501112233' },
+          masterId: masterA.id,
+          serviceIds: [haircut.id],
+          startAt: onMonday('2026-12-21', '10:00'),
+        });
+      expect(pAppt1.status).toBe(201);
+
+      const pAppt2 = await request(app)
+        .post('/api/v1/admin/appointments')
+        .set('Authorization', `Bearer ${admin.token}`)
+        .send({
+          client: { name: 'Paging Client 2', phone: '+380501112233' },
+          masterId: masterA.id,
+          serviceIds: [haircut.id],
+          startAt: onMonday('2026-12-21', '11:00'),
+        });
+      expect(pAppt2.status).toBe(201);
+
       const page1 = await request(app)
-        .get(`/api/v1/admin/appointments?from=${SECOND_MONDAY}&to=${SECOND_MONDAY}&page=1&pageSize=1`)
+        .get('/api/v1/admin/appointments?from=2026-12-21&to=2026-12-21&page=1&pageSize=1')
         .set('Authorization', `Bearer ${admin.token}`);
       const page2 = await request(app)
-        .get(`/api/v1/admin/appointments?from=${SECOND_MONDAY}&to=${SECOND_MONDAY}&page=2&pageSize=1`)
+        .get('/api/v1/admin/appointments?from=2026-12-21&to=2026-12-21&page=2&pageSize=1')
         .set('Authorization', `Bearer ${admin.token}`);
 
       const items1 = expectPage(page1);
@@ -408,9 +454,9 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
 
       expect(items1).toHaveLength(1);
       expect(items2).toHaveLength(1);
-      expect(items1[0].id).not.toBe(items2[0].id);
-      expect(page1.body.total).toBe(page2.body.total);
-      expect(page1.body.total).toBeGreaterThanOrEqual(2);
+      expect(items1[0]?.id).not.toBe(items2[0]?.id);
+      expect(page1.body.total).toBe(2);
+      expect(page2.body.total).toBe(2);
     });
 
     it('L4 answers 400 for malformed parameters, 401 without auth, and 403 for master', async () => {
