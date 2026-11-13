@@ -211,7 +211,8 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
 
   it('C4 leaves a reminder that was already sent as sent', async () => {
     const master = await freshMaster();
-    const created = await book(master.id, `${FAR_MONDAY}T12:00:00${OFFSET}`);
+    // A 10:00 start puts the 24 h moment exactly at `AT_THE_24H_MOMENT`.
+    const created = await book(master.id, `${FAR_MONDAY}T10:00:00${OFFSET}`);
     expect(created.status).toBe(201);
     const token = created.body.accessToken as string;
 
