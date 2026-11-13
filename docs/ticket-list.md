@@ -62,7 +62,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-45 | Addendum 001: cancelled reminders (REQ-F-034) | Addendum | REQ-F-034, Plan §8.1 | SMS-7, SMS-46 | Coding Agent | Done |
 | SMS-46 | Stage R: refactoring and the reminder scheduler | Refactoring | Plan §9, register row 11 | SMS-7 | Coding Agent | Done |
 | SMS-47 | Component split, README and log samples | Documentation | Task step 1 (logging); component split | SMS-24, SMS-25 | Joint | Done |
-| SMS-48 | Human validation record (step 7) | Validation | Plan §10 | SMS-45, SMS-46, SMS-47 | Human | Backlog |
+| SMS-48 | Human validation record (step 7) | Validation | Plan §10 | SMS-45, SMS-46, SMS-47 | Human | Done |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
