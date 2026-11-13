@@ -468,3 +468,33 @@ in practice.
 mistakes are 422 `VALIDATION_ERROR` (D22), the state rule and the cardinality are
 409s, and REQ-F-021 states no amount rule. It is recorded in the gate §1.2, not
 invented in the handler.
+
+### 6.16 S5.4 — reports
+
+| Operation | Test | Code |
+|---|---|---|
+| `getRevenueReport` (R28) | `tests/api/reports.test.ts` — R1–R5 | `src/modules/reports/routes.ts`, `src/modules/reports/service.ts` (`revenueReport`), `src/modules/reports/period.ts` |
+| `getPopularServicesReport` (R29) | `tests/api/reports.test.ts` — R6–R8 | `src/modules/reports/routes.ts`, `service.ts` (`popularServicesReport`), `period.ts` |
+| `getStockLevelsReport` (R30) | `tests/api/reports.test.ts` — R9–R10 | `src/modules/reports/routes.ts`, `service.ts` (`stockLevelsReport`) |
+
+**REQ-F-022's two forms are one rule.** `period.ts` resolves `day` to today, `week`
+to the ISO Monday–Sunday containing today and `month` to the calendar month, all
+against the application's clock in `Europe/Kyiv`; it refuses both forms, neither,
+half a range and a reversed range with 422 `INVALID_PERIOD`. An unrecognised
+preset is that same 422 rather than the query validator's 400 (`Q1`), because
+`error-model.md` §3 names it in the `INVALID_PERIOD` row; a date that is not a
+real calendar date remains 400 (`R5`).
+
+**What counts is decided and asserted, not assumed.** Revenue sums only
+`status: paid` payments by `recordedAt` (`Q2`); popular services count every
+appointment in the window by `startAt`, cancelled included (`Q3`), and label the
+row with the catalogue's current name (`Q4`); the stock snapshot lists inactive
+materials at their ledger balance (`R3`). Each decision has a case that would fail
+if it were reversed, and the run `logs/runs/runs-16.md` re-derives the presets from
+the real date.
+
+**`byMethod` lists only methods that occur**, in the contract's order (cash,
+card), so the parts add up to the total; an empty window is `[]` (`R2`). R30 reads
+no query at all: a `period` parameter is ignored (`R4`, D17), which is the only
+reading compatible with REQ-F-033's "no period selection applies" and with R30's
+declared response set, which has no 422.

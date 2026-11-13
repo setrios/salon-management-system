@@ -33,6 +33,7 @@ import { authRoutes } from './modules/auth/routes.js';
 import { adminActionRoutes } from './modules/appointments/admin-actions.js';
 import { adminAppointmentRoutes } from './modules/appointments/admin.js';
 import { paymentRoutes } from './modules/appointments/payments.js';
+import { reportRoutes } from './modules/reports/routes.js';
 import { appointmentRoutes } from './modules/appointments/routes.js';
 import { availabilityRoutes } from './modules/availability/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
@@ -97,6 +98,8 @@ export function registerRoutes(app: Express): void {
   adminActionRoutes(admin);
   // R27 records the money of a completed appointment (S5.3, SMS-34).
   paymentRoutes(admin);
+  // R28–R30 answer questions about the data (S5.4, SMS-35).
+  reportRoutes(admin);
 
   api.use(admin);
 

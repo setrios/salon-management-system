@@ -34,6 +34,18 @@ export interface CalendarDate {
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**
+ * The `YYYY-MM-DD` text of a calendar date — the inverse of `parseCalendarDate`.
+ *
+ * The report operations echo their resolved window as `from`/`to`, which the
+ * contract types as `format: date`. Building that string from the parts, rather
+ * than from a `Date`, keeps the zone out of it: a date has no offset.
+ */
+export function formatCalendarDate(date: CalendarDate): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  return `${date.year}-${pad(date.month)}-${pad(date.day)}`;
+}
+
+/**
  * Parses `YYYY-MM-DD` into its parts, or `null` when it is not a real date.
  *
  * `2026-02-30` and `2027-02-29` are rejected: a string that matches the shape
