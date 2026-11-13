@@ -534,6 +534,18 @@ it is asked.
 | Implementation | `src/modules/notifications/cancellation.ts`; the two cancellation paths in `src/modules/appointments/service.ts`; migration `0008_cancelled_reminders.sql` |
 | Control run | `logs/runs/runs-18.md` — 18/18 on the built artifact |
 
+### 6.20 Documentation deliverables (SMS-47)
+
+| Deliverable | Where | What it states |
+|---|---|---|
+| Component split | `docs/components.md` | 13 components with their files, responsibilities, boundaries and tests; the reason for each boundary |
+| Runbook | `README.md` | install, env, migrate, build, start, test, contract commands, layout, limits |
+| Log sample | `logs/samples/app-sample.jsonl` + `logs/samples/README.md` | ten real records, every field explained, and the path-resolution rule shown by example |
+| Generator | `logs/runtime/s47-log-sample.mjs` | the run that produced the sample, so it can be reproduced |
+
+The sample is evidence for the logging deliverable (D-6); the component split is
+evidence that the implementation's structure follows the contract's audiences.
+
 ### 6.19 Stage R — the reminder scheduler (REQ-F-010, row 11)
 
 | Item | Where |
