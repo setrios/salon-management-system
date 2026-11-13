@@ -30,6 +30,7 @@ import type { Express } from 'express';
 import { Router } from 'express';
 
 import { authRoutes } from './modules/auth/routes.js';
+import { adminActionRoutes } from './modules/appointments/admin-actions.js';
 import { adminAppointmentRoutes } from './modules/appointments/admin.js';
 import { appointmentRoutes } from './modules/appointments/routes.js';
 import { availabilityRoutes } from './modules/availability/routes.js';
@@ -87,6 +88,9 @@ export function registerRoutes(app: Express): void {
   // appointment-management operations (R19–R23) arrive with SMS-32.
   notificationRoutes(admin);
   adminAppointmentRoutes(admin);
+  // R21–R23 act on one appointment: the same component, mounted after the
+  // reads and creates (S5.1b, SMS-32).
+  adminActionRoutes(admin);
 
   api.use(admin);
 

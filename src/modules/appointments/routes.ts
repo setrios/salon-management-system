@@ -90,7 +90,7 @@ import {
   findBookableServices,
   findBookingMaster,
   loadAppointment,
-  rescheduleAppointment,
+  editAppointment,
   type Executor,
 } from './service.js';
 import { staffBody } from './staff-view.js';
@@ -112,7 +112,7 @@ const SLOT_UNAVAILABLE_DETAIL =
   'The requested slot cannot be booked with this master: it is outside the master\'s availability or overlaps an existing appointment.';
 
 /** `YYYY-MM-DD` for a salon date. */
-function dateKeyOf(date: { year: number; month: number; day: number }): string {
+export function dateKeyOf(date: { year: number; month: number; day: number }): string {
   return `${date.year.toString().padStart(4, '0')}-${date.month
     .toString()
     .padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`;
@@ -360,7 +360,7 @@ interface AppointmentRescheduleBody {
  * answers it with `MALFORMED_REQUEST` (unlike P9 and P10, which declare no 400
  * and answer 404).
  *
- * The 200 body is `appointmentBody` over the record `rescheduleAppointment`
+ * The 200 body is `appointmentBody` over the record `editAppointment`
  * re-read through `findByToken` — the same mapper P8's 201, P9's 200 and P10's
  * 200 use.
  */
@@ -409,16 +409,22 @@ async function rescheduleAppointmentByTokenHandler(req: Request, res: Response):
   const windows = windowsOn(dateKey, await readAvailability(decision.masterId));
 
   // 6. The slot, inside the transaction and under the advisory lock (D2, G5).
-  const result = await rescheduleAppointment(
+  const result = await editAppointment(
     {
       appointmentId: record.id,
       masterId: decision.masterId,
       startAt: decision.startAt,
       endAt: decision.endAt,
+      totalDurationMinutes: record.totalDurationMinutes,
+      occupiedDurationMinutes: record.occupiedDurationMinutes,
       lines: decision.lines,
       reprice: decision.reprice,
+      replaceLines: false,
       totalPriceAmountMinor: decision.totalPriceAmountMinor,
       totalPriceCurrency: decision.totalPriceCurrency,
+      recalculateReminders: true,
+      emitReschedule: true,
+      actor: 'client',
       now,
     },
     async (tx: Executor): Promise<boolean> => {

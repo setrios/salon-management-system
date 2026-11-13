@@ -583,29 +583,48 @@ export async function cancelByToken(token: string, now: Date): Promise<CancelByT
   return { kind: 'cancelled', record };
 }
 
-/** Everything a reschedule writes, already decided by `reschedule.ts`. */
-export interface RescheduleAppointmentInput {
+/** Everything an appointment edit writes, already decided by `reschedule.ts`. */
+export interface AppointmentEditInput {
   readonly appointmentId: string;
   readonly masterId: string;
   readonly startAt: Date;
   readonly endAt: Date;
+  readonly totalDurationMinutes: number;
+  readonly occupiedDurationMinutes: number;
+  /** The lines to store: the snapshot, the re-priced snapshot, or R21's new set. */
   readonly lines: readonly ServiceLineInput[];
-  /** True when the master changed, so the line prices follow the new links (G8). */
+  /** True when the master changed, so the stored line prices follow the new links (G8). */
   readonly reprice: boolean;
+  /** True when `lines` replaces the stored rows (R21 with `serviceIds`, L4). */
+  readonly replaceLines: boolean;
   readonly totalPriceAmountMinor: number;
   readonly totalPriceCurrency: string;
+  /** R21 may correct the client in the same write (K4). */
+  readonly client?: { readonly name: string; readonly phone: string };
+  /** True when the time moved, so the two reminder moments follow (H6). */
+  readonly recalculateReminders: boolean;
+  /** True for a time or master change: one client reschedule row (REQ-F-009). */
+  readonly emitReschedule: boolean;
+  /** Who initiated the edit: 'admin' suppresses the administrator's row (REQ-F-030). */
+  readonly actor: 'client' | 'admin';
   /** The injected clock: `updated_at` and the reschedule message's `sent_at`. */
   readonly now: Date;
 }
 
-/** What P11's write did, as the route needs to answer it. */
-export type RescheduleAppointmentResult =
+/** What an edit's write did, as the route needs to answer it. */
+export type AppointmentEditResult =
   | { readonly kind: 'slot-unavailable' }
   | { readonly kind: 'rejected'; readonly code: 'INVALID_STATE_TRANSITION' }
   | { readonly kind: 'moved'; readonly record: StoredAppointment };
 
 /**
- * P11 — move the record to the decided values, inside one transaction.
+ * An edit — P11's reschedule and R21's administrator patch — inside one
+ * transaction.
+ *
+ * **One write for both operations** (K3): P11 and R21 differ in what they
+ * decided, not in what the write does, so a second copy of this transaction
+ * would be a second place for the reminder recalculation, the guarded update and
+ * the event rows to drift.
  *
  * **The advisory lock is on the new master** (D2, G5), taken before the caller's
  * `recheck` runs. A reschedule takes a block on the new master's calendar, so it
@@ -622,36 +641,39 @@ export type RescheduleAppointmentResult =
  * **The `reschedule` row is written here, not after the commit** (G6, the same
  * reasoning as E2 for the confirmation): one transaction, one commit, or
  * neither. There is no unique index for it, because REQ-F-007 allows any number
- * of reschedules (R17).
+ * of reschedules (R17). R21 writes it only for a time or master change (K4, L4)
+ * and passes its own `actor`, so REQ-F-030 suppresses the administrator's row.
  *
- * **The lines are re-priced only when the master changed** (G8). When it did
- * not, the snapshot is the booking's and is left alone.
+ * **The lines are re-priced only when the master changed** (G8); when R21 also
+ * names a service set, `replaceLines` rewrites the rows instead (L4).
  *
- * **The reminder rows are recalculated in the same transaction** (H6): the new
- * `startAt` moves both moments, and a moment that is now past is `skipped`
- * rather than left `scheduled` for a dispatch that would never come.
+ * **The reminder rows are recalculated in the same transaction** (H6) when the
+ * time moved: the new `startAt` moves both moments, and a moment that is now
+ * past is `skipped` rather than left `scheduled` for a dispatch that would never
+ * come. An edit that keeps the time (a master, service-set or client change)
+ * leaves them alone.
  *
- * The re-read is `findByToken` **after** the transaction commits, so it sees the
+ * The re-read is `findById` **after** the transaction commits, so it sees the
  * committed row; reading inside the transaction through the pool would be a
  * second connection and would not see the uncommitted update.
  */
-export async function rescheduleAppointment(
-  input: RescheduleAppointmentInput,
+export async function editAppointment(
+  input: AppointmentEditInput,
   recheck: (tx: Executor) => Promise<boolean>,
-): Promise<RescheduleAppointmentResult> {
+): Promise<AppointmentEditResult> {
   const db = getDb();
 
   type Outcome =
     | { readonly kind: 'slot-unavailable' }
     | { readonly kind: 'rejected' }
-    | { readonly kind: 'moved'; readonly accessToken: string };
+    | { readonly kind: 'moved' };
 
   let outcome: Outcome;
 
   try {
     outcome = await db.transaction(async (tx): Promise<Outcome> => {
       // Transaction-scoped, keyed on the new master: released on commit or
-      // rollback, and two reschedules for different masters do not wait.
+      // rollback, and two edits for different masters do not wait.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`);
 
       if (!(await recheck(tx))) return { kind: 'slot-unavailable' };
@@ -662,8 +684,13 @@ export async function rescheduleAppointment(
           masterId: input.masterId,
           startAt: input.startAt,
           endAt: input.endAt,
+          totalDurationMinutes: input.totalDurationMinutes,
+          occupiedDurationMinutes: input.occupiedDurationMinutes,
           totalPriceAmountMinor: input.totalPriceAmountMinor,
           totalPriceCurrency: input.totalPriceCurrency,
+          ...(input.client === undefined
+            ? {}
+            : { clientName: input.client.name, clientPhone: input.client.phone }),
           updatedAt: input.now,
         })
         .where(
@@ -672,14 +699,31 @@ export async function rescheduleAppointment(
             eq(appointments.status, 'confirmed'),
           ),
         )
-        .returning({ accessToken: appointments.accessToken });
+        .returning({ id: appointments.id });
 
       const row = updated[0];
       // A concurrent cancel or complete won the race: the record is no longer
       // editable, and the route answers the state the winner wrote.
       if (row === undefined) return { kind: 'rejected' };
 
-      if (input.reprice) {
+      if (input.replaceLines) {
+        // L4: the new set is the record's set, so the old rows go in the same
+        // transaction — one commit, or neither set exists.
+        await tx
+          .delete(appointmentServices)
+          .where(eq(appointmentServices.appointmentId, input.appointmentId));
+        await tx.insert(appointmentServices).values(
+          input.lines.map((line, position) => ({
+            appointmentId: input.appointmentId,
+            serviceId: line.serviceId,
+            position,
+            name: line.name,
+            baseDurationMinutes: line.baseDurationMinutes,
+            priceAmountMinor: line.priceAmountMinor,
+            priceCurrency: line.priceCurrency,
+          })),
+        );
+      } else if (input.reprice) {
         for (const [position, line] of input.lines.entries()) {
           await tx
             .update(appointmentServices)
@@ -696,32 +740,37 @@ export async function rescheduleAppointment(
         }
       }
 
-      // REQ-F-029, SCN-11: the two reminder rows follow the new time, in place
-      // (H6). A moment that is now past becomes `skipped`; one that is now
-      // ahead becomes `scheduled` again, which is the reactivation SCN-11
-      // describes.
-      await recalculateReminders(tx, input.appointmentId, input.startAt, input.now);
+      if (input.recalculateReminders) {
+        // REQ-F-029, SCN-11: the two reminder rows follow the new time, in place
+        // (H6). A moment that is now past becomes `skipped`; one that is now
+        // ahead becomes `scheduled` again, which is the reactivation SCN-11
+        // describes.
+        await recalculateReminders(tx, input.appointmentId, input.startAt, input.now);
+      }
 
-      // REQ-F-009: exactly one reschedule SMS per successful reschedule.
-      await tx.insert(notifications).values({
-        appointmentId: input.appointmentId,
-        audience: 'client',
-        eventType: 'reschedule',
-        channel: 'sms',
-        status: 'sent',
-        sentAt: input.now,
-      });
+      if (input.emitReschedule) {
+        // REQ-F-009: exactly one reschedule SMS per successful reschedule.
+        await tx.insert(notifications).values({
+          appointmentId: input.appointmentId,
+          audience: 'client',
+          eventType: 'reschedule',
+          channel: 'sms',
+          status: 'sent',
+          sentAt: input.now,
+        });
 
-      // REQ-F-016, REQ-F-023: the master's and the administrator's rows for the
-      // new time (S4.1, I5).
-      await recordAppointmentEvent(tx, {
-        appointmentId: input.appointmentId,
-        eventType: 'reschedule',
-        actor: 'client',
-        now: input.now,
-      });
+        // REQ-F-016, REQ-F-023: the master's and the administrator's rows for
+        // the new time (S4.1, I5); `actor: 'admin'` suppresses the acting
+        // administrator's own row (REQ-F-030, K5).
+        await recordAppointmentEvent(tx, {
+          appointmentId: input.appointmentId,
+          eventType: 'reschedule',
+          actor: input.actor,
+          now: input.now,
+        });
+      }
 
-      return { kind: 'moved', accessToken: row.accessToken };
+      return { kind: 'moved' };
     });
   } catch (error) {
     if (isUniqueViolation(error, APPOINTMENT_SLOT_CONSTRAINT)) {
@@ -735,12 +784,94 @@ export async function rescheduleAppointment(
     return { kind: 'rejected', code: 'INVALID_STATE_TRANSITION' };
   }
 
-  const record = await findByToken(outcome.accessToken);
+  const record = await findById(input.appointmentId);
   if (record === undefined) {
-    throw new Error(`appointment ${input.appointmentId} disappeared after the reschedule`);
+    throw new Error(`appointment ${input.appointmentId} disappeared after the edit`);
   }
 
   return { kind: 'moved', record };
+}
+
+/** What R22's or R23's transition did, as the route needs to answer it. */
+export type StatusTransitionResult =
+  | { readonly kind: 'not-found' }
+  | { readonly kind: 'rejected'; readonly code: 'INVALID_STATE_TRANSITION' }
+  | { readonly kind: 'done'; readonly record: StoredAppointment };
+
+/**
+ * R22 and R23 — apply one column of `error-model.md` §3.1 to a record by id.
+ *
+ * The table is `state.ts`'s; this function only carries it out. A `confirmed`
+ * record is updated under a `status = 'confirmed'` guard (F5), so a concurrent
+ * winner leaves this one with zero rows instead of a second `updated_at`; an
+ * already-terminal record answers its stored state without a write.
+ *
+ * **Cancellation writes the event and completion does not** (REQ-F-030, K6): the
+ * event catalog is `new`, `reschedule`, `cancellation`, and the acting
+ * administrator's own row is suppressed while the master's stands. Completion
+ * has no event to write.
+ *
+ * The `now` is the injected clock (D9), written to `updated_at` and to the
+ * cancellation row's `sent_at`.
+ */
+export async function transitionAppointmentById(
+  appointmentId: string,
+  action: 'cancel' | 'complete',
+  now: Date,
+): Promise<StatusTransitionResult> {
+  const db = getDb();
+
+  const [current] = await db
+    .select({ id: appointments.id, status: appointments.status })
+    .from(appointments)
+    .where(eq(appointments.id, appointmentId));
+
+  if (current === undefined) return { kind: 'not-found' };
+
+  // The column has `appointments_status_check` behind it, so a value outside the
+  // enum is a broken invariant, not a client mistake: it becomes a 500 rather
+  // than a status the contract does not define.
+  if (!isAppointmentStatus(current.status)) {
+    throw new Error(
+      `appointment ${current.id} has status "${current.status}", which error-model.md §3.1 does not define`,
+    );
+  }
+
+  const outcome = stateOutcome(current.status, action);
+  if (outcome.kind === 'rejected') return { kind: 'rejected', code: outcome.code };
+
+  if (outcome.kind === 'transition') {
+    await db.transaction(async (tx): Promise<void> => {
+      const updated = await tx
+        .update(appointments)
+        .set({ status: outcome.to, updatedAt: now })
+        .where(
+          and(
+            eq(appointments.id, current.id),
+            eq(appointments.status, 'confirmed'),
+          ),
+        )
+        .returning({ id: appointments.id });
+
+      if (updated.length === 0) return; // a concurrent transition won
+
+      if (action === 'cancel') {
+        await recordAppointmentEvent(tx, {
+          appointmentId: current.id,
+          eventType: 'cancellation',
+          actor: 'admin',
+          now,
+        });
+      }
+    });
+  }
+
+  const record = await findById(appointmentId);
+  if (record === undefined) {
+    throw new Error(`appointment ${appointmentId} disappeared after the transition`);
+  }
+
+  return { kind: 'done', record };
 }
 
 /** M1's filters, as the contract declares them. */

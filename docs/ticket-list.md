@@ -32,7 +32,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-15 | Test master availability modes (SCN-09) | Test | REQ-F-015, SCN-09 | SMS-3 | Coding Agent | Done |
 | SMS-16 | Test reports: revenue, popular services, stock (SCN-10/14/15) | Test | REQ-F-022, 032, 033, SCN-10, SCN-14, SCN-15 | SMS-3 | Coding Agent | Backlog |
 | SMS-17 | Test skipped-reminder reactivation (SCN-11) | Test | REQ-F-029, SCN-11 | SMS-3 | Coding Agent | Done |
-| SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-30 | Coding Agent | Backlog |
+| SMS-18 | Test admin self-notification suppression (SCN-12) | Test | REQ-F-030, SCN-12 | SMS-30 | Coding Agent | Done |
 | SMS-19 | Test 30-min slot rounding (SCN-13) | Test | REQ-F-031, SCN-13 | SMS-3 | Coding Agent | Done |
 | SMS-20 | Test non-functional acceptance criteria | Verification | REQ-NF-001…009 | SMS-3 | Coding Agent | Backlog |
 | SMS-21 | Test auth and reference-data CRUD checks | Test | REQ-F-012, 013, 014, 017, 018, 019, 020, 025 | SMS-3 | Coding Agent | Done |
@@ -46,7 +46,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-29 | Feature: reminder engine (24h/2h, skip rule, reactivation) | Feature | REQ-F-010, 011, 029 | SMS-11, SMS-17, SMS-28 | Coding Agent | Done |
 | SMS-30 | Feature: notification service (channels, per-event prefs, admin self-notify suppression) | Feature | REQ-F-016, 023, 026, 030 | SMS-12, SMS-26, SMS-27, SMS-28 | Coding Agent | Done |
 | SMS-31 | Feature: master calendar + own services/prices | Feature | REQ-F-013, 014 | SMS-21, SMS-22 | Coding Agent | Done |
-| SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | In Progress (S5.1a Done) |
+| SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | Done |
 | SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Backlog |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Backlog |
 | SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Backlog |
@@ -100,7 +100,7 @@ human only). They inherit the stage's ticket sources as their `Source` field.
 | REQ-F-024 | SMS-23 | SMS-14 |
 | REQ-F-025 | SMS-23 | SMS-21 |
 | REQ-F-026 | SMS-30 | SMS-12 |
-| REQ-F-027 | SMS-34 | SMS-13 |
+| REQ-F-027 | SMS-34 (payment), SMS-32 (completed status) | SMS-13 |
 | REQ-F-028 | SMS-32 | SMS-21 (AC check) + SMS-10 (behavior) |
 | REQ-F-029 | SMS-29 | SMS-17 |
 | REQ-F-030 | SMS-30 | SMS-18 |

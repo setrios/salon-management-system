@@ -5,9 +5,10 @@ after the mock scenarios ran on 2026-10-26. Extended on 2026-11-09 with §6, whi
 adds a **Test** and a **Code** location per operation delivered by stages S1.1–S1.3
 (G1 exit criterion 4, `logs/2026-11-08-implementation-plan.md` §8.3). Extended
 again on 2026-11-12 with §6.5–§6.7 for the operations delivered by S2.1–S2.3
-(G2 exit criterion 4, same plan section), and on 2026-11-13 with §6.8–§6.10 for
-S3.1, S3.2 and S4.1 (G3 exit criterion 4). Sections 1–5 and §6.1–§6.3 are
-unchanged by all three extensions.
+(G2 exit criterion 4, same plan section), on 2026-11-13 with §6.8–§6.10 for
+S3.1, S3.2 and S4.1 (G3 exit criterion 4), and on the same day with §6.11–§6.13
+for S4.2, S5.1a and S5.1b (G4 exit criterion 4). Sections 1–5 and §6.1–§6.3 are
+unchanged by all four extensions.
 
 Links every SRS v1.3 requirement to the operations that expose it, the BDD
 scenario that motivated it, and the API scenario that will verify it on the
@@ -369,4 +370,44 @@ date, master, and status filters in staff representation (K9, J2).
 
 **REQ-F-030 on creation is asserted.** C1 asserts that the administrator creating
 an appointment receives no notification row, while the client and the master
-receive theirs (K5). The remaining SMS-18 suite across R21 and R22 belongs to S5.1b.
+receive theirs (K5). The rest of SMS-18 — the same suppression on an edit and on
+a cancellation — belongs to S5.1b and is asserted there (§6.13).
+
+### 6.13 S5.1b — administrator actions (SMS-32, SMS-18)
+
+S5.1b adds the three operations that let the administrator change or close an
+appointment. All three answer `AppointmentAdmin`, read back after the commit.
+
+| Operation | Test | Code |
+|---|---|---|
+| `updateAppointmentAdmin` (R21) | `tests/api/admin-appointment-actions.test.ts` — U1–U8 | `src/modules/appointments/admin-actions.ts` (`updateAppointmentAdminHandler`), `src/modules/appointments/reschedule.ts` (`rescheduleDecision`), `src/modules/appointments/service.ts` (`editAppointment`, `findBookableServices`, `bookedBlocks`) |
+| `cancelAppointmentAdmin` (R22) | `tests/api/admin-appointment-actions.test.ts` — X1–X3 | `src/modules/appointments/admin-actions.ts` (`cancelAppointmentAdminHandler`), `src/modules/appointments/service.ts` (`transitionAppointmentById`), `src/modules/appointments/state.ts` (`stateOutcome`) |
+| `completeAppointment` (R23) | `tests/api/admin-appointment-actions.test.ts` — P1–P3 | `src/modules/appointments/admin-actions.ts` (`completeAppointmentHandler`), `src/modules/appointments/service.ts` (`transitionAppointmentById`), `src/modules/appointments/state.ts` (`stateOutcome`) |
+
+**REQ-F-028 is delivered by R21.** The edit calls `rescheduleDecision` — P11's
+own function — so the recalculation of the reminder moments, the client's
+`reschedule` SMS and the master's row are the same code, not a parallel rule
+(K3). U1 and U3 assert the two moments and the one client row; the master's one
+event per enabled channel is asserted in U2.
+
+**REQ-F-030 is delivered on both acting operations (SMS-18 closed).** U2 asserts
+that an administrator edit writes no administrator row while the master's
+reschedule row stands; X1 asserts the same for a cancellation. The insertion
+point is one guard in `recordAppointmentEvent` (`actor !== 'admin'`), so a future
+actor cannot reintroduce the row by accident.
+
+**REQ-F-027's status half is delivered by R23.** `completed` is written only from
+`confirmed` (`state.ts`, `error-model.md` §3.1); the payment gate on that status
+is S5.3's, and REQ-F-027 stays on SMS-34 for it.
+
+**L3's inconsistency is recorded, not hidden.** R21 answers an off-boundary start
+with 422 `BUSINESS_RULE_VIOLATION`, while P11 answers the same input with 409
+`SLOT_UNAVAILABLE`; register row 13 carries the divergence and stage R resolves
+it. K8's text at #16 is the other one, and the register holds it the same way.
+
+**K6 and L6 are asserted as facts.** P1 compares the message records before and
+after a completion and finds them identical: there is no `completed` event in the
+catalog (`notification_preferences.event_type`), and the reminders stay
+`scheduled`. The contract's `reminders: []` for a completed record is the
+divergence recorded as register row 10 (addendum SMS-45), not what the system
+does.

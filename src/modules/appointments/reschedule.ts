@@ -16,7 +16,9 @@
  *      is the one normative source (G2).
  *   2. **The past** — `startInPast` (CL-11, G1). A start at or before the clock
  *      is 422 `BUSINESS_RULE_VIOLATION`. It precedes the slot check: a past
- *      start inside a free window is the body's fault, not the calendar's.
+ *      start inside a free window is the body's fault, not the calendar's. The
+ *      check applies only when the request supplies a start: R21 may edit the
+ *      master or the services of a record whose stored time has passed (L4).
  *   3. **The master** — a supplied `masterId` that differs must name a bookable
  *      master: active and role `master`, P8's rule (D4, G4). Otherwise 422.
  *   4. **The coverage** — the new master must offer every service of the record
@@ -29,13 +31,16 @@
  * the check and the write, so it runs inside the transaction under the advisory
  * lock on `master_id` (D2, G5), in `service.ts`.
  *
- * **The service set and the duration do not change** (G3): `AppointmentReschedule`
- * has no `serviceIds`, and the block is the stored `occupiedDurationMinutes`.
+ * **The service set and the duration do not change** for P11 (G3):
+ * `AppointmentReschedule` has no `serviceIds`, and the block is the stored
+ * `occupiedDurationMinutes`. R21 (S5.1b, L4) does change them; it passes the
+ * re-derived lines and the re-derived block as `current`, so this decision still
+ * sees one record and one block and needs no second copy of the rules.
  *
- * Source: REQ-F-007, REQ-F-008, REQ-F-009, REQ-F-029; SRS v1.3:371; SCN-03,
- *         SCN-11; `error-model.md` §3, §3.1; `openapi.yaml`
- *         `AppointmentReschedule`, P11's declared responses; CL-11, CL-12;
- *         decisions G1–G10.
+ * Source: REQ-F-007, REQ-F-008, REQ-F-009, REQ-F-028, REQ-F-029; SRS v1.3:371;
+ *         SCN-03, SCN-11; `error-model.md` §3, §3.1; `openapi.yaml`
+ *         `AppointmentReschedule`, P11's declared responses, `AppointmentPatch`;
+ *         CL-11, CL-12; decisions G1–G10, K3, K4, L1, L4.
  */
 
 import { serviceRejection, startInPast, type BookableService } from './rules.js';
@@ -46,15 +51,24 @@ import type { AppointmentLine } from './view.js';
 export interface RescheduleCurrent {
   readonly status: string;
   readonly masterId: string;
+  /** The stored start: the effective one when a request does not move the time. */
+  readonly startAt: Date;
   readonly occupiedDurationMinutes: number;
   readonly totalPriceAmountMinor: number;
   readonly totalPriceCurrency: string;
   readonly lines: readonly AppointmentLine[];
 }
 
-/** The body, as `AppointmentReschedule` declares it (closed, D-22). */
+/**
+ * The body, as `AppointmentReschedule` declares it (closed, D-22), plus R21's
+ * optional time.
+ *
+ * P11 always names `startAt` (`AppointmentReschedule` requires it). R21 may omit
+ * it — an edit of the master, the service set or the client — and then the
+ * decision keeps the stored start (L4, K4).
+ */
 export interface RescheduleRequest {
-  readonly startAt: Date;
+  readonly startAt?: Date;
   /** Omitted means "keep the current master" (the schema's own words). */
   readonly masterId?: string;
 }
@@ -121,8 +135,10 @@ export function rescheduleDecision(
     };
   }
 
-  // 2. The past (CL-11, G1). The body is wrong; the calendar is not.
-  if (startInPast(request.startAt, now)) {
+  // 2. The past (CL-11, G1). The body is wrong; the calendar is not. Only a
+  //    supplied start can be in the past: R21 may edit the master or the
+  //    services of a record whose stored time has already passed (L4).
+  if (request.startAt !== undefined && startInPast(request.startAt, now)) {
     return {
       kind: 'rejected',
       code: 'BUSINESS_RULE_VIOLATION',
@@ -130,17 +146,17 @@ export function rescheduleDecision(
     };
   }
 
+  const startAt = request.startAt ?? current.startAt;
+
   // G3: the block is the stored one, so the end follows from the new start.
-  const endAt = new Date(
-    request.startAt.getTime() + current.occupiedDurationMinutes * 60_000,
-  );
+  const endAt = new Date(startAt.getTime() + current.occupiedDurationMinutes * 60_000);
 
   // The master does not change: the snapshot is untouched (G8).
   if (request.masterId === undefined || request.masterId === current.masterId) {
     return {
       kind: 'move',
       masterId: current.masterId,
-      startAt: request.startAt,
+      startAt,
       endAt,
       lines: current.lines,
       reprice: false,
@@ -196,7 +212,7 @@ export function rescheduleDecision(
   return {
     kind: 'move',
     masterId: newMaster.id,
-    startAt: request.startAt,
+    startAt,
     endAt,
     lines,
     reprice: true,
