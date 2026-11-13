@@ -16,9 +16,14 @@
  * `skipped` and stays `skipped` (H4). A `scheduled` row whose moment passes
  * becomes `sent` on the next read (H3).
  *
+ * **A cancelled record's rows are settled at cancellation** (addendum 001,
+ * REQ-F-034, `cancellation.ts`): `scheduled` becomes `cancelled`, and `isDue`
+ * below already ignores anything that is not `scheduled`, so the dispatch needs
+ * no new branch. `sent` and `skipped` are history and keep their value.
+ *
  * Source: REQ-F-010, REQ-F-011, REQ-F-029; SCN-04, SCN-05, SCN-11;
  *         `openapi.yaml` `Reminder` (`type` ∈ {24h, 2h}, `status` ∈
- *         {scheduled, skipped, sent, failed}), `Notification`;
+ *         {scheduled, skipped, sent, failed, cancelled}), `Notification`;
  *         decisions H1–H6 (S3.2 inventory).
  */
 
@@ -27,8 +32,15 @@ import { salonDateTime } from '../../lib/occupancy.js';
 /** `Reminder.type` as the contract enumerates it. */
 export type ReminderType = '24h' | '2h';
 
-/** `Reminder.status` as the contract enumerates it. */
-export type ReminderStatus = 'scheduled' | 'sent' | 'skipped' | 'failed';
+/**
+ * `Reminder.status` as the contract enumerates it.
+ *
+ * `cancelled` is addendum 001 (REQ-F-034): the appointment was cancelled while
+ * this reminder was still `scheduled`. It is not `skipped` — that value means
+ * the moment had already passed when the record was written, and it is decided
+ * at booking or reschedule, not by a later transition.
+ */
+export type ReminderStatus = 'scheduled' | 'sent' | 'skipped' | 'failed' | 'cancelled';
 
 /** One reminder as the engine and the table hold it. */
 export interface ReminderRow {
@@ -86,7 +98,10 @@ export function reminderRowsFor(startAt: Date, now: Date): ReminderRow[] {
  * True when a `scheduled` row's moment has passed and it is due to be sent.
  *
  * A `skipped` row is never due (H4): the moment was already past when the
- * record was written, so there was nothing to send.
+ * record was written, so there was nothing to send. A `cancelled` row is never
+ * due for a different reason — the appointment no longer exists as a service to
+ * remind anyone about — and the same `status === 'scheduled'` test covers both
+ * without a second branch.
  */
 export function isDue(row: ReminderRow, now: Date): boolean {
   return row.status === 'scheduled' && row.scheduledAt.getTime() <= now.getTime();

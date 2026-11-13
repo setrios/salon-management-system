@@ -50,6 +50,9 @@ import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time
 import type { BookableService } from './rules.js';
 import { isAppointmentStatus, stateOutcome } from './state.js';
 import type { AppointmentLine, PaymentView } from './view.js';
+import {
+  settleCancelledReminders,
+} from '../notifications/cancellation.js';
 import { isUniqueViolation } from '../reference-data/http.js';
 import {
   dispatchDueReminders,
@@ -556,7 +559,9 @@ export type CancelByTokenResult =
  * again, and it is the database's, not this function's.
  *
  * **No `notifications` row** (K6): SRS v1.3 lines 253–256 say no SMS is sent for
- * a cancellation, and the master's and administrator's alerts are SMS-30.
+ * a cancellation, and the master's and administrator's alerts are SMS-30. The
+ * one write the cancellation does make to that table is addendum 001's: the
+ * reminders that are still `scheduled` become `cancelled` (REQ-F-034).
  *
  * `now` is the injected clock (D9): the transition writes it to `updated_at`,
  * and the re-read reads the reminder rows the dispatch may have changed.
@@ -605,6 +610,11 @@ export async function cancelByToken(token: string, now: Date): Promise<CancelByT
       actor: 'client',
       now,
     });
+
+    // Addendum 001 (REQ-F-034): the reminders that had not been sent will never
+    // be sent now. The settlement rewrites only `scheduled` rows, so a reminder
+    // dispatched while the record was live keeps `sent`.
+    await settleCancelledReminders(current.id, db);
   }
 
   const record = await findByToken(token);
@@ -894,6 +904,11 @@ export async function transitionAppointmentById(
           actor: 'admin',
           now,
         });
+
+        // Addendum 001 (REQ-F-034), in the same transaction as the state change:
+        // an administrator's cancellation settles the reminders exactly as the
+        // client's does.
+        await settleCancelledReminders(current.id, tx);
       }
     });
   }

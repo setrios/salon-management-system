@@ -465,7 +465,7 @@ paths:
                 reminders:
                   - type: '24h'
                     scheduledAt: '2026-11-02T10:00:00+02:00'
-                    status: skipped
+                    status: cancelled
                 accessToken: 9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
                 confirmationUrl: https://salon.example/appointments/9b2f7c1e-4a3d-4f6b-8e21-7c5a9d0b3f14
                 createdAt: '2026-10-26T12:00:00+02:00'
@@ -854,7 +854,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [scheduled, sent, skipped, failed]
+            enum: [scheduled, sent, skipped, failed, cancelled]
         - name: eventType
           in: query
           required: false
@@ -3175,6 +3175,11 @@ components:
           $ref: '#/components/schemas/Money'
     Reminder:
       type: object
+      description: |
+        A reminder of one appointment. `cancelled` is addendum 001 (REQ-F-034):
+        the appointment was cancelled while the reminder was still `scheduled`,
+        so it will never be sent. `skipped` keeps its own meaning — the moment
+        had already passed when the record was written.
       required: [type, scheduledAt, status]
       properties:
         type:
@@ -3185,7 +3190,7 @@ components:
           format: date-time
         status:
           type: string
-          enum: [scheduled, skipped, sent, failed]
+          enum: [scheduled, skipped, sent, failed, cancelled]
     Payment:
       type: object
       required: [id, appointmentId, amount, status, method, recordedAt]
@@ -3416,7 +3421,7 @@ components:
           enum: [sms, in_app]
         status:
           type: string
-          enum: [scheduled, sent, skipped, failed]
+          enum: [scheduled, sent, skipped, failed, cancelled]
         scheduledAt:
           type: string
           format: date-time

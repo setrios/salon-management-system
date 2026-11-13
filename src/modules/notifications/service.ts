@@ -64,7 +64,7 @@ import {
  * The same shape `appointments/service.ts` uses, restated here so the
  * notifications module does not depend on the appointments one for a type.
  */
-type Executor = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
+export type Executor = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** One row of `NotificationPage.items`, as the contract exposes it. */
 export interface NotificationView {

@@ -482,7 +482,9 @@ export const notifications = pgTable(
     check('notifications_channel_check', sql`${table.channel} in ('sms', 'in_app')`),
     check(
       'notifications_status_check',
-      sql`${table.status} in ('scheduled', 'sent', 'skipped', 'failed')`,
+      // `cancelled` is addendum 001 (REQ-F-034): an unsent reminder of a
+      // cancelled appointment. It is not `skipped` — see reminders.ts.
+      sql`${table.status} in ('scheduled', 'sent', 'skipped', 'failed', 'cancelled')`,
     ),
     uniqueIndex('notifications_appointment_new_client_sms_unique')
       .on(table.appointmentId)

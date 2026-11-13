@@ -61,6 +61,7 @@ mock. Columns:
 | REQ-F-031 | Duration rounds up to 30-minute block | P7, P8, R19, R21 | SCN-13 | POS-13 | documented |
 | REQ-F-032 | Popular services ranked by booking count | R29 | SCN-14 | POS-14 | documented |
 | REQ-F-033 | Stock-level snapshot without period | R30 | SCN-15 | POS-15 | documented |
+| REQ-F-034 (addendum 001) | Cancellation settles unsent reminders | P10, R22, R24, M7 | SCN-01 (extension) | NEG-10 (extension) | documented |
 
 ## 2. Non-functional requirements (9)
 
@@ -76,7 +77,7 @@ mock. Columns:
 | REQ-NF-008 | No start off a 30-minute boundary | P7, P8, R19, R21 | — | POS-27, NEG-14 | documented |
 | REQ-NF-009 | No payment-gateway integration | R27 | — | POS-07 | documented |
 
-**Coverage:** 42/42 requirements mapped. 40 have API surface (33 direct, 7 as
+**Coverage:** 43/43 requirements mapped. 41 have API surface (34 direct, 7 as
 cross-cutting conventions enforced by the contract); 2 are explicitly
 not applicable and carry a reason (REQ-NF-002, REQ-NF-007).
 
@@ -521,3 +522,20 @@ about what the artifact does not contain, so the acceptance checks read `dist/`,
 the migrations and `package.json`. That is the only form in which "no purge job"
 and "no gateway" can be checked; an API call can only show absence at the moment
 it is asked.
+
+### 6.18 Addendum 001 — cancelled reminders (REQ-F-034)
+
+| Item | Where |
+|---|---|
+| Requirement text | `spec/addenda/001-cancelled-reminders.md` §2 |
+| Gate | `logs/gates/2026-11-13-spec-addendum-001.md` (SPEC-ADDENDUM-GATE), `logs/gates/2026-11-13-test-SMS-45.md` (TEST-GATE) |
+| Contract | `openapi.yaml` — `Reminder.status`, `Notification.status`, `listMyNotifications`'s `status` parameter, P10's example |
+| Cases | `tests/api/cancelled-reminders.test.ts` C1–C8; R9 in `tests/api/reminders.test.ts` amended |
+| Implementation | `src/modules/notifications/cancellation.ts`; the two cancellation paths in `src/modules/appointments/service.ts`; migration `0008_cancelled_reminders.sql` |
+| Control run | `logs/runs/runs-18.md` — 18/18 on the built artifact |
+
+**Why the requirement has no SCN of its own.** The addendum extends an existing
+scenario rather than adding a journey: SCN-01 books, P10 cancels, and the reminders
+of that record are the record's own field. The acceptance criteria are stated as
+eight cases rather than as a story because the behaviour has no new actor.
+
