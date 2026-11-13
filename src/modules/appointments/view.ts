@@ -38,6 +38,25 @@ export interface AppointmentLine {
   readonly priceCurrency: string;
 }
 
+/**
+ * `Payment`, as the contract exposes it (REQ-F-021, D12).
+ *
+ * The appointment's payment is at most one, and it is its own row rather than a
+ * field on the appointment: D12 makes it immutable, so it must not share a row
+ * that R21 rewrites. The body carries it here because `AppointmentAdmin` declares
+ * the field (N2); R27 answers it as `Payment` from the same view.
+ */
+export interface PaymentView {
+  readonly id: string;
+  readonly appointmentId: string;
+  readonly amountMinor: number;
+  readonly currency: string;
+  readonly status: 'paid' | 'unpaid';
+  readonly method: 'cash' | 'card';
+  /** The instant the money was recorded, in the salon's offset. */
+  readonly recordedAt: string;
+}
+
 /** Everything an `Appointment` body needs from the stored row and its master. */
 export interface AppointmentRecord {
   readonly id: string;
@@ -58,6 +77,8 @@ export interface AppointmentRecord {
   readonly lines: readonly AppointmentLine[];
   /** The two reminder rows, in the order they occur (S3.2, H1). */
   readonly reminders: readonly ReminderRow[];
+  /** The recorded payment, when there is one (N2); absent, not `null`. */
+  readonly payment?: PaymentView;
 }
 
 /**
@@ -105,9 +126,30 @@ export function appointmentBody(record: AppointmentRecord): Record<string, unkno
     },
     // H1: the stored rows, not a computation from `startAt`.
     reminders: reminderViews(record.reminders),
+    // N2: optional in the schema, so an unpaid appointment carries no key at
+    // all rather than `payment: null`.
+    ...(record.payment === undefined ? {} : { payment: paymentBody(record.payment) }),
     accessToken: record.accessToken,
     confirmationUrl: `${CONFIRMATION_ORIGIN}/appointments/${record.accessToken}`,
     createdAt: salonDateTime(record.createdAt),
     updatedAt: salonDateTime(record.updatedAt),
+  };
+}
+
+/**
+ * The `Payment` body for one stored payment (REQ-F-021).
+ *
+ * The stored view is flat (`amountMinor`, `currency`); the contract nests them
+ * under `amount`. The mapping is here, next to `appointmentBody`, so R27's 201 and
+ * the appointment's `payment` field cannot disagree about the shape.
+ */
+export function paymentBody(payment: PaymentView): Record<string, unknown> {
+  return {
+    id: payment.id,
+    appointmentId: payment.appointmentId,
+    amount: { amountMinor: payment.amountMinor, currency: payment.currency },
+    status: payment.status,
+    method: payment.method,
+    recordedAt: payment.recordedAt,
   };
 }

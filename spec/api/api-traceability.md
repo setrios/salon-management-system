@@ -440,3 +440,31 @@ create-operation pattern, recorded here and in the gate.
 **Four points the contract leaves open** are decided in the gate's §1.1: the
 ledger order (M3), the inclusive Kyiv day filters (M4), transactions on an
 inactive material (M6) and any `occurredAt` instant (M7).
+
+### 6.15 S5.3 — appointment payments
+
+| Operation | Test | Code |
+|---|---|---|
+| `createPayment` (R27) | `tests/api/appointment-payments.test.ts` — P1–P10 | `src/modules/appointments/payments.ts` (`createPaymentHandler`), `src/modules/appointments/service.ts` (`recordPayment`, `findPayment`), `src/db/schema.ts` (`payments`), `src/db/migrations/0007_payments.sql` |
+
+**REQ-F-021 is delivered by R27 and is total.** The payment is recorded only for
+a `completed` appointment: P4 and P5 assert the 409 `APPOINTMENT_NOT_COMPLETED`
+with `error-model.md` §5.5's sentence for a `confirmed` and a `cancelled` record,
+and assert that nothing was written. REQ-F-027's precondition is the state
+transition R23 already performs (S5.1b), read here in front of the insert.
+
+**D12 is delivered twice over.** The unique constraint on `appointment_id` makes a
+second payment impossible, and P6 asserts that it answers 409
+`PAYMENT_ALREADY_RECORDED` and leaves the first row intact; the absence of any
+operation that edits a payment is asserted by the 405 on `PATCH` of the path.
+
+**Three points the contract leaves open** are decided in the gate's §1.1: any
+amount is accepted (N1), `AppointmentAdmin.payment` is returned when recorded
+(N2), and the 201 carries no `Location` (N3). `status` defaults to `paid` (N4),
+and the two 409s are ordered state-before-cardinality (N5) — they cannot overlap
+in practice.
+
+**`422 BUSINESS_RULE_VIOLATION` is declared for R27 and unreachable**: the body's
+mistakes are 422 `VALIDATION_ERROR` (D22), the state rule and the cardinality are
+409s, and REQ-F-021 states no amount rule. It is recorded in the gate §1.2, not
+invented in the handler.

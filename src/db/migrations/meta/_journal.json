@@ -50,6 +50,13 @@
       "when": 1794565983843,
       "tag": "0006_material_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794566723198,
+      "tag": "0007_payments",
+      "breakpoints": true
     }
   ]
 }

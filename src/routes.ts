@@ -32,6 +32,7 @@ import { Router } from 'express';
 import { authRoutes } from './modules/auth/routes.js';
 import { adminActionRoutes } from './modules/appointments/admin-actions.js';
 import { adminAppointmentRoutes } from './modules/appointments/admin.js';
+import { paymentRoutes } from './modules/appointments/payments.js';
 import { appointmentRoutes } from './modules/appointments/routes.js';
 import { availabilityRoutes } from './modules/availability/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
@@ -94,6 +95,8 @@ export function registerRoutes(app: Express): void {
   // R21–R23 act on one appointment: the same component, mounted after the
   // reads and creates (S5.1b, SMS-32).
   adminActionRoutes(admin);
+  // R27 records the money of a completed appointment (S5.3, SMS-34).
+  paymentRoutes(admin);
 
   api.use(admin);
 

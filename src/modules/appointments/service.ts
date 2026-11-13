@@ -42,12 +42,14 @@ import {
   masterServices,
   masters,
   notifications,
+  payments,
   services,
 } from '../../db/schema.js';
+import { salonDateTime } from '../../lib/occupancy.js';
 import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time.js';
 import type { BookableService } from './rules.js';
 import { isAppointmentStatus, stateOutcome } from './state.js';
-import type { AppointmentLine } from './view.js';
+import type { AppointmentLine, PaymentView } from './view.js';
 import { isUniqueViolation } from '../reference-data/http.js';
 import {
   dispatchDueReminders,
@@ -439,8 +441,38 @@ async function fetchAppointment(condition: SQL): Promise<StoredAppointment | und
     .orderBy(appointmentServices.position);
 
   const reminders = await readReminders(db, row.id);
+  const payment = await findPayment(row.id);
 
-  return { ...row, lines, reminders };
+  // N2: absent when the appointment has none, so the body omits the key.
+  return { ...row, lines, reminders, ...(payment === undefined ? {} : { payment }) };
+}
+
+/**
+ * The appointment's payment, or `undefined` when it has none (D12: at most one).
+ *
+ * The `recordedAt` instant leaves in the salon's offset, like every other
+ * instant this API returns.
+ */
+export async function findPayment(
+  appointmentId: string,
+  executor: Executor = getDb(),
+): Promise<PaymentView | undefined> {
+  const [row] = await executor
+    .select()
+    .from(payments)
+    .where(eq(payments.appointmentId, appointmentId));
+
+  if (row === undefined) return undefined;
+
+  return {
+    id: row.id,
+    appointmentId: row.appointmentId,
+    amountMinor: row.amountMinor,
+    currency: row.currency,
+    status: row.status as 'paid' | 'unpaid',
+    method: row.method as 'cash' | 'card',
+    recordedAt: salonDateTime(row.recordedAt),
+  };
 }
 
 export async function findByToken(token: string): Promise<StoredAppointment | undefined> {
@@ -1016,3 +1048,70 @@ export async function listMyAppointments(
 ): Promise<{ items: StoredAppointment[]; total: number }> {
   return listAppointmentsAdmin({ ...filters, masterId }, limit, offset, now);
 }
+
+/** What R27 did, as the route needs to answer it (N5). */
+export type RecordPaymentOutcome =
+  | { readonly kind: 'recorded'; readonly payment: PaymentView }
+  | { readonly kind: 'not-found' }
+  | { readonly kind: 'not-completed' }
+  | { readonly kind: 'already-recorded' };
+
+export interface RecordPaymentInput {
+  readonly amountMinor: number;
+  readonly currency: string;
+  readonly method: 'cash' | 'card';
+  readonly status: 'paid' | 'unpaid';
+}
+
+/**
+ * R27 — record the payment of a completed appointment (REQ-F-021, D12).
+ *
+ * **The order of the two 409s (N5).** The record's state is read first: an
+ * appointment that is not `completed` answers `not-completed`, whatever else is
+ * true of it. Only a completed record reaches the insert, where D12's unique
+ * constraint answers `already-recorded` — the constraint rather than a
+ * read-then-write, so two simultaneous requests cannot both pass a check and
+ * both insert.
+ *
+ * **The appointment row is not written** (N6): recording money is not a change
+ * to the booking, so its `status` and `updatedAt` stay as they were.
+ *
+ * `now` is the application's clock and becomes the payment's `recordedAt`.
+ */
+export async function recordPayment(
+  appointmentId: string,
+  input: RecordPaymentInput,
+  now: Date,
+): Promise<RecordPaymentOutcome> {
+  const db = getDb();
+
+  const record = await findById(appointmentId);
+  if (record === undefined) return { kind: 'not-found' };
+  if (record.status !== 'completed') return { kind: 'not-completed' };
+
+  try {
+    await db.insert(payments).values({
+      appointmentId,
+      amountMinor: input.amountMinor,
+      currency: input.currency,
+      status: input.status,
+      method: input.method,
+      recordedAt: now,
+    });
+  } catch (error) {
+    // D12's unique constraint on `appointment_id`. Mapped like the booking's
+    // slot constraint: a request that loses the race gets the same business
+    // refusal as one that found the row first, never a 500.
+    if (isUniqueViolation(error, PAYMENT_CONSTRAINT)) return { kind: 'already-recorded' };
+    throw error;
+  }
+
+  const payment = await findPayment(appointmentId);
+  if (payment === undefined) {
+    throw new Error(`payment for appointment ${appointmentId} was not readable after insert`);
+  }
+  return { kind: 'recorded', payment };
+}
+
+/** The unique constraint D12's cardinality is enforced by. */
+export const PAYMENT_CONSTRAINT = 'payments_appointment_id_unique';

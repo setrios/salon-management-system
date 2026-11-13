@@ -391,6 +391,47 @@ export const appointmentServices = pgTable(
 );
 
 /**
+ * Payments — the money recorded for a completed appointment (REQ-F-021, D12).
+ *
+ * D12 decides the shape: **at most one payment per appointment**, and it is
+ * immutable. The cardinality is the unique constraint on `appointment_id`, so
+ * two concurrent writes cannot both succeed; the immutability is the absence of
+ * any operation that updates or deletes a row, rather than a trigger.
+ *
+ * `amount_minor` is integer kopiykas (the contract's `Money`), not a float: money
+ * is counted. `currency` is stored even though `Money` admits only `UAH` today,
+ * because the column is what a later multi-currency rule would read and the
+ * contract's enum is the place that would change first.
+ *
+ * `status` and `method` are constrained to the contract's enums, like the
+ * appointment status and the material transaction type: a third value would make
+ * every branch on them incomplete.
+ *
+ * `recorded_at` is when the administrator recorded the money — the application's
+ * clock, as every other write uses it — not when the service was performed.
+ */
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    appointmentId: uuid('appointment_id')
+      .notNull()
+      .unique()
+      .references(() => appointments.id),
+    amountMinor: integer('amount_minor').notNull(),
+    currency: text('currency').notNull().default('UAH'),
+    status: text('status').notNull(),
+    method: text('method').notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    check('payments_amount_check', sql`${table.amountMinor} >= 0`),
+    check('payments_status_check', sql`${table.status} in ('paid', 'unpaid')`),
+    check('payments_method_check', sql`${table.method} in ('cash', 'card')`),
+  ],
+);
+
+/**
  * Notification records — the messages the system has decided to send (REQ-F-005).
  *
  * A row is written by the operation that causes the message, in the same
