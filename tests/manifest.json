@@ -1,21 +1,24 @@
 {
   "$comment": [
-    "Ticket → test → implementation mapping, read by scripts/check-test-first.mjs.",
+    "Ticket \u2192 test \u2192 implementation mapping, read by scripts/check-test-first.mjs.",
     "One entry per test file, added in the `test:` commit of its ticket and left",
     "unchanged afterwards. `implementation` lists only source files this ticket",
     "CREATES; the checker proves none of them existed at the commit where the test",
     "file was first added. A file that already exists and is only modified goes",
-    "under `touches`, which the checker ignores — listing it under `implementation`",
-    "fails the check, because the ordering would not be provable (plan §6.2, D-17).",
+    "under `touches`, which the checker ignores \u2014 listing it under `implementation`",
+    "fails the check, because the ordering would not be provable (plan \u00a76.2, D-17).",
     "Kept as a top-level object with an `entries` array so that metadata can be",
     "added without breaking the checker. An empty array is valid and exits 0."
   ],
   "schemaVersion": 1,
   "entries": [
     {
-      "ticket": "SMS-21 (test) → SMS-22 (implementation)",
+      "ticket": "SMS-21 (test) \u2192 SMS-22 (implementation)",
       "test": "tests/api/auth.test.ts",
-      "sources": ["REQ-F-012", "REQ-F-017"],
+      "sources": [
+        "REQ-F-012",
+        "REQ-F-017"
+      ],
       "implementation": [
         "src/modules/auth/password.ts",
         "src/modules/auth/tokens.ts",
@@ -35,9 +38,14 @@
       ]
     },
     {
-      "ticket": "SMS-14 (test) → SMS-23 (implementation)",
+      "ticket": "SMS-14 (test) \u2192 SMS-23 (implementation)",
       "test": "tests/api/reference-data.test.ts",
-      "sources": ["REQ-F-018", "REQ-F-024", "REQ-F-025", "SCN-08"],
+      "sources": [
+        "REQ-F-018",
+        "REQ-F-024",
+        "REQ-F-025",
+        "SCN-08"
+      ],
       "implementation": [
         "src/middleware/authorize.ts",
         "src/modules/reference-data/http.ts",
@@ -65,9 +73,15 @@
       ]
     },
     {
-      "ticket": "SMS-15 (test) → SMS-24 (implementation)",
+      "ticket": "SMS-15 (test) \u2192 SMS-24 (implementation)",
       "test": "tests/api/availability.test.ts",
-      "sources": ["REQ-F-015", "REQ-F-031", "REQ-NF-008", "SCN-09", "SCN-13"],
+      "sources": [
+        "REQ-F-015",
+        "REQ-F-031",
+        "REQ-NF-008",
+        "SCN-09",
+        "SCN-13"
+      ],
       "implementation": [
         "src/modules/availability/routes.ts",
         "src/modules/availability/service.ts",
@@ -84,9 +98,15 @@
       ]
     },
     {
-      "ticket": "SMS-25 (test) → SMS-25 (implementation)",
+      "ticket": "SMS-25 (test) \u2192 SMS-25 (implementation)",
       "test": "tests/api/public-catalogue.test.ts",
-      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-014", "REQ-F-024", "SCN-08"],
+      "sources": [
+        "REQ-F-001",
+        "REQ-F-002",
+        "REQ-F-014",
+        "REQ-F-024",
+        "SCN-08"
+      ],
       "implementation": [
         "src/modules/public/routes.ts",
         "src/modules/public/service.ts"
@@ -98,9 +118,19 @@
       ]
     },
     {
-      "ticket": "SMS-8 (test) → SMS-25 (implementation)",
+      "ticket": "SMS-8 (test) \u2192 SMS-25 (implementation)",
       "test": "tests/api/booking.test.ts",
-      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-003", "REQ-F-004", "REQ-F-005", "REQ-F-010", "REQ-F-011", "REQ-NF-008", "SCN-01"],
+      "sources": [
+        "REQ-F-001",
+        "REQ-F-002",
+        "REQ-F-003",
+        "REQ-F-004",
+        "REQ-F-005",
+        "REQ-F-010",
+        "REQ-F-011",
+        "REQ-NF-008",
+        "SCN-01"
+      ],
       "implementation": [
         "src/modules/appointments/routes.ts",
         "src/modules/appointments/service.ts",
@@ -120,9 +150,13 @@
       ]
     },
     {
-      "ticket": "SMS-19 (test) → SMS-25 (implementation)",
+      "ticket": "SMS-19 (test) \u2192 SMS-25 (implementation)",
       "test": "tests/api/rounding.test.ts",
-      "sources": ["REQ-F-031", "REQ-NF-008", "SCN-13"],
+      "sources": [
+        "REQ-F-031",
+        "REQ-NF-008",
+        "SCN-13"
+      ],
       "implementation": [
         "src/modules/appointments/routes.ts",
         "src/modules/appointments/service.ts",
@@ -142,9 +176,14 @@
       ]
     },
     {
-      "ticket": "SMS-26 (test) → SMS-26 (implementation)",
+      "ticket": "SMS-26 (test) \u2192 SMS-26 (implementation)",
       "test": "tests/api/confirmation.test.ts",
-      "sources": ["REQ-F-004", "REQ-NF-001", "REQ-NF-005", "SCN-01"],
+      "sources": [
+        "REQ-F-004",
+        "REQ-NF-001",
+        "REQ-NF-005",
+        "SCN-01"
+      ],
       "implementation": [
         "src/modules/appointments/view.ts"
       ],
@@ -157,9 +196,13 @@
       ]
     },
     {
-      "ticket": "SMS-26 (test) → SMS-26 (implementation)",
+      "ticket": "SMS-26 (test) \u2192 SMS-26 (implementation)",
       "test": "tests/api/notification.test.ts",
-      "sources": ["REQ-F-005", "REQ-F-003", "SCN-01"],
+      "sources": [
+        "REQ-F-005",
+        "REQ-F-003",
+        "SCN-01"
+      ],
       "implementation": [
         "src/modules/notifications/routes.ts",
         "src/modules/notifications/service.ts",
@@ -175,9 +218,13 @@
       ]
     },
     {
-      "ticket": "SMS-27 (test) → SMS-27 (implementation)",
+      "ticket": "SMS-27 (test) \u2192 SMS-27 (implementation)",
       "test": "tests/api/cancellation.test.ts",
-      "sources": ["REQ-F-006", "REQ-NF-005", "SCN-02"],
+      "sources": [
+        "REQ-F-006",
+        "REQ-NF-005",
+        "SCN-02"
+      ],
       "implementation": [
         "src/modules/appointments/state.ts"
       ],
@@ -190,9 +237,15 @@
       ]
     },
     {
-      "ticket": "SMS-8 (test) → SMS-25 (implementation)",
+      "ticket": "SMS-8 (test) \u2192 SMS-25 (implementation)",
       "test": "tests/api/occupancy.test.ts",
-      "sources": ["REQ-F-001", "REQ-F-002", "REQ-F-031", "REQ-NF-008", "SCN-01"],
+      "sources": [
+        "REQ-F-001",
+        "REQ-F-002",
+        "REQ-F-031",
+        "REQ-NF-008",
+        "SCN-01"
+      ],
       "implementation": [
         "src/lib/occupancy.ts",
         "src/modules/appointments/routes.ts",
@@ -213,10 +266,19 @@
       ]
     },
     {
-      "ticket": "SMS-10 (test) → SMS-28 (implementation)",
+      "ticket": "SMS-10 (test) \u2192 SMS-28 (implementation)",
       "test": "tests/api/reschedule.test.ts",
-      "sources": ["REQ-F-007", "REQ-F-008", "REQ-F-009", "REQ-F-029", "SCN-03", "SCN-11"],
-      "implementation": ["src/modules/appointments/reschedule.ts"],
+      "sources": [
+        "REQ-F-007",
+        "REQ-F-008",
+        "REQ-F-009",
+        "REQ-F-029",
+        "SCN-03",
+        "SCN-11"
+      ],
+      "implementation": [
+        "src/modules/appointments/reschedule.ts"
+      ],
       "touches": [
         "src/modules/appointments/rules.ts",
         "src/modules/appointments/routes.ts",
@@ -226,10 +288,19 @@
       ]
     },
     {
-      "ticket": "SMS-11, SMS-17 (test) → SMS-29 (implementation)",
+      "ticket": "SMS-11, SMS-17 (test) \u2192 SMS-29 (implementation)",
       "test": "tests/api/reminders.test.ts",
-      "sources": ["REQ-F-010", "REQ-F-011", "REQ-F-029", "SCN-04", "SCN-05", "SCN-11"],
-      "implementation": ["src/modules/notifications/reminders.ts"],
+      "sources": [
+        "REQ-F-010",
+        "REQ-F-011",
+        "REQ-F-029",
+        "SCN-04",
+        "SCN-05",
+        "SCN-11"
+      ],
+      "implementation": [
+        "src/modules/notifications/reminders.ts"
+      ],
       "touches": [
         "src/modules/appointments/reminders.ts",
         "src/modules/appointments/service.ts",
@@ -242,9 +313,14 @@
       ]
     },
     {
-      "ticket": "SMS-12 (test) → SMS-30 (implementation)",
+      "ticket": "SMS-12 (test) \u2192 SMS-30 (implementation)",
       "test": "tests/api/notification-preferences.test.ts",
-      "sources": ["REQ-F-016", "REQ-F-023", "REQ-F-026", "SCN-06"],
+      "sources": [
+        "REQ-F-016",
+        "REQ-F-023",
+        "REQ-F-026",
+        "SCN-06"
+      ],
       "implementation": [
         "src/modules/notifications/preferences.ts",
         "src/db/migrations/0005_notification_preferences.sql",
@@ -260,9 +336,12 @@
       ]
     },
     {
-      "ticket": "SMS-12 (test) → SMS-30 (implementation)",
+      "ticket": "SMS-12 (test) \u2192 SMS-30 (implementation)",
       "test": "tests/api/my-notifications.test.ts",
-      "sources": ["REQ-F-016", "REQ-F-023"],
+      "sources": [
+        "REQ-F-016",
+        "REQ-F-023"
+      ],
       "implementation": [
         "src/modules/notifications/preferences.ts",
         "src/db/migrations/0005_notification_preferences.sql",
@@ -278,10 +357,15 @@
       ]
     },
     {
-      "ticket": "SMS-31 (test) → SMS-31 (implementation)",
+      "ticket": "SMS-31 (test) \u2192 SMS-31 (implementation)",
       "test": "tests/api/master-calendar.test.ts",
-      "sources": ["REQ-F-013", "REQ-F-014"],
-      "implementation": ["src/modules/appointments/staff-view.ts"],
+      "sources": [
+        "REQ-F-013",
+        "REQ-F-014"
+      ],
+      "implementation": [
+        "src/modules/appointments/staff-view.ts"
+      ],
       "touches": [
         "src/modules/appointments/service.ts",
         "src/modules/appointments/routes.ts",
@@ -292,10 +376,16 @@
       ]
     },
     {
-      "ticket": "SMS-21 (test) → SMS-32 (implementation)",
+      "ticket": "SMS-21 (test) \u2192 SMS-32 (implementation)",
       "test": "tests/api/admin-appointments.test.ts",
-      "sources": ["REQ-F-019", "REQ-NF-006", "REQ-F-030"],
-      "implementation": ["src/modules/appointments/admin.ts"],
+      "sources": [
+        "REQ-F-019",
+        "REQ-NF-006",
+        "REQ-F-030"
+      ],
+      "implementation": [
+        "src/modules/appointments/admin.ts"
+      ],
       "touches": [
         "src/routes.ts",
         "src/modules/appointments/routes.ts",
@@ -304,10 +394,17 @@
       ]
     },
     {
-      "ticket": "SMS-32 (test) → SMS-32 (implementation)",
+      "ticket": "SMS-32 (test) \u2192 SMS-32 (implementation)",
       "test": "tests/api/admin-appointment-actions.test.ts",
-      "sources": ["REQ-F-019", "REQ-F-027", "REQ-F-028", "REQ-F-030"],
-      "implementation": ["src/modules/appointments/admin-actions.ts"],
+      "sources": [
+        "REQ-F-019",
+        "REQ-F-027",
+        "REQ-F-028",
+        "REQ-F-030"
+      ],
+      "implementation": [
+        "src/modules/appointments/admin-actions.ts"
+      ],
       "touches": [
         "src/modules/appointments/reschedule.ts",
         "src/modules/appointments/service.ts",
@@ -317,10 +414,14 @@
       ]
     },
     {
-      "ticket": "SMS-33 (test) → SMS-33 (implementation)",
+      "ticket": "SMS-33 (test) \u2192 SMS-33 (implementation)",
       "test": "tests/api/material-transactions.test.ts",
-      "sources": ["REQ-F-020"],
-      "implementation": ["src/modules/materials/transactions.ts"],
+      "sources": [
+        "REQ-F-020"
+      ],
+      "implementation": [
+        "src/modules/materials/transactions.ts"
+      ],
       "touches": [
         "src/db/schema.ts",
         "src/db/migrations",
@@ -330,10 +431,15 @@
       ]
     },
     {
-      "ticket": "SMS-13 (test) → SMS-34 (implementation)",
+      "ticket": "SMS-13 (test) \u2192 SMS-34 (implementation)",
       "test": "tests/api/appointment-payments.test.ts",
-      "sources": ["REQ-F-021", "REQ-F-027"],
-      "implementation": ["src/modules/appointments/payments.ts"],
+      "sources": [
+        "REQ-F-021",
+        "REQ-F-027"
+      ],
+      "implementation": [
+        "src/modules/appointments/payments.ts"
+      ],
       "touches": [
         "src/db/schema.ts",
         "src/db/migrations",
@@ -345,10 +451,16 @@
       ]
     },
     {
-      "ticket": "SMS-16 (test) → SMS-35 (implementation)",
+      "ticket": "SMS-16 (test) \u2192 SMS-35 (implementation)",
       "test": "tests/api/reports.test.ts",
-      "sources": ["REQ-F-022", "REQ-F-032", "REQ-F-033"],
-      "implementation": ["src/modules/reports/routes.ts"],
+      "sources": [
+        "REQ-F-022",
+        "REQ-F-032",
+        "REQ-F-033"
+      ],
+      "implementation": [
+        "src/modules/reports/routes.ts"
+      ],
       "touches": [
         "src/modules/reports/service.ts",
         "src/modules/reports/period.ts",
@@ -358,16 +470,35 @@
       ]
     },
     {
-      "ticket": "SMS-45 (test) → SMS-45 (implementation)",
+      "ticket": "SMS-45 (test) \u2192 SMS-45 (implementation)",
       "test": "tests/api/cancelled-reminders.test.ts",
-      "sources": ["REQ-F-034"],
-      "implementation": ["src/modules/notifications/cancellation.ts"],
+      "sources": [
+        "REQ-F-034"
+      ],
+      "implementation": [
+        "src/modules/notifications/cancellation.ts"
+      ],
       "touches": [
         "src/modules/notifications/reminders.ts",
         "src/modules/appointments/service.ts",
         "src/db/schema.ts",
         "src/db/migrations",
         "tests/api/reminders.test.ts",
+        "tests/manifest.json"
+      ]
+    },
+    {
+      "ticket": "SMS-46 (test) \u2192 SMS-46 (implementation)",
+      "test": "tests/api/reminder-scheduler.test.ts",
+      "sources": [
+        "REQ-F-010",
+        "REQ-F-011"
+      ],
+      "implementation": [
+        "src/modules/notifications/scheduler.ts"
+      ],
+      "touches": [
+        "src/index.ts",
         "tests/manifest.json"
       ]
     }
