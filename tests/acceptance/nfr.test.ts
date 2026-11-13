@@ -142,13 +142,15 @@ describe('REQ-NF-006 — client data is visible only to authorised parties', () 
     expect(adminView.status).toBe(200);
     expect(adminView.body.client).toEqual({ name: 'NFR Client', phone: '+380509876543' });
 
-    // The owning master sees it in their own calendar.
+    // The owning master sees it in their own calendar. The window is the
+    // appointment's own day, so the case stays true whatever else the file
+    // arranged for this master (N6 books another one later in November).
     const ownCalendar = await request(app)
-      .get('/api/v1/me/appointments?from=2026-11-01&to=2026-11-30')
+      .get('/api/v1/me/appointments?from=2026-11-16&to=2026-11-16')
       .set('Authorization', `Bearer ${ownerToken}`);
     expect(ownCalendar.status).toBe(200);
-    expect(ownCalendar.body.total).toBe(1);
-    expect(ownCalendar.body.items[0].client).toEqual({
+    const ownEntry = ownCalendar.body.items.find((item: any) => item.id === appointmentId);
+    expect(ownEntry?.client).toEqual({
       name: 'NFR Client',
       phone: '+380509876543',
     });
@@ -290,9 +292,10 @@ describe('REQ-NF-001 and REQ-NF-008 — restated in one line each', () => {
     expect(adminView.body.confirmationUrl).toBeUndefined();
 
     const masterView = await request(app)
-      .get('/api/v1/me/appointments?from=2026-11-01&to=2026-11-30')
+      .get('/api/v1/me/appointments?from=2026-11-16&to=2026-11-16')
       .set('Authorization', `Bearer ${ownerToken}`);
-    expect(masterView.body.items[0].accessToken).toBeUndefined();
+    const staffEntry = masterView.body.items.find((item: any) => item.id === appointmentId);
+    expect(staffEntry?.accessToken).toBeUndefined();
   });
 
   it('N6 accepts only start times on a 30-minute boundary (REQ-NF-008)', async () => {
