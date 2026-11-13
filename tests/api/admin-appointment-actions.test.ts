@@ -321,10 +321,13 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       // REQ-F-030: the administrator's own action produces no row for them.
       expect(items.some((row) => row.audience === 'admin')).toBe(false);
 
-      // REQ-F-016: the assigned master's notification is unaffected.
+      // REQ-F-016: the assigned master's notification is unaffected. S4.1 writes
+      // one row per enabled channel, so the count is the preferences'.
       expect(
-        items.filter((row) => row.audience === 'master' && row.eventType === 'reschedule'),
-      ).toHaveLength(1);
+        items.some(
+          (row) => row.audience === 'master' && row.eventType === 'reschedule',
+        ),
+      ).toBe(true);
     });
 
     it('U3 changes the master, re-prices from their link and writes the client reschedule (L1, G8)', async () => {
@@ -375,7 +378,7 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
     });
 
     it('U5 recalculates the block and the price when the service set changes (L4)', async () => {
-      const created = await book(masterA.id, onMonday(FIRST_MONDAY, '09:30'));
+      const created = await book(masterA.id, onMonday(SECOND_MONDAY, '12:00'));
       const before = await notificationItems(created.body.id);
 
       const response = await patch(created.body.id, { serviceIds: [colouring.id] });
@@ -388,8 +391,8 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
         price: { amountMinor: 70000, currency: 'UAH' },
       });
       expect(response.body).toMatchObject({
-        startAt: onMonday(FIRST_MONDAY, '09:30'),
-        endAt: onMonday(FIRST_MONDAY, '10:30'),
+        startAt: onMonday(SECOND_MONDAY, '12:00'),
+        endAt: onMonday(SECOND_MONDAY, '13:00'),
         totalDurationMinutes: 60,
         occupiedDurationMinutes: 60,
         totalPrice: { amountMinor: 70000, currency: 'UAH' },
@@ -534,11 +537,14 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       });
 
       const items = await notificationItems(created.body.id);
-      // REQ-F-030: no row for the administrator, one for the master.
+      // REQ-F-030: no row for the administrator, the master's rows stand (one
+      // per enabled channel).
       expect(items.some((row) => row.audience === 'admin')).toBe(false);
       expect(
-        items.filter((row) => row.audience === 'master' && row.eventType === 'cancellation'),
-      ).toHaveLength(1);
+        items.some(
+          (row) => row.audience === 'master' && row.eventType === 'cancellation',
+        ),
+      ).toBe(true);
       // SRS v1.3:253–256 (P10's reading): a cancellation sends the client nothing.
       expect(items.some((row) => row.audience === 'client' && row.eventType === 'cancellation')).toBe(
         false,
@@ -559,6 +565,7 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       const cancelled = await book(masterA.id, onMonday(SECOND_MONDAY, '15:00'));
       const first = await cancelAction(cancelled.body.id);
       expectAppointmentAdmin(first);
+      const afterFirst = await notificationItems(cancelled.body.id);
 
       const repeat = await cancelAction(cancelled.body.id);
       expectAppointmentAdmin(repeat);
@@ -566,11 +573,8 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       // F5's rule for the repeat: no write, so `updatedAt` is the first one's.
       expect(repeat.body.updatedAt).toBe(first.body.updatedAt);
 
-      // And no second master row for the repeat.
-      const items = await notificationItems(cancelled.body.id);
-      expect(
-        items.filter((row) => row.audience === 'master' && row.eventType === 'cancellation'),
-      ).toHaveLength(1);
+      // And no second cancellation event: the row set is the first one's.
+      expect(await notificationItems(cancelled.body.id)).toEqual(afterFirst);
     });
 
     it('X3 answers 404 for an unknown or non-uuid id, 401 without auth, 403 for a master (K8)', async () => {
@@ -603,6 +607,7 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
   describe('completeAppointment (R23, POST /admin/appointments/{appointmentId}/complete)', () => {
     it('P1 marks a confirmed record completed (REQ-F-027, K6)', async () => {
       const created = await book(masterA.id, onMonday(SECOND_MONDAY, '16:00'));
+      const before = await notificationItems(created.body.id);
 
       const response = await completeAction(created.body.id);
 
@@ -616,11 +621,8 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       });
 
       // K6: completion is not in the event catalog, so the rows do not change.
-      const items = await notificationItems(created.body.id);
-      expect(
-        items.filter((row) => row.eventType === 'new' || row.eventType === 'reschedule'),
-      ).toHaveLength(2);
-      expect(items.some((row) => row.eventType === 'cancellation')).toBe(false);
+      expect(await notificationItems(created.body.id)).toEqual(before);
+      expect(before.some((row) => row.eventType === 'cancellation')).toBe(false);
     });
 
     it('P2 answers 409 on a cancelled record, 200 without a write on a completed one, and keeps the reminder rows (K7, L6)', async () => {
