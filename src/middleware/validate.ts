@@ -103,7 +103,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 function coerce(
   raw: unknown,
-  schema: { type?: string; format?: string; enum?: readonly unknown[] },
+  schema: {
+    type?: string;
+    format?: string;
+    enum?: readonly unknown[];
+    minimum?: number;
+    maximum?: number;
+    exclusiveMinimum?: boolean | number;
+    exclusiveMaximum?: boolean | number;
+  },
 ): unknown {
   if (typeof raw !== 'string') return undefined;
 
@@ -133,6 +141,29 @@ function coerce(
   // with an enum query parameter declares 400, so the answer stays inside its
   // declared set (CL-09's rule again).
   if (schema.enum !== undefined && !schema.enum.includes(value)) return undefined;
+
+  // Bounds are part of the declared type for the same reason. `pageSize=0` is
+  // not a small page, it is a value the schema excludes (`minimum: 1`); letting
+  // it through would build a response the contract's own validator then
+  // rejects, and a 500 is not an answer the contract offers. S5.2 found this on
+  // `MaterialTransactionPage`; every page-taking operation declares 400, so the
+  // answer stays inside its set.
+  if (typeof value === 'number') {
+    if (schema.minimum !== undefined && value < schema.minimum) return undefined;
+    if (schema.maximum !== undefined && value > schema.maximum) return undefined;
+    if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) {
+      return undefined;
+    }
+    if (schema.exclusiveMinimum === true && schema.minimum !== undefined && value <= schema.minimum) {
+      return undefined;
+    }
+    if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) {
+      return undefined;
+    }
+    if (schema.exclusiveMaximum === true && schema.maximum !== undefined && value >= schema.maximum) {
+      return undefined;
+    }
+  }
 
   return value;
 }

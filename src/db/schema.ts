@@ -54,6 +54,7 @@ import {
   boolean,
   check,
   doublePrecision,
+  index,
   integer,
   pgTable,
   text,
@@ -186,6 +187,46 @@ export const materials = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check('materials_stock_check', sql`${table.stockQuantity} >= 0`)],
+);
+
+/**
+ * The material ledger (REQ-F-020, D13).
+ *
+ * A row is one recorded movement: `receipt` adds `quantity` to the material's
+ * balance, `issue` subtracts it. `materials.stock_quantity` is the running
+ * total and this table is the history that explains it; the two are written in
+ * one database transaction, so they cannot disagree.
+ *
+ * `quantity` is fractional for the same reason the balance is (ml, l, g, kg),
+ * and `occurred_at` is when the movement happened — the operator's fact, echoed
+ * back exactly — while `created_at` is when the row was recorded. Both exist
+ * because a receipt can be entered for a delivery that arrived yesterday, and
+ * the list is ordered by the fact, not by the entry (M3).
+ *
+ * `type` is constrained to the contract's two values rather than left to the
+ * application, matching `payment_status_check` and the appointment status: a
+ * third value would make every branch on it incomplete.
+ */
+export const materialTransactions = pgTable(
+  'material_transactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    materialId: uuid('material_id')
+      .notNull()
+      .references(() => materials.id),
+    type: text('type').notNull(),
+    quantity: doublePrecision('quantity').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('material_transactions_type_check', sql`${table.type} in ('receipt', 'issue')`),
+    check('material_transactions_quantity_check', sql`${table.quantity} > 0`),
+    // The ledger's only read is "this material's rows, newest first"; the index
+    // serves it directly (M3).
+    index('material_transactions_material_occurred_idx').on(table.materialId, table.occurredAt),
+  ],
 );
 
 /**

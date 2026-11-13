@@ -47,7 +47,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-30 | Feature: notification service (channels, per-event prefs, admin self-notify suppression) | Feature | REQ-F-016, 023, 026, 030 | SMS-12, SMS-26, SMS-27, SMS-28 | Coding Agent | Done |
 | SMS-31 | Feature: master calendar + own services/prices | Feature | REQ-F-013, 014 | SMS-21, SMS-22 | Coding Agent | Done |
 | SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | Done |
-| SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Backlog |
+| SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Done |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Backlog |
 | SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Backlog |
 | SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26 | Coding Agent | Backlog |

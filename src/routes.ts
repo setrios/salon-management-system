@@ -38,6 +38,7 @@ import { catalogRoutes } from './modules/catalog/routes.js';
 import { masterRoutes } from './modules/masters/routes.js';
 import { masterServiceRoutes } from './modules/master-services/routes.js';
 import { materialRoutes } from './modules/materials/routes.js';
+import { materialTransactionRoutes } from './modules/materials/transactions.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { publicRoutes } from './modules/public/routes.js';
 import { unitRoutes } from './modules/units/routes.js';
@@ -81,6 +82,8 @@ export function registerRoutes(app: Express): void {
   catalogRoutes(admin);
   masterServiceRoutes(admin);
   materialRoutes(admin);
+  // R25/R26: the material's ledger (S5.2, SMS-33).
+  materialTransactionRoutes(admin);
   unitRoutes(admin);
   // R24 reads the message records of one appointment. It belongs to the
   // administrator surface and is mounted after the other admin modules because

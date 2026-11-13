@@ -364,9 +364,11 @@ over appointments.
 | `listAppointmentsAdmin` (R20) | `tests/api/admin-appointments.test.ts` — L1–L4 | `src/modules/appointments/admin.ts` (`listAppointmentsAdminHandler`), `src/modules/appointments/service.ts` (`listAppointmentsAdmin`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
 | `getAppointmentAdmin` | `tests/api/admin-appointments.test.ts` — G1–G2 | `src/modules/appointments/admin.ts` (`getAppointmentAdminHandler`, `loadAppointmentAdmin`), `src/modules/appointments/service.ts` (`loadAppointmentById`, `findById`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
 
-**REQ-F-019 and REQ-F-020 are delivered by this stage.** R19 reuses P8's booking
-machinery with no own rules (K2); R20 provides the cross-master schedule with
-date, master, and status filters in staff representation (K9, J2).
+**REQ-F-019 is delivered by this stage.** R19 reuses P8's booking machinery with
+no own rules (K2); R20 provides the cross-master schedule with date, master, and
+status filters in staff representation (K9, J2). **REQ-F-020 does not belong
+here** — S5.1a's first version of this paragraph credited it to S5.1a by mistake;
+it is the material ledger, delivered by S5.2 (§6.14).
 
 **REQ-F-030 on creation is asserted.** C1 asserts that the administrator creating
 an appointment receives no notification row, while the client and the master
@@ -411,3 +413,30 @@ catalog (`notification_preferences.event_type`), and the reminders stay
 `scheduled`. The contract's `reminders: []` for a completed record is the
 divergence recorded as register row 10 (addendum SMS-45), not what the system
 does.
+
+### 6.14 S5.2 — material transactions (SMS-33)
+
+S5.2 adds the ledger behind REQ-F-020: two operations, one rule and one refusal.
+
+| Operation | Test | Code |
+|---|---|---|
+| `listMaterialTransactions` (R25) | `tests/api/material-transactions.test.ts` — L1–L6 | `src/modules/materials/transactions.ts` (`listTransactionsHandler`), `src/modules/materials/service.ts` (`listMaterialTransactions`) |
+| `createMaterialTransaction` (R26) | `tests/api/material-transactions.test.ts` — T1–T8 | `src/modules/materials/transactions.ts` (`createTransactionHandler`), `src/modules/materials/service.ts` (`recordMaterialTransaction`), `src/db/schema.ts` (`materialTransactions`), `src/db/migrations/0006_material_transactions.sql` |
+
+**REQ-F-020 is delivered by R26.** The SRS's sentence — "Each transaction updates
+the material's stock level by the recorded quantity" — is T1's receipt and T2's
+issue, and the balance is asserted through R15 after each write, not only in the
+response.
+
+**D13's refusal is delivered and is total.** An issue above the balance answers
+409 `MATERIAL_STOCK_INSUFFICIENT` with `error-model.md` §5.6's sentence, and T4
+asserts that neither the balance nor the ledger moved. The check reads the
+balance under a row lock, so the arithmetic is the running total (T5).
+
+**The 201 carries no `Location`** (M5): no operation reads a single transaction,
+so a header would name something unfetchable. That is the one departure from the
+create-operation pattern, recorded here and in the gate.
+
+**Four points the contract leaves open** are decided in the gate's §1.1: the
+ledger order (M3), the inclusive Kyiv day filters (M4), transactions on an
+inactive material (M6) and any `occurredAt` instant (M7).
