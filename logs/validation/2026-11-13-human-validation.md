@@ -6,7 +6,7 @@
 | Ticket | SMS-48 |
 | Artifact | `11f12fe` on `main`, built with `npm run build` (`dist/` served by `npm start`) |
 | Executed by | setrios |
-| Executed | 2026-11-13, from 22:38 to 22:50 (Europe/Kiev) |
+| Executed | 2026-11-13, from 22:38 to 23:03 (Europe/Kiev) |
 | Environment | Linux; Node.js 26.8.1; PostgreSQL 16 (`docker compose` service `postgres`); development database per `.env` |
 | Checklist used | `logs/validation/checklist.md` |
 | Result | PASS |
@@ -22,7 +22,7 @@ accepted responsibility for it.
 
 ## 1. Scenarios executed by hand
 
-Fifteen scenarios, run through the HTTP API against the built artifact with the
+Sixteen scenarios, run through the HTTP API against the built artifact with the
 commands from `logs/validation/checklist.md`. The observed column quotes the
 run's own output; the verdict follows from the comparison with the expected
 value stated for that scenario.
@@ -44,6 +44,7 @@ value stated for that scenario.
 | SCN-13 | duration rounds to 30 minutes | `total 80`, `occupied 90`, `2026-11-23T12:00 → 13:30`; `12:15 → 422` | PASS |
 | SCN-14 | popular services ranked by bookings | `rank 1 Validation Haircut 7`, `rank 2 Validation Colouring 2` | PASS |
 | SCN-15 | stock levels as a snapshot | `receipt 201`, `issue 201`, `quantity 7`; `?period=week → 200` (parameter ignored, not refused) | PASS |
+| SCN-16 | a master cannot be double-booked | A `201` (16:00–17:00, `occupied 60`); B same start `409 SLOT_UNAVAILABLE`; C 16:30 inside A `409 SLOT_UNAVAILABLE`; D 17:00 (first free boundary) `201` | PASS |
 
 Two observations worth keeping next to the table:
 
@@ -77,7 +78,7 @@ lost history, uncontrolled stock, no consolidated financial picture.
 
 | # | Goal from §2 | Assessment |
 |---|---|---|
-| 1 | No scheduling conflicts among masters — a slot cannot be double-booked | **Partly demonstrated, and this is the one gap of the run.** `POST /appointments` refuses a start outside the master's window (SCN-09: `10:00 → 409`), and the automated case K2 covers an occupied slot, but the run did not attempt a *direct* second booking over a taken one. The mechanism is there; the end-to-end attempt is the first thing the next run should add. |
+| 1 | No scheduling conflicts among masters — a slot cannot be double-booked | **Yes, demonstrated directly.** SCN-16 booked a 50-minute service at 16:00, then attempted the same start (`409 SLOT_UNAVAILABLE`), then a start inside the occupied block at 16:30 (`409 SLOT_UNAVAILABLE`), and finally the first free boundary at 17:00 (`201`). The control is what makes the two refusals mean something: they came from the clash, not from a blanket refusal. Together with the automated case K2 this is the strongest evidence the run produced for the owner's first complaint. |
 | 2 | Client visit history is not lost — a past visit and its client can be found | **Not exercised.** The run created, cancelled and moved visits but never read an administrator's list of past ones. That the record survives is shown by P9 returning it and by the automated pagination/filter cases; the read itself is two commands and belongs in the next checklist. |
 | 3 | Control over consumable stock — what is left and what was used | **Yes.** SCN-15: receipt 10, issue 3, report `quantity 7`; the report is a snapshot with `asOf` and ignores a `period` parameter instead of pretending to be a period figure. That answers the owner's question — "how much shampoo is left" — directly. |
 | 4 | A consolidated financial overview — revenue and popular services in one place | **Yes, with the deviation of §4.** SCN-10 gave identical totals for the preset week and the explicit range, and the payment rules held (409 before completion, 201 once, 409 again). The caveat is that the same collision is answered `409` on the client's path and `422` on the administrator's — accepted below, but it is an inconsistency a future client would notice. |
@@ -92,10 +93,11 @@ Also, in the validator's words:
   which the product honours by not offering a selector. A client has no account,
   only a name and a phone; that is the design, not an omission, but it means the
   salon cannot recognise a returning client.
-- **What you would change first if the salon ran this tomorrow:** the
-  double-booking guarantee. It is the owner's first complaint in
-  `DESCRIPTION.md` §2 and the only goal this run did not exercise directly, so
-  before a single real booking it deserves a deliberate attempt to break it.
+- **What you would change first if the salon ran this tomorrow:** the interface.
+  The double-booking guarantee held under a deliberate attempt (SCN-16), the
+  money and stock figures are consistent, and the remaining absence is the one a
+  salon cannot work around — a master and an owner have no screen, only HTTP
+  calls (SMS-36/SMS-37).
 
 ## 3. Was the addendum justified?
 
@@ -124,27 +126,47 @@ refactor label.
 
 ## 5. Other findings
 
-None of these is a defect in the implementation; they are the limits and the
-coverage gaps a reader of this record should know about.
+None of these is a defect in the implementation; they are the limits a reader of
+this record should know about.
 
 1. **Reminder delivery is simulated** (from SCN-01, SCN-06, SCN-12). A `sent` row
    means the message was handed to the channel; there is no gateway
    (REQ-NF-009). Severity: accepted limitation, declared in the README.
-2. **The double-booking attempt was not made** (from §2.1). The run proved the
-   window rule refuses a start outside availability, not that a taken slot
-   refuses a second booking. Severity: coverage gap in the checklist — the
-   automated case K2 covers it, the hand run does not.
-3. **No 5xx was produced** (whole run). Every refusal observed was a 4xx; the
+2. **No 5xx was produced** (whole run). Every refusal observed was a 4xx; the
    500 shape is covered by `tests/api/structural.test.ts`, not by this run.
    Severity: none — stated so that the record does not imply otherwise.
-4. **SCN-14 counts cancelled appointments** (from SCN-14, 7 bookings against the
+3. **SCN-14 counts cancelled appointments** (from SCN-14, 7 bookings against the
    4 made in this run). By design (S5.4), but an operator reading "popular
    services" should know that a cancelled visit still counts towards demand.
 
 ## 6. Decision
 
-**PASS** — all fifteen scenarios behaved as the contract states, the four items of
-§5 are declared limits rather than defects, and the one goal this run did not
-exercise (§2.1) is named instead of being assumed.
+**PASS** — all sixteen scenarios behaved as the contract states, the three items
+of §5 are declared limits rather than defects, and the double-booking guarantee,
+which the first pass could only call "partly demonstrated", was demonstrated
+directly by SCN-16 rather than left as an assumption.
+
+Signed by: setrios  Date: 2026-11-13
+
+---
+
+## 7. Post-signature amendment — 2026-11-13, 23:03
+
+The record above was signed at 22:50 with §2.1 reading "partly demonstrated" and
+§5 carrying a coverage gap: no direct attempt had been made to book a taken slot.
+Closing that gap was the next step rather than a later one, so SCN-16 was added to
+`logs/validation/checklist.md` (commit `481b694`) and executed at 23:03 against
+the same artifact (`11f12fe`).
+
+Changed: §1 gained the SCN-16 row and the executed window now ends at 23:03; §2.1
+now reads "yes, demonstrated directly"; §5 lost the coverage-gap item and its
+remaining items were renumbered; §6's sentence names sixteen scenarios; §2's
+"what you would change first" now names the missing interface, because the
+double-booking concern it used to name is answered.
+
+Not changed: every verdict of §1, the disposition of §4, the addendum assessment
+of §3, and the result `PASS`. No observation of the 22:38–22:50 pass was
+rewritten; the amendment adds a scenario and removes a caveat that no longer
+holds.
 
 Signed by: setrios  Date: 2026-11-13

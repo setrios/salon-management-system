@@ -574,10 +574,11 @@ evidence that the implementation's structure follows the contract's audiences.
 | Scenario checklist | `logs/validation/checklist.md` | prepared: SCN-01…15 with commands, expected values, automated evidence |
 | Bootstrap | `logs/validation/bootstrap.mjs` | prepared and dry-run against a scratch database |
 | Record template | `logs/validation/record-template.md` | prepared; to be copied to `YYYY-MM-DD-human-validation.md` |
-| The record itself | `logs/validation/2026-11-13-human-validation.md` | **executed and signed** — 15/15 scenarios PASS, result `PASS`, findings in §5 |
+| The record itself | `logs/validation/2026-11-13-human-validation.md` | **executed and signed** — 16/16 scenarios PASS, result `PASS`, limits in §5, post-signature amendment in §7 |
 
 Verification (the agent's half of step 7) is the matrix above; validation is the
 signed record. Its §1 is the hand run; §2–§5 were drafted from that run and
 adopted by the validator, who signs §6 — the record states this provenance
-itself. The one goal it did not exercise — a direct double-booking attempt — is
-named there as the first thing a next run should add.
+itself. The double-booking guarantee, the one goal the first pass could not
+demonstrate, was closed by SCN-16 at 23:03 and recorded as a visible amendment
+(§7) rather than a silent edit.
