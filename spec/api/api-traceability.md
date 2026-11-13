@@ -582,3 +582,15 @@ adopted by the validator, who signs §6 — the record states this provenance
 itself. The double-booking guarantee, the one goal the first pass could not
 demonstrate, was closed by SCN-16 at 23:03 and recorded as a visible amendment
 (§7) rather than a silent edit.
+
+### 6.22 Final gate (plan step 8)
+
+| Item | Where | Result |
+|---|---|---|
+| FINAL-GATE | `logs/gates/2026-11-13-final-gate.md` | **GO**, signed 2026-11-13 |
+
+The gate states its own edges: it does not claim performance, a security audit or
+production readiness, and it records the six accepted deviations — simulated
+delivery, the 60 s reminder tick and its single-ticker assumption, register row 13,
+the §8.1 ordering that makes C8 a characterisation test, the absent interface, and
+the out-of-scope verification classes.
