@@ -176,15 +176,18 @@ rather than calling it a failure.
 
 *Intent: same rule, two hours.*
 
-A slot less than two hours ahead, in a window opened for the next half hour:
+A slot inside the next two hours, in a half-hour window that does not cross
+midnight (a window whose end is not after its start is refused with 422
+`BUSINESS_RULE_VIOLATION` — that is the system behaving, not a failure):
 
 ```bash
-SOON=$(date -d '+1 hour' '+%Y-%m-%dT%H:00:00+02:00')
-SOON_DAY=$(date -d '+1 hour' '+%Y-%m-%d')
-SOON_END=$(date -d '+2 hours' '+%H:00')
+SOON=$(date -d '+60 min' '+%Y-%m-%dT%H:00:00+02:00')
+SOON_DAY=$(date -d "$SOON" '+%Y-%m-%d')
+SOON_START=$(date -d "$SOON" '+%H:%M')
+SOON_END=$(date -d "@$(( $(date -d "$SOON" +%s) + 1800 ))" '+%H:%M')
 curl -s -o /dev/null -w 'window %{http_code}\n' -X PUT "$B/me/availability" \
   -H "Authorization: Bearer $MASTER" -H 'Content-Type: application/json' \
-  -d "{\"weekly\":[],\"dates\":[{\"date\":\"$SOON_DAY\",\"startTime\":\"${SOON:11:5}\",\"endTime\":\"$SOON_END\"}]}"
+  -d "{\"weekly\":[],\"dates\":[{\"date\":\"$SOON_DAY\",\"startTime\":\"$SOON_START\",\"endTime\":\"$SOON_END\"}]}"
 VERY_LATE=$(curl -s -X POST "$B/appointments" -H 'Content-Type: application/json' \
   -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$HAIRCUT\"],\"startAt\":\"$SOON\"}")
 echo "$VERY_LATE" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).reminders'
@@ -250,7 +253,8 @@ pay                                                  # 409 PAYMENT_ALREADY_RECOR
 ```bash
 curl -s -X POST "$B/admin/services" -H "Authorization: Bearer $ADMIN" -H 'Content-Type: application/json' \
   -d '{"name":"Validation Manicure","category":"Nails","baseDurationMinutes":60}' | node -pe 'const b=JSON.parse(require("fs").readFileSync(0,"utf8"));JSON.stringify({id:b.id,category:b.category,duration:b.baseDurationMinutes})'
-curl -s "$B/categories" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).items'
+# `CategoryList` in the contract is a bare array, not `{ items: [...] }`.
+curl -s "$B/categories" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).map(c=>c.name)'
 ```
 
 **Expect:** `201`; the category appears in `GET /categories` like any other, and
