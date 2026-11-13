@@ -5,14 +5,14 @@
  *   R20 GET  /admin/appointments                  listAppointmentsAdmin  → 200 AppointmentAdminPage
  *       GET  /admin/appointments/{appointmentId}  getAppointmentAdmin    → 200 AppointmentAdmin
  *
- * Source: REQ-F-019 ("An administrator can create appointments on behalf of
- *         clients using the same business rules as public booking"),
- *         REQ-F-020 ("An administrator can view the appointment schedule across
- *         all masters, with filtering by date range, master, and status"),
- *         REQ-F-030 ("The acting administrator is not self-notified about
- *         actions they perform, but affected clients and masters receive
- *         notifications");
- *         `resource-model.md` §5.1 (R19, R20), §5.2;
+ * Source: REQ-F-019 ("The administrator can create, edit, and cancel client
+ *         appointments"; AC: "An administrator-created or edited appointment is
+ *         reflected identically to a client-made one (subject to REQ-F-002,
+ *         REQ-F-003)"),
+ *         REQ-NF-006 (a staff view never carries the client's access token),
+ *         REQ-F-030 (the acting administrator receives no notification for
+ *         their own action; the assigned master's is unaffected);
+ *         `resource-model.md` §5.1 (R19, R20);
  *         `openapi.yaml` createAppointmentAdmin, listAppointmentsAdmin,
  *         getAppointmentAdmin; schemas AppointmentCreate, Appointment,
  *         AppointmentAdminPage, AppointmentAdmin, Problem.
