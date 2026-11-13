@@ -33,10 +33,11 @@ import { HttpProblem } from '../../middleware/error-handler.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
 import { resolvePeriod, type ResolvedPeriod } from './period.js';
 import { popularServicesReport, revenueReport, stockLevelsReport } from './service.js';
+import { nowOf } from '../../lib/clock.js';
 
 /** The clock, as injected at the app (D9). */
 function clockOf(req: Request): Date {
-  return (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  return nowOf(req);
 }
 
 /**

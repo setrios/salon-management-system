@@ -84,6 +84,8 @@ import {
 import { isAppointmentStatus, stateOutcome } from './state.js';
 import { staffBody } from './staff-view.js';
 import type { AppointmentLine } from './view.js';
+import { nowOf } from '../../lib/clock.js';
+import { appointmentNotFoundForId } from './lookup.js';
 
 /** `AppointmentPatch` as the contract declares it (closed body, D-22). */
 interface AppointmentPatchBody {
@@ -106,11 +108,11 @@ const EDIT_SLOT_UNAVAILABLE_DETAIL =
 async function updateAppointmentAdminHandler(req: Request, res: Response): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
   const body = res.locals.body as AppointmentPatchBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const record = await findById(appointmentId);
   if (record === undefined) {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists with the supplied id.');
+    throw appointmentNotFoundForId();
   }
 
   // K7: the state is decided before the body's rules, the order `reschedule.ts`
@@ -287,12 +289,12 @@ async function transitionAdminHandler(
   action: 'cancel' | 'complete',
 ): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const result = await transitionAppointmentById(appointmentId, action, now);
 
   if (result.kind === 'not-found') {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists with the supplied id.');
+    throw appointmentNotFoundForId();
   }
   if (result.kind === 'rejected') {
     throw new HttpProblem(

@@ -48,6 +48,8 @@ import { bookAppointment, type AppointmentCreateBody } from './routes.js';
 import { listAppointmentsAdmin, loadAppointmentById } from './service.js';
 import { staffBody } from './staff-view.js';
 import { appointmentBody } from './view.js';
+import { nowOf } from '../../lib/clock.js';
+import { appointmentNotFoundForId } from './lookup.js';
 
 /**
  * Loads one appointment by id in staff representation (`AppointmentAdmin`).
@@ -67,7 +69,7 @@ export async function loadAppointmentAdmin(
 /** R19 — create an appointment on a client's behalf. */
 async function createAppointmentAdminHandler(req: Request, res: Response): Promise<void> {
   const body = res.locals.body as AppointmentCreateBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const { created, booking } = await bookAppointment(body, now, 'admin');
 
@@ -112,7 +114,7 @@ async function listAppointmentsAdminHandler(req: Request, res: Response): Promis
     | { from?: string; to?: string; masterId?: string; status?: string }
     | undefined;
   const request = pageRequest(res);
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const { items, total } = await listAppointmentsAdmin(
     query ?? {},
@@ -132,11 +134,11 @@ async function listAppointmentsAdminHandler(req: Request, res: Response): Promis
 /** getAppointmentAdmin — read one appointment in staff representation. */
 async function getAppointmentAdminHandler(req: Request, res: Response): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const body = await loadAppointmentAdmin(appointmentId, now);
   if (body === undefined) {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists with the supplied id.');
+    throw appointmentNotFoundForId();
   }
 
   sendJson(res, 200, 'AppointmentAdmin', body);

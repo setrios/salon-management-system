@@ -56,6 +56,7 @@ import {
   setPreference,
   type NotificationPageResult,
 } from './service.js';
+import { nowOf } from '../../lib/clock.js';
 
 /** One `Notification` as the contract exposes it; R24 and M7 share the shape. */
 function notificationBody(row: NotificationPageResult['items'][number]): Record<string, unknown> {
@@ -83,7 +84,7 @@ async function listAppointmentNotificationsHandler(
     throw new HttpProblem('NOT_FOUND', 'No appointment is defined with this id.');
   }
 
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
   await dispatchDueReminders(appointmentId, now);
 
   const request = pageRequest(res);
@@ -126,7 +127,7 @@ async function updateMyNotificationPreferenceHandler(
     eventType: PreferenceEvent;
     enabled: boolean;
   };
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   sendJson(
     res,

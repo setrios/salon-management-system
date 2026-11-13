@@ -95,6 +95,8 @@ import {
 } from './service.js';
 import { staffBody } from './staff-view.js';
 import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
+import { nowOf } from '../../lib/clock.js';
+import { appointmentNotFoundForToken } from './lookup.js';
 /** `AppointmentCreate` as the contract declares it (closed body, D-22). */
 export interface AppointmentCreateBody {
   readonly client: { readonly name: string; readonly phone: string };
@@ -242,7 +244,7 @@ export async function bookAppointment(
 /** P8 — the public booking operation. */
 async function createAppointmentHandler(req: Request, res: Response): Promise<void> {
   const body = res.locals.body as AppointmentCreateBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const { created, booking } = await bookAppointment(body, now, 'client');
 
@@ -296,13 +298,13 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
  */
 async function getAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
   const { token } = res.locals.params as { token: string };
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   // H3: the read is what dispatches a due reminder, so the record is loaded
   // through `loadAppointment`, not `findByToken`.
   const record = await loadAppointment(token, now);
   if (record === undefined) {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+    throw appointmentNotFoundForToken();
   }
 
   sendJson(res, 200, 'Appointment', appointmentBody(record));
@@ -323,12 +325,12 @@ async function getAppointmentByTokenHandler(req: Request, res: Response): Promis
  */
 async function cancelAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
   const { token } = res.locals.params as { token: string };
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const result = await cancelByToken(token, now);
 
   if (result.kind === 'not-found') {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+    throw appointmentNotFoundForToken();
   }
 
   if (result.kind === 'rejected') {
@@ -367,12 +369,12 @@ interface AppointmentRescheduleBody {
 async function rescheduleAppointmentByTokenHandler(req: Request, res: Response): Promise<void> {
   const { token } = res.locals.params as { token: string };
   const body = res.locals.body as AppointmentRescheduleBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   // 1. The token. Without a record there is nothing to decide.
   const record = await findByToken(token);
   if (record === undefined) {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists for the supplied access token.');
+    throw appointmentNotFoundForToken();
   }
 
   const startAt = new Date(body.startAt);
@@ -470,7 +472,7 @@ async function listMyAppointmentsHandler(req: Request, res: Response): Promise<v
     | { from?: string; to?: string; status?: string }
     | undefined;
   const request = pageRequest(res);
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const { items, total } = await listMyAppointments(
     principal.id,

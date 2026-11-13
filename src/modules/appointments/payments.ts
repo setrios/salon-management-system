@@ -47,6 +47,8 @@ import { validateBody, validateParams } from '../../middleware/validate.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
 import { recordPayment } from './service.js';
 import { paymentBody } from './view.js';
+import { nowOf } from '../../lib/clock.js';
+import { appointmentNotFoundForId } from './lookup.js';
 
 /** `PaymentCreate` as the contract declares it. */
 interface PaymentBody {
@@ -59,7 +61,7 @@ interface PaymentBody {
 async function createPaymentHandler(req: Request, res: Response): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
   const body = res.locals.body as PaymentBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const result = await recordPayment(
     appointmentId,
@@ -74,7 +76,7 @@ async function createPaymentHandler(req: Request, res: Response): Promise<void> 
   );
 
   if (result.kind === 'not-found') {
-    throw new HttpProblem('NOT_FOUND', 'No appointment exists with the supplied id.');
+    throw appointmentNotFoundForId();
   }
   if (result.kind === 'not-completed') {
     // error-model.md §5.5's sentence.

@@ -47,6 +47,7 @@ import {
   recordMaterialTransaction,
   type MaterialTransactionInput,
 } from './service.js';
+import { nowOf } from '../../lib/clock.js';
 
 /** `MaterialTransactionCreate` as the contract declares it. */
 interface TransactionBody {
@@ -85,7 +86,7 @@ async function listTransactionsHandler(_req: Request, res: Response): Promise<vo
 async function createTransactionHandler(req: Request, res: Response): Promise<void> {
   const { materialId } = res.locals.params as { materialId: string };
   const body = res.locals.body as TransactionBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+  const now = nowOf(req);
 
   const input: MaterialTransactionInput = {
     type: body.type,

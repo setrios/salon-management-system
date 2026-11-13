@@ -487,28 +487,37 @@ export async function findById(id: string): Promise<StoredAppointment | undefine
 }
 
 /**
- * P9's read, with the reminder dispatch in front of it (H3).
+ * The dispatch step both loaders share (H3).
  *
- * The dispatch is a write, and a read is the only trigger the system has: the
- * lab has no scheduler. It runs only for a `confirmed` record — a cancelled or
- * completed one is not dispatched (H5) — and only when something is due, so a
+ * The dispatch is a write, and a read is the only trigger the base system has:
+ * the lab has no scheduler. It runs only for a `confirmed` record — a cancelled
+ * or completed one is not dispatched (H5) — and only when something is due, so a
  * read of a record whose reminders are still ahead issues no `update` at all.
  *
  * The rows are re-read only when the dispatch changed something, so the common
- * case is one read of the appointment and one of its reminders.
+ * case is one read of the appointment and one of its reminders. Written once
+ * because the two loaders differ in *how* they find the record, not in what
+ * happens after that: a second copy would be a second place for H5 to drift.
  */
-export async function loadAppointment(
-  token: string,
+async function withDispatchedReminders(
+  record: StoredAppointment,
   now: Date,
-): Promise<StoredAppointment | undefined> {
-  const record = await findByToken(token);
-  if (record === undefined) return undefined;
+): Promise<StoredAppointment> {
   if (record.status !== 'confirmed') return record;
 
   const dispatched = await dispatchDueReminders(record.id, now);
   if (dispatched === 0) return record;
 
   return { ...record, reminders: await readReminders(getDb(), record.id) };
+}
+
+/** P9's read by token, with the reminder dispatch in front of it (H3). */
+export async function loadAppointment(
+  token: string,
+  now: Date,
+): Promise<StoredAppointment | undefined> {
+  const record = await findByToken(token);
+  return record === undefined ? undefined : withDispatchedReminders(record, now);
 }
 
 /**
@@ -521,13 +530,7 @@ export async function loadAppointmentById(
   now: Date,
 ): Promise<StoredAppointment | undefined> {
   const record = await findById(id);
-  if (record === undefined) return undefined;
-  if (record.status !== 'confirmed') return record;
-
-  const dispatched = await dispatchDueReminders(record.id, now);
-  if (dispatched === 0) return record;
-
-  return { ...record, reminders: await readReminders(getDb(), record.id) };
+  return record === undefined ? undefined : withDispatchedReminders(record, now);
 }
 
 /** What P10's cancellation did, as the route needs to answer it. */
