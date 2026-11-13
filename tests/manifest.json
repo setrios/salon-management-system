@@ -290,6 +290,18 @@
         "src/modules/notifications/service.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-21 (test) → SMS-32 (implementation)",
+      "test": "tests/api/admin-appointments.test.ts",
+      "sources": ["REQ-F-019", "REQ-F-020", "REQ-F-030"],
+      "implementation": ["src/modules/appointments/admin.ts"],
+      "touches": [
+        "src/routes.ts",
+        "src/modules/appointments/routes.ts",
+        "src/modules/appointments/service.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
