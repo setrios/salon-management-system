@@ -214,7 +214,9 @@ describe('createMaterialTransaction (R26, POST /admin/materials/{materialId}/tra
     const after = await request(app)
       .get(`/api/v1/admin/materials/${material.id}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expect(after.body.updatedAt).toBe(NOW);
+    // The serialised form is the material's (`Material.updatedAt` is ISO-8601
+    // UTC, unlike the instants of the ledger); the instant is what is asserted.
+    expect(new Date(after.body.updatedAt).getTime()).toBe(new Date(NOW).getTime());
     expect(after.body.updatedAt).not.toBe(before.body.updatedAt);
   });
 
