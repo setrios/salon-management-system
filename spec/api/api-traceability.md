@@ -534,6 +534,22 @@ it is asked.
 | Implementation | `src/modules/notifications/cancellation.ts`; the two cancellation paths in `src/modules/appointments/service.ts`; migration `0008_cancelled_reminders.sql` |
 | Control run | `logs/runs/runs-18.md` — 18/18 on the built artifact |
 
+### 6.19 Stage R — the reminder scheduler (REQ-F-010, row 11)
+
+| Item | Where |
+|---|---|
+| Gate | `logs/gates/2026-11-13-test-SMS-46-scheduler.md` (TEST-GATE), `logs/gates/2026-11-13-SMS-46-scheduler.md` (stage gate) |
+| Cases | `tests/api/reminder-scheduler.test.ts` S1–S7 |
+| Implementation | `src/modules/notifications/scheduler.ts`; `src/index.ts` starts and stops it |
+| Control run | `logs/runs/runs-19.md` — 13/13 on the built artifact |
+| Behaviour-preserving pass | `logs/gates/2026-11-13-refactor-SMS-46.md` |
+
+**REQ-F-010's AC now holds with a bounded delay.** The base dispatched a due
+reminder at the next read (H3); the process now ticks every 60 s and sends what is
+due, so the delay between the moment and `sent` is at most one period where it
+used to be unbounded. The read-triggered dispatch stays as the fallback for a
+process without a scheduler, and both write `sentAt` the same way.
+
 **Why the requirement has no SCN of its own.** The addendum extends an existing
 scenario rather than adding a journey: SCN-01 books, P10 cancels, and the reminders
 of that record are the record's own field. The acceptance criteria are stated as
