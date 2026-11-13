@@ -104,9 +104,9 @@ function postTransaction(
   body: unknown,
   options: { readonly token?: string; readonly contentType?: string } = {},
 ): Promise<JsonResponse> {
-  const call = request(app)
-    .post(`/api/v1/admin/materials/${materialId}/transactions`)
-    .set('Authorization', `Bearer ${options.token ?? adminToken}`);
+  const token = options.token === undefined ? adminToken : options.token;
+  const call = request(app).post(`/api/v1/admin/materials/${materialId}/transactions`);
+  if (token !== '') call.set('Authorization', `Bearer ${token}`);
   return (options.contentType === undefined
     ? call.send(body as object)
     : call.set('Content-Type', options.contentType).send(
@@ -307,7 +307,7 @@ describe('createMaterialTransaction (R26, POST /admin/materials/{materialId}/tra
     for (const body of refusals) {
       expectProblem(await postTransaction(material.id, body), {
         status: 422,
-        code: 'VALIDATION_FAILED',
+        code: 'VALIDATION_ERROR',
       });
     }
 
