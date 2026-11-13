@@ -96,7 +96,7 @@ import {
 import { staffBody } from './staff-view.js';
 import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
 /** `AppointmentCreate` as the contract declares it (closed body, D-22). */
-interface AppointmentCreateBody {
+export interface AppointmentCreateBody {
   readonly client: { readonly name: string; readonly phone: string };
   readonly masterId: string;
   readonly serviceIds: readonly string[];
@@ -119,7 +119,7 @@ function dateKeyOf(date: { year: number; month: number; day: number }): string {
 }
 
 /** Everything decided before the transaction opens. */
-interface PendingBooking {
+export interface PendingBooking {
   readonly master: { readonly id: string; readonly fullName: string };
   readonly client: { readonly name: string; readonly phone: string };
   readonly startAt: Date;
@@ -132,11 +132,17 @@ interface PendingBooking {
   readonly currency: string;
 }
 
-/** P8 — the public booking operation. */
-async function createAppointmentHandler(req: Request, res: Response): Promise<void> {
-  const body = res.locals.body as AppointmentCreateBody;
-  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
-
+/**
+ * Shared booking path used by P8 (public) and R19 (admin).
+ *
+ * Implements K2: R19 has no business rules of its own and reuses the exact P8
+ * booking path, passing `actor: 'admin'` to suppress the administrator's row (REQ-F-030, K5).
+ */
+export async function bookAppointment(
+  body: AppointmentCreateBody,
+  now: Date,
+  actor: 'client' | 'admin' = 'client',
+) {
   const startAt = new Date(body.startAt);
 
   // D3: the boundary is a property of the body, so it is refused before any
@@ -207,9 +213,8 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
       occupiedDurationMinutes: booking.occupiedDurationMinutes,
       totalPriceAmountMinor: booking.totalPriceAmountMinor,
       totalPriceCurrency: booking.currency,
-      // The injected clock (D9): the instant the confirmation message is
-      // recorded as sent, in the same transaction (E2/E3).
       now,
+      actor,
       lines: services.map((service) => ({
         serviceId: service.id,
         name: service.name,
@@ -230,6 +235,16 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
   if (created === undefined) {
     throw new HttpProblem('SLOT_UNAVAILABLE', SLOT_UNAVAILABLE_DETAIL);
   }
+
+  return { created, booking, services };
+}
+
+/** P8 — the public booking operation. */
+async function createAppointmentHandler(req: Request, res: Response): Promise<void> {
+  const body = res.locals.body as AppointmentCreateBody;
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+
+  const { created, booking } = await bookAppointment(body, now, 'client');
 
   // `sent` is set before `sendJson`: the body is written in one call, and a
   // header set after it would be silently dropped.
@@ -257,11 +272,14 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
         createdAt: created.createdAt,
         updatedAt: created.updatedAt,
         lines: created.lines,
-        reminders: created.reminders,
-      },
-    ),
-  );
-}
+        reminders: created.reminders.map((r) => ({
+          type: r.type,
+          scheduledAt: r.scheduledAt,
+          status: r.status,
+        })),
+      }),
+    );
+  }
 
 /**
  * P9 — the appointment a token names.

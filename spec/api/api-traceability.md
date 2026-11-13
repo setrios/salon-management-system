@@ -351,3 +351,22 @@ judgement: a reader who doubts that `updateMasterService` is delivered can open
 the named test and the named module and see both. Nothing here replaces the
 suite: `npm test` is criterion 1, and this table is not evidence that the tests
 pass — it is evidence that each operation has somewhere to look.
+
+### 6.12 S5.1a — administrator reads and creates (SMS-21 → SMS-32)
+
+S5.1a adds three operations that give the administrator control and visibility
+over appointments.
+
+| Operation | Test | Code |
+|---|---|---|
+| `createAppointmentAdmin` (R19) | `tests/api/admin-appointments.test.ts` — C1–C4 | `src/modules/appointments/admin.ts` (`createAppointmentAdminHandler`), `src/modules/appointments/routes.ts` (`bookAppointment`), `src/modules/appointments/service.ts` (`createAppointment`) |
+| `listAppointmentsAdmin` (R20) | `tests/api/admin-appointments.test.ts` — L1–L4 | `src/modules/appointments/admin.ts` (`listAppointmentsAdminHandler`), `src/modules/appointments/service.ts` (`listAppointmentsAdmin`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
+| `getAppointmentAdmin` | `tests/api/admin-appointments.test.ts` — G1–G2 | `src/modules/appointments/admin.ts` (`getAppointmentAdminHandler`, `loadAppointmentAdmin`), `src/modules/appointments/service.ts` (`loadAppointmentById`, `findById`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
+
+**REQ-F-019 and REQ-F-020 are delivered by this stage.** R19 reuses P8's booking
+machinery with no own rules (K2); R20 provides the cross-master schedule with
+date, master, and status filters in staff representation (K9, J2).
+
+**REQ-F-030 on creation is asserted.** C1 asserts that the administrator creating
+an appointment receives no notification row, while the client and the master
+receive theirs (K5). The remaining SMS-18 suite across R21 and R22 belongs to S5.1b.

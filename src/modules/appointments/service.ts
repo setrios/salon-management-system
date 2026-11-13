@@ -33,7 +33,7 @@
  *         D15.
  */
 
-import { and, asc, count, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, lt, ne, sql, type SQL } from 'drizzle-orm';
 
 import { getDb, type Database } from '../../db/client.js';
 import {
@@ -223,6 +223,8 @@ export interface CreateAppointmentInput {
   readonly lines: readonly ServiceLineInput[];
   /** The injected clock: the instant the confirmation message is recorded as sent. */
   readonly now: Date;
+  /** Who initiated the booking; 'admin' suppresses the administrator's row (REQ-F-030). */
+  readonly actor?: 'client' | 'admin';
 }
 
 /** The row a booking produced, as the response needs it. */
@@ -334,7 +336,7 @@ export async function createAppointment(
       await recordAppointmentEvent(tx, {
         appointmentId: row.id,
         eventType: 'new',
-        actor: 'client',
+        actor: input.actor ?? 'client',
         now: input.now,
       });
 
@@ -397,7 +399,7 @@ export interface StoredAppointment {
  * The master's name is read through a join (E8): it is the current name, not a
  * snapshot, and the archive of what was booked is the service lines.
  */
-export async function findByToken(token: string): Promise<StoredAppointment | undefined> {
+async function fetchAppointment(condition: SQL): Promise<StoredAppointment | undefined> {
   const db = getDb();
 
   const [row] = await db
@@ -420,7 +422,7 @@ export async function findByToken(token: string): Promise<StoredAppointment | un
     })
     .from(appointments)
     .innerJoin(masters, eq(masters.id, appointments.masterId))
-    .where(eq(appointments.accessToken, token));
+    .where(condition);
 
   if (row === undefined) return undefined;
 
@@ -441,6 +443,14 @@ export async function findByToken(token: string): Promise<StoredAppointment | un
   return { ...row, lines, reminders };
 }
 
+export async function findByToken(token: string): Promise<StoredAppointment | undefined> {
+  return fetchAppointment(eq(appointments.accessToken, token));
+}
+
+export async function findById(id: string): Promise<StoredAppointment | undefined> {
+  return fetchAppointment(eq(appointments.id, id));
+}
+
 /**
  * P9's read, with the reminder dispatch in front of it (H3).
  *
@@ -457,6 +467,25 @@ export async function loadAppointment(
   now: Date,
 ): Promise<StoredAppointment | undefined> {
   const record = await findByToken(token);
+  if (record === undefined) return undefined;
+  if (record.status !== 'confirmed') return record;
+
+  const dispatched = await dispatchDueReminders(record.id, now);
+  if (dispatched === 0) return record;
+
+  return { ...record, reminders: await readReminders(getDb(), record.id) };
+}
+
+/**
+ * Loads one appointment by id, dispatching due reminders when confirmed.
+ *
+ * S5.1a: sibling of `loadAppointment` (by token), used by `getAppointmentAdmin`.
+ */
+export async function loadAppointmentById(
+  id: string,
+  now: Date,
+): Promise<StoredAppointment | undefined> {
+  const record = await findById(id);
   if (record === undefined) return undefined;
   if (record.status !== 'confirmed') return record;
 
@@ -721,32 +750,32 @@ export interface MyAppointmentFilters {
   readonly status?: string;
 }
 
+export interface AdminAppointmentFilters {
+  readonly masterId?: string;
+  readonly from?: string;
+  readonly to?: string;
+  readonly status?: string;
+}
+
 /**
- * M1 — one page of the caller's own appointments (REQ-F-013, J1–J5).
+ * Lists appointments with filters across all masters or for a specific master.
  *
- * The scope is the `masterId` the route takes from the token's subject, not a
- * parameter: REQ-F-013's AC is that the calendar contains only the caller's
- * appointments, and a parameter would make that a promise the query could
- * break.
- *
- * `from` and `to` filter on `startAt`, inclusive of the whole day (J3), and the
- * order is `startAt` then `id` (J4). The dispatch of J5 runs before the rows are
- * read, so the `reminders[]` the body shows are the ones this read produced.
- *
- * The lines and the reminders are loaded for the whole page in two queries
- * rather than two per appointment: a page is up to 20 records, and the batch is
- * the same code the single-record read uses.
+ * S5.1a R20 and S4.2 M1 share this implementation: M1 locks `masterId` to the
+ * authenticated caller, while R20 accepts an optional `masterId` query filter.
+ * Ordering is `startAt` then `id` ascending (J4, K9).
  */
-export async function listMyAppointments(
-  masterId: string,
-  filters: MyAppointmentFilters,
+export async function listAppointmentsAdmin(
+  filters: AdminAppointmentFilters,
   limit: number,
   offset: number,
   now: Date,
 ): Promise<{ items: StoredAppointment[]; total: number }> {
   const db = getDb();
 
-  const conditions = [eq(appointments.masterId, masterId)];
+  const conditions: SQL[] = [];
+  if (filters.masterId !== undefined) {
+    conditions.push(eq(appointments.masterId, filters.masterId));
+  }
   if (filters.status !== undefined) {
     conditions.push(eq(appointments.status, filters.status));
   }
@@ -763,7 +792,7 @@ export async function listMyAppointments(
     );
   }
 
-  const where = and(...conditions);
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const rows = await db
     .select({
@@ -837,4 +866,22 @@ export async function listMyAppointments(
     })),
     total,
   };
+}
+
+/**
+ * M1 — one page of the caller's own appointments (REQ-F-013, J1–J5).
+ *
+ * The scope is the `masterId` the route takes from the token's subject, not a
+ * parameter: REQ-F-013's AC is that the calendar contains only the caller's
+ * appointments, and a parameter would make that a promise the query could
+ * break.
+ */
+export async function listMyAppointments(
+  masterId: string,
+  filters: MyAppointmentFilters,
+  limit: number,
+  offset: number,
+  now: Date,
+): Promise<{ items: StoredAppointment[]; total: number }> {
+  return listAppointmentsAdmin({ ...filters, masterId }, limit, offset, now);
 }

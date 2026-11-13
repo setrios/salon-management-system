@@ -30,6 +30,7 @@ import type { Express } from 'express';
 import { Router } from 'express';
 
 import { authRoutes } from './modules/auth/routes.js';
+import { adminAppointmentRoutes } from './modules/appointments/admin.js';
 import { appointmentRoutes } from './modules/appointments/routes.js';
 import { availabilityRoutes } from './modules/availability/routes.js';
 import { catalogRoutes } from './modules/catalog/routes.js';
@@ -85,6 +86,7 @@ export function registerRoutes(app: Express): void {
   // its path (`/admin/appointments/...`) collides with nothing here: the
   // appointment-management operations (R19–R23) arrive with SMS-32.
   notificationRoutes(admin);
+  adminAppointmentRoutes(admin);
 
   api.use(admin);
 
