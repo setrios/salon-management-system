@@ -217,12 +217,15 @@ describe('stage R — the reminder scheduler (row 11)', () => {
     const masterId = await freshMaster();
     const created = await book(masterId, `${MONDAY}T14:00:00${OFFSET}`);
 
-    expect(await runDueReminders(new Date(AT_THE_24H_MOMENT))).toBeGreaterThanOrEqual(1);
-    expect(await runDueReminders(new Date(AT_THE_24H_MOMENT))).toBe(0);
+    // The tick is at this record's own 24 h moment (a 14:00 start), so the first
+    // one sends it and the second has nothing left to send.
+    const tick = (): Promise<number> => runDueReminders(new Date('2026-12-06T14:00:00+02:00'));
+    expect(await tick()).toBeGreaterThanOrEqual(1);
+    expect(await tick()).toBe(0);
 
     const rows = await reminderRows(created.body.id as string);
     expect(rows.map((row) => row.status)).toEqual(['sent', 'scheduled']);
-    expect(rows[0]?.sentAt).toBe(`2026-12-06T10:00:00${OFFSET}`);
+    expect(rows[0]?.sentAt).toBe(`2026-12-06T14:00:00${OFFSET}`);
   });
 
   // ============================================ the timer around the tick
