@@ -124,8 +124,15 @@ first, and a second call returns the *same* record (no 409, no new `updatedAt`).
 
 *Intent: rescheduling is free, unlimited, and the reminders follow the new time.*
 
+SCN-02 cancels SCN-01's record, so this scenario books its own (a cancelled
+record cannot be rescheduled — that is a 409, and it is not what this case is
+about):
+
 ```bash
-curl -s -X POST "$B/appointments/$TOKEN/reschedule" -H 'Content-Type: application/json' \
+R3=$(curl -s -X POST "$B/appointments" -H 'Content-Type: application/json' \
+  -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$HAIRCUT\"],\"startAt\":\"2026-11-16T14:00:00+02:00\"}")
+R3_TOKEN=$(echo "$R3" | tok)
+curl -s -X POST "$B/appointments/$R3_TOKEN/reschedule" -H 'Content-Type: application/json' \
   -d '{"startAt":"2026-11-16T15:00:00+02:00"}' \
   | node -pe 'const b=JSON.parse(require("fs").readFileSync(0,"utf8"));JSON.stringify({id:b.id,start:b.startAt,end:b.endAt,reminders:b.reminders.map(r=>r.scheduledAt)})'
 ```
@@ -144,8 +151,24 @@ LATE=$(curl -s -X POST "$B/appointments" -H 'Content-Type: application/json' \
 echo "$LATE" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).reminders'
 ```
 
-Run this **on the day before** the slot (or later), so the 24-hour moment is in the
-past. **Expect:** the `24h` reminder `skipped`, the `2h` one `scheduled`.
+For the 24-hour moment to be in the past, the slot must be **less than 24 hours
+ahead**. Open a window for tomorrow first, then book inside it:
+
+```bash
+TOMORROW=$(date -d tomorrow '+%Y-%m-%d')
+curl -s -o /dev/null -w 'window %{http_code}\n' -X PUT "$B/me/availability" \
+  -H "Authorization: Bearer $MASTER" -H 'Content-Type: application/json' \
+  -d "{\"weekly\":[{\"dayOfWeek\":1,\"startTime\":\"10:00\",\"endTime\":\"18:00\"}],
+       \"dates\":[{\"date\":\"$TOMORROW\",\"startTime\":\"10:00\",\"endTime\":\"18:00\"}]}"
+LATE=$(curl -s -X POST "$B/appointments" -H 'Content-Type: application/json' \
+  -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$HAIRCUT\"],\"startAt\":\"${TOMORROW}T10:00:00+02:00\"}")
+echo "$LATE" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).reminders'
+```
+
+**Expect:** the `24h` reminder `skipped`, the `2h` one `scheduled` — *provided the
+run happens after 10:00 today*. If it is earlier than that, the 24-hour moment is
+still ahead and both will be `scheduled`: in that case note `NOT EXECUTED (clock)`
+rather than calling it a failure.
 
 *Automated:* `tests/api/reminders.test.ts` R2.
 
@@ -153,15 +176,31 @@ past. **Expect:** the `24h` reminder `skipped`, the `2h` one `scheduled`.
 
 *Intent: same rule, two hours.*
 
+A slot less than two hours ahead, in a window opened for the next half hour:
+
 ```bash
+SOON=$(date -d '+1 hour' '+%Y-%m-%dT%H:00:00+02:00')
+SOON_DAY=$(date -d '+1 hour' '+%Y-%m-%d')
+SOON_END=$(date -d '+2 hours' '+%H:00')
+curl -s -o /dev/null -w 'window %{http_code}\n' -X PUT "$B/me/availability" \
+  -H "Authorization: Bearer $MASTER" -H 'Content-Type: application/json' \
+  -d "{\"weekly\":[],\"dates\":[{\"date\":\"$SOON_DAY\",\"startTime\":\"${SOON:11:5}\",\"endTime\":\"$SOON_END\"}]}"
 VERY_LATE=$(curl -s -X POST "$B/appointments" -H 'Content-Type: application/json' \
-  -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$HAIRCUT\"],\"startAt\":\"$(date -d '+1 hour' '+%Y-%m-%dT%H:00:00+02:00')\"}")
+  -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$HAIRCUT\"],\"startAt\":\"$SOON\"}")
 echo "$VERY_LATE" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).reminders'
 ```
 
-**Expect:** both `skipped`. (`+1 hour` keeps the time within the Monday window only
-if the run is on a Monday; otherwise book the next Monday under two hours away is
-impossible — pick a slot and read the two statuses, the rule is the same.)
+**Expect:** both `skipped`. If the hour is such that no slot is possible (for
+example after 23:00), note `NOT EXECUTED (clock)` and restore the fixture instead
+of forcing it.
+
+**Restore the fixture** before the next scenario:
+
+```bash
+curl -s -o /dev/null -w 'restore %{http_code}\n' -X PUT "$B/me/availability" \
+  -H "Authorization: Bearer $MASTER" -H 'Content-Type: application/json' \
+  -d '{"weekly":[{"dayOfWeek":1,"startTime":"10:00","endTime":"18:00"}],"dates":[]}'
+```
 
 *Automated:* `tests/api/reminders.test.ts` R3.
 
@@ -236,6 +275,16 @@ curl -s "$B/masters/$MASTER_ID/availability?date=2026-11-16&serviceIds=$HAIRCUT"
 date rule replaces the Monday rule for that date). A booking at 10:00 that day is
 `409 SLOT_UNAVAILABLE`; at 13:00 it is `201`.
 
+After this scenario the master's schedule is the pattern **plus** the 16 November
+override, which makes 10:00 that day unavailable for later scenarios. Restore the
+fixture:
+
+```bash
+curl -s -o /dev/null -w 'restore %{http_code}\n' -X PUT "$B/me/availability" \
+  -H "Authorization: Bearer $MASTER" -H 'Content-Type: application/json' \
+  -d '{"weekly":[{"dayOfWeek":1,"startTime":"10:00","endTime":"18:00"}],"dates":[]}'
+```
+
 *Automated:* `tests/api/availability.test.ts`; `booking.test.ts` (K2).
 
 ### SCN-10 — Revenue report: preset period and custom date range
@@ -257,6 +306,9 @@ an `unpaid` one would not move the total).
 ### SCN-11 — Reschedule reactivates a previously skipped reminder
 
 *Intent: a reminder that was skipped for being late comes back if the visit moves far enough ahead.*
+
+Needs a record whose 24-hour reminder is `skipped`; SCN-04 leaves one behind. If
+SCN-04 was `NOT EXECUTED`, make one the same way (the SCN-04 block) and use it.
 
 ```bash
 echo "$LATE" | node -pe 'console.log(JSON.parse(require("fs").readFileSync(0,"utf8")).reminders.map(r=>r.status))'
