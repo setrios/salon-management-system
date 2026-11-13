@@ -24,6 +24,8 @@ Revision 5 — 2026-11-12: G2 corrections. §8's stage table places R24 (listApp
 
 Revision 6 — 2026-11-12: §7 extended with CL-12; scope, stages, tickets and decisions unchanged.
 
+Revision 7 — 2026-11-13: S5.1 split. Stage S5.1 is six operations, the largest stage in the plan. It becomes S5.1a (the read-and-create half: R19 `createAppointmentAdmin`, R20 `listAppointmentsAdmin` and `getAppointmentAdmin`, all three of which reuse machinery that already exists — P8's rules for R19, M1's page and staff view for R20) and S5.1b (the acting half: R21 `updateAppointmentAdmin` with the REQ-F-028 recalculation, R22 `cancelAppointmentAdmin`, R23 `completeAppointment`, and SMS-18's REQ-F-030, all of which depend on the state table and on the notification recorder). Ticket SMS-32 covers both halves and closes after S5.1b. Each half gets its own TEST-GATE, its own `test:`/`feat:` pair and its own control run, as S3.1 did. Stage order, the gate (G4) and every decision in force are otherwise unchanged.
+
 ---
 
 ## 1. Repository state at plan time
@@ -320,7 +322,8 @@ move a gate to GO.
 | S3.2 | Reminder engine: 24h/2h, skip-if-past, reactivation | SMS-11, SMS-17 | SMS-29 | G3 |
 | S4.1 | Notification service: channel × event preferences, acting-administrator suppression | SMS-12, SMS-18 | SMS-30 | G3 |
 | S4.2 | Master calendar and own services/prices | SMS-21 | SMS-31 | G3 |
-| S5.1 | Administrator appointment management, including the REQ-F-028 recalculation rule | SMS-21 | SMS-32 | G4 |
+| S5.1a | Administrator reads and creates: R19 `createAppointmentAdmin`, R20 `listAppointmentsAdmin`, `getAppointmentAdmin` | SMS-21 | SMS-32 | G4 |
+| S5.1b | Administrator acts: R21 `updateAppointmentAdmin` with the REQ-F-028 recalculation, R22 `cancelAppointmentAdmin`, R23 `completeAppointment`, and SMS-18's REQ-F-030 | SMS-21 | SMS-32 | G4 |
 | S5.2 | Material receipts and issues with stock control | SMS-21 | SMS-33 | G4 |
 | S5.3 | Completion → payment, completion as a hard precondition | SMS-13 | SMS-34 | G4 |
 | S5.4 | Reports: revenue, popular services, stock levels | SMS-16 | SMS-35 | G4 |
