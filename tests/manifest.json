@@ -356,6 +356,20 @@
         "src/routes.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-45 (test) → SMS-45 (implementation)",
+      "test": "tests/api/cancelled-reminders.test.ts",
+      "sources": ["REQ-F-034"],
+      "implementation": ["src/modules/notifications/cancellation.ts"],
+      "touches": [
+        "src/modules/notifications/reminders.ts",
+        "src/modules/appointments/service.ts",
+        "src/db/schema.ts",
+        "src/db/migrations",
+        "tests/api/reminders.test.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }

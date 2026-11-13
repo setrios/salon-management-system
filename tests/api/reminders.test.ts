@@ -54,8 +54,9 @@
  *     the reschedule message.
  *   - **A background dispatch.** There is none (H3); the read is the trigger,
  *     and R4/R6/R10 are what make that observable.
- *   - **The `reminders[]` of a cancelled record as a decision.** R9 asserts
- *     only that nothing is dispatched; the shape is row 10's, not this file's.
+ *   - **The `reminders[]` of a cancelled record as a decision.** R9 asserted
+ *     only that nothing is dispatched; addendum 001 (REQ-F-034) decided the
+ *     shape as `cancelled`, and R9 now asserts it.
  */
 
 import request from 'supertest';
@@ -413,8 +414,8 @@ describe('S3.2 reminders — the 24 h and 2 h rows', () => {
 
   // ============================================ the record that is not live
 
-  describe('the record that is not live (H5, G2 register row 10)', () => {
-    it('R9 does not dispatch the reminders of a cancelled record', async () => {
+  describe('the record that is not live (H5; register row 10, closed by addendum 001)', () => {
+    it('R9 settles the reminders of a cancelled record to cancelled and never sends them', async () => {
       const master = await freshMaster();
       const created = await book(master.id, onMonday('10:00'));
       const token = created.body.accessToken as string;
@@ -422,15 +423,18 @@ describe('S3.2 reminders — the 24 h and 2 h rows', () => {
       const cancelled = await request(app).post(`/api/v1/appointments/${token}/cancel`);
       expectAppointment(cancelled);
 
-      // The moment has passed, but the record is cancelled: nothing is sent.
+      // Addendum 001 (REQ-F-034): the cancellation settled both rows, so the
+      // later clock finds nothing scheduled to dispatch. Before the addendum
+      // these rows stayed `scheduled` and the dispatch predicate was the only
+      // thing keeping them from being sent.
       const later = await readWith(atTheMoment, token);
       expect(later.body.reminders).toEqual([
-        { type: '24h', scheduledAt: onSunday('10:00'), status: 'scheduled' },
-        { type: '2h', scheduledAt: onMonday('08:00'), status: 'scheduled' },
+        { type: '24h', scheduledAt: onSunday('10:00'), status: 'cancelled' },
+        { type: '2h', scheduledAt: onMonday('08:00'), status: 'cancelled' },
       ]);
 
       const page = await notifications(atTheMoment, created.body.id as string);
-      expect(reminderRows(page).map((row) => row.status)).toEqual(['scheduled', 'scheduled']);
+      expect(reminderRows(page).map((row) => row.status)).toEqual(['cancelled', 'cancelled']);
     });
   });
 });
