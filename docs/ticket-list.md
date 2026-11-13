@@ -59,7 +59,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-42 | Write positive and negative mock scenarios and runners | Test | Plan §8.2; SCN-01..15 | SMS-40 | Coding Agent | Done |
 | SMS-43 | API-GATE: validate contract and mock against the 10 criteria | Gate | Plan §9 | SMS-41, SMS-42 | Human | Done |
 | SMS-44 | Test S1.0 infrastructure: 404, 405, malformed JSON → 400, Problem shape, trace propagation, log line shape (415 moves to SMS-21, plan §8.2) | Test | Plan §8, §8.2; error-model.md §3 | SMS-43 | Coding Agent | Done |
-| SMS-45 | Spec addendum (step 4): choose one change and gate it | Addendum | Plan §8.1 | SMS-7, SMS-46 | Human | Backlog |
+| SMS-45 | Addendum 001: cancelled reminders (REQ-F-034) | Addendum | REQ-F-034, Plan §8.1 | SMS-7, SMS-46 | Coding Agent | In progress |
 | SMS-46 | Refactoring of the base implementation (step 3) | Feature | Plan §9 | SMS-7 | Coding Agent | Backlog |
 | SMS-47 | Component split, README and log samples | Documentation | Task step 1 (logging); component split | SMS-24, SMS-25 | Joint | Backlog |
 | SMS-48 | Human validation record (step 7) | Validation | Plan §10 | SMS-45, SMS-46, SMS-47 | Human | Backlog |
@@ -96,6 +96,7 @@ human only). They inherit the stage's ticket sources as their `Source` field.
 | REQ-F-022 | SMS-35 | SMS-16 |
 | REQ-F-032 | SMS-35 | SMS-16 |
 | REQ-F-033 | SMS-35 | SMS-16 |
+| REQ-F-034 (addendum 001) | SMS-45 | SMS-45 |
 | REQ-F-023 | SMS-30 | SMS-12 |
 | REQ-F-024 | SMS-23 | SMS-14 |
 | REQ-F-025 | SMS-23 | SMS-21 |
