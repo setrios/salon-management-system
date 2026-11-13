@@ -20,7 +20,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-3 | PLAN-GATE: approve decomposition, dependencies, plan, risks | Gate | This plan §9 | SMS-1, SMS-2 | Human | Done (GO, 2026-10-22) |
 | SMS-4 | G1: approve stage S1 (foundations) exit | Gate | Plan §6 | SMS-3 | Human | Done |
 | SMS-5 | G2: approve stage S2 (client booking core) exit | Gate | Plan §6 | SMS-4 | Human | Done (GO, 2026-11-12) |
-| SMS-6 | G3: approve stages S3+S4 (reschedule/reminders, notifications) exit | Gate | Plan §6 | SMS-5 | Human | Backlog |
+| SMS-6 | G3: approve stages S3+S4 (reschedule/reminders, notifications) exit | Gate | Plan §6 | SMS-5 | Human | Done (GO, 2026-11-13) |
 | SMS-7 | G4: approve stage S5 (admin & payment) exit | Gate | Plan §6 | SMS-6 | Human | Backlog |
 | SMS-8 | Test multi-service booking flow (SCN-01) | Test | REQ-F-001…005, SCN-01 | SMS-3 | Coding Agent | Done |
 | SMS-9 | Test free cancellation (SCN-02) | Test | REQ-F-006, SCN-02 | SMS-3 | Coding Agent | Done |
