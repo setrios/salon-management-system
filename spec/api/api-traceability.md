@@ -594,3 +594,21 @@ production readiness, and it records the six accepted deviations — simulated
 delivery, the 60 s reminder tick and its single-ticker assumption, register row 13,
 the §8.1 ordering that makes C8 a characterisation test, the absent interface, and
 the out-of-scope verification classes.
+
+### 6.23 Second refactoring (SMS-49, task step 6)
+
+| Item | Where |
+|---|---|
+| Gate | `logs/gates/2026-11-14-refactor-SMS-49.md` (REFACTOR, **GO**, 2026-11-14) |
+| Commit | `3206b05` — `refactor: one due-reminder statement for both dispatchers (SMS-49)` |
+| Shared statement | `src/modules/notifications/dispatch.ts` — `markDueRemindersSent(db, now, appointmentId?)` |
+| Callers | `dispatchDueReminders` (read-triggered, `notifications/service.ts`) and `runDueReminders` (the 60 s tick, `notifications/scheduler.ts`) |
+| One event-type list | `REMINDER_EVENT_TYPES` in `notifications/reminders.ts`, derived from `REMINDER_OFFSETS` |
+| Removed | `settledByCancellation` — the addendum's pure helper with no caller |
+| Proof | 395/395 before and after; three shuffled runs green; `verify:contract` 50 operations; no route registration in the diff |
+
+The first refactoring (stage R, `95c5a70`) removed the duplication the base
+implementation had accumulated; this one covers the code addendum 001 added and
+touched, which is what the task's step 6 asks for. The two are separate records
+because they are separate decisions about separate code, and neither is a
+rewording of the other.
