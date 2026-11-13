@@ -69,6 +69,15 @@ export function eventTypeOf(type: ReminderType): 'reminder_24h' | 'reminder_2h' 
   return type === '24h' ? 'reminder_24h' : 'reminder_2h';
 }
 
+/**
+ * The `event_type` values a reminder is stored under, derived from the offsets
+ * above so the two cannot drift: a new reminder moment adds its event type here
+ * without a second list having to be remembered.
+ */
+export const REMINDER_EVENT_TYPES: readonly string[] = REMINDER_OFFSETS.map(({ type }) =>
+  eventTypeOf(type),
+);
+
 /** The reminder type an `event_type` names, or `undefined` for any other row. */
 export function reminderTypeOf(eventType: string): ReminderType | undefined {
   if (eventType === 'reminder_24h') return '24h';

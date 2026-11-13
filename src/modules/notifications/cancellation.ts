@@ -34,27 +34,11 @@ import { and, eq } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
 import { notifications } from '../../db/schema.js';
-import type { ReminderRow, ReminderStatus } from './reminders.js';
+import type { ReminderStatus } from './reminders.js';
 import type { Executor } from './service.js';
 
 /** The status a cancelled appointment's unsent reminders take. */
 export const CANCELLED_REMINDER_STATUS = 'cancelled' satisfies ReminderStatus;
-
-/**
- * The status each reminder takes once its appointment is cancelled.
- *
- * Pure, so the rule can be read and tested without a database: a `scheduled` row
- * becomes `cancelled`, everything else is returned unchanged. The caller's rows
- * are not mutated; a new array is returned.
- */
-export function settledByCancellation(
-  rows: readonly ReminderRow[],
-): { row: ReminderRow; status: ReminderStatus }[] {
-  return rows.map((row) => ({
-    row,
-    status: row.status === 'scheduled' ? CANCELLED_REMINDER_STATUS : row.status,
-  }));
-}
 
 /**
  * Rewrites one appointment's `scheduled` reminder rows to `cancelled`.

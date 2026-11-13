@@ -32,7 +32,7 @@
  *         channel and status); decisions E2–E4, H1–H6.
  */
 
-import { and, asc, count, eq, exists, gte, inArray, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { getDb, type Database } from '../../db/client.js';
 import {
@@ -42,6 +42,7 @@ import {
   notifications,
 } from '../../db/schema.js';
 import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time.js';
+import { markDueRemindersSent } from './dispatch.js';
 import {
   enabledChannels,
   preferenceViews,
@@ -50,6 +51,7 @@ import {
   type PreferenceView,
 } from './preferences.js';
 import {
+  REMINDER_EVENT_TYPES,
   eventTypeOf,
   isDue,
   reminderRowsFor,
@@ -249,31 +251,9 @@ export async function dispatchDueReminders(
   const rows = await readReminders(db, appointmentId);
   if (!rows.some((row) => isDue(row, now))) return 0;
 
-  const updated = await db
-    .update(notifications)
-    .set({ status: 'sent', sentAt: now })
-    .where(
-      and(
-        eq(notifications.appointmentId, appointmentId),
-        inArray(notifications.eventType, ['reminder_24h', 'reminder_2h']),
-        eq(notifications.status, 'scheduled'),
-        lte(notifications.scheduledAt, now),
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(appointments)
-            .where(
-              and(
-                eq(appointments.id, appointmentId),
-                eq(appointments.status, 'confirmed'),
-              ),
-            ),
-        ),
-      ),
-    )
-    .returning({ id: notifications.id });
-
-  return updated.length;
+  // The statement itself is shared with the scheduler's tick (SMS-49): one rule
+  // for "due", so a read and a tick cannot disagree about which rows are due.
+  return markDueRemindersSent(db, now, appointmentId);
 }
 
 /**
@@ -316,7 +296,7 @@ export async function readRemindersFor(
     .where(
       and(
         inArray(notifications.appointmentId, [...appointmentIds]),
-        inArray(notifications.eventType, ['reminder_24h', 'reminder_2h']),
+        inArray(notifications.eventType, [...REMINDER_EVENT_TYPES]),
       ),
     )
     .orderBy(asc(notifications.scheduledAt));

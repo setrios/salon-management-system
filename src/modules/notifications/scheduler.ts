@@ -31,13 +31,8 @@
  * Ticket: SMS-46 (stage R).
  */
 
-import { and, eq, exists, inArray, lte, sql } from 'drizzle-orm';
-
 import { getDb } from '../../db/client.js';
-import { appointments, notifications } from '../../db/schema.js';
-
-/** The two `event_type` values a reminder is stored under. */
-const REMINDER_EVENT_TYPES = ['reminder_24h', 'reminder_2h'] as const;
+import { markDueRemindersSent } from './dispatch.js';
 
 /** How often the process ticks, and why. */
 export const DEFAULT_REMINDER_INTERVAL_MS = 60_000;
@@ -48,38 +43,12 @@ export const DEFAULT_REMINDER_INTERVAL_MS = 60_000;
  * Returns the number of rows sent, which is what the control run and the tests
  * assert on; a scheduler in production ignores it.
  *
- * The `exists` clause is H5 and it is correlated on purpose: the row's own
- * appointment is the one that must still be `confirmed`. Written as a join it
- * would be the same query, but a join over a `update ... returning` is a shape
- * the driver does not support, and a subquery states the rule in one place.
+ * **The statement is not written here** (SMS-49): the read-triggered dispatch
+ * uses the same one, so the tick and a read cannot disagree about which rows are
+ * due. This function is the tick's scope — every appointment — and nothing else.
  */
 export async function runDueReminders(now: Date): Promise<number> {
-  const db = getDb();
-
-  const sent = await db
-    .update(notifications)
-    .set({ status: 'sent', sentAt: now })
-    .where(
-      and(
-        inArray(notifications.eventType, REMINDER_EVENT_TYPES),
-        eq(notifications.status, 'scheduled'),
-        lte(notifications.scheduledAt, now),
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(appointments)
-            .where(
-              and(
-                eq(appointments.id, notifications.appointmentId),
-                eq(appointments.status, 'confirmed'),
-              ),
-            ),
-        ),
-      ),
-    )
-    .returning({ id: notifications.id });
-
-  return sent.length;
+  return markDueRemindersSent(getDb(), now);
 }
 
 /** What the scheduler needs to run: the clock, the period, and the tick. */
