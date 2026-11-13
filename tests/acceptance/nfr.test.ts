@@ -214,21 +214,32 @@ describe('REQ-NF-005 — no automatic deletion', () => {
   it('N4 contains no purge job, retention schedule or destructive SQL', () => {
     const text = sourceText();
 
-    const forbidden = [
+    // The evidence of a purge job is *deletion*, not repetition. At S5.5 a
+    // `setInterval` implied one, because nothing legitimately repeated; stage R
+    // added the reminder tick (`scheduler.ts`), which repeats and deletes
+    // nothing. So the rule is now: a destructive statement is forbidden
+    // anywhere, and a repeating job is forbidden when it is the thing that
+    // deletes.
+    const destructive = [
       /\bnode-cron\b/,
-      /\bsetInterval\s*\(/, // a repeating job would need one
       /\bpurge\b/i,
       /\bretention\b/i,
       /\barchive\b/i,
       /\bdelete\s+from\b/i,
       /\btruncate\b/i,
     ];
+    const repeating = /\bsetInterval\s*\(/;
 
-    const offenders = text.flatMap(({ path, text: body }) =>
-      forbidden
-        .filter((pattern) => pattern.test(stripComments(body)))
-        .map((pattern) => `${path} matches ${pattern}`),
-    );
+    const offenders = text.flatMap(({ path, text: body }) => {
+      const code = stripComments(body);
+      const hits = destructive
+        .filter((pattern) => pattern.test(code))
+        .map((pattern) => `${path} matches ${pattern}`);
+      if (repeating.test(code) && destructive.some((pattern) => pattern.test(code))) {
+        hits.push(`${path} repeats and deletes`);
+      }
+      return hits;
+    });
     expect(offenders).toEqual([]);
 
     // The migrations are the schema's history: no destructive statement there
