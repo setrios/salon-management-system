@@ -315,6 +315,19 @@
         "src/routes.ts",
         "tests/manifest.json"
       ]
+    },
+    {
+      "ticket": "SMS-33 (test) → SMS-33 (implementation)",
+      "test": "tests/api/material-transactions.test.ts",
+      "sources": ["REQ-F-020"],
+      "implementation": ["src/modules/materials/transactions.ts"],
+      "touches": [
+        "src/db/schema.ts",
+        "src/db/migrations",
+        "src/modules/materials/service.ts",
+        "src/modules/materials/routes.ts",
+        "tests/manifest.json"
+      ]
     }
   ]
 }
