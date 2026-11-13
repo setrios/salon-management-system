@@ -47,8 +47,13 @@ export interface LinkListFilter {
   readonly masterId?: string;
   readonly serviceId?: string;
   readonly active?: boolean;
-  readonly limit: number;
-  readonly offset: number;
+  /**
+   * The page, when the caller wants one. R10 always passes both; M2 passes
+   * neither, because `MasterServiceList` is a bare array with no envelope
+   * (S4.2, J7).
+   */
+  readonly limit?: number;
+  readonly offset?: number;
 }
 
 /** One page of links plus the total for that filter. */
@@ -63,13 +68,18 @@ export async function listLinks(
   ];
   const where = conditions.length === 0 ? undefined : and(...conditions);
 
-  const rows = await db
+  const ordered = db
     .select()
     .from(masterServices)
     .where(where)
-    .orderBy(asc(masterServices.createdAt), asc(masterServices.id))
-    .limit(filter.limit)
-    .offset(filter.offset);
+    .orderBy(asc(masterServices.createdAt), asc(masterServices.id));
+
+  // `limit` is optional (S4.2, J7): M2 asks for the caller's links without a
+  // page envelope, and Drizzle's builder takes a number, not `undefined`.
+  const rows =
+    filter.limit === undefined
+      ? await ordered
+      : await ordered.limit(filter.limit).offset(filter.offset ?? 0);
 
   const [totalRow] = await db.select({ value: count() }).from(masterServices).where(where);
 

@@ -78,3 +78,12 @@ export function requireRole(role: PrincipalRole): RequestHandler {
  * choose a different order.
  */
 export const adminAccess: readonly RequestHandler[] = [authenticate, requireRole('admin')];
+
+/**
+ * The complete master gate: a valid bearer token, then the master role.
+ *
+ * The mirror of `adminAccess`, and the same two functions in the same order.
+ * S1.3 wrote the pair out in `availability/routes.ts`; S4.2 is the third module
+ * to need it, so it is declared once here and the three spread it.
+ */
+export const masterAccess: readonly RequestHandler[] = [authenticate, requireRole('master')];

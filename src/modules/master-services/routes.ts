@@ -1,9 +1,10 @@
 /**
- * Master-service links — administrator operations R10–R12.
+ * Master-service links — administrator operations R10–R12 and the master's M2.
  *
  *   R10 GET   /admin/master-services                  listMasterServicesAdmin → MasterServicePage
  *   R11 POST  /admin/master-services                  createMasterService     → 201 MasterService + Location
  *   R12 PATCH /admin/master-services/{masterServiceId} updateMasterService    → MasterService
+ *   M2  GET   /me/services                            listMyServices          → MasterServiceList
  *
  * Source: REQ-F-018 (the administrator sets what a master charges for a
  *         service), D-24 (`error-model.md` §3 names the link pair as one of the
@@ -16,7 +17,8 @@
 import { Router, type Request, type Response } from 'express';
 
 import { HttpProblem } from '../../middleware/error-handler.js';
-import { adminAccess } from '../../middleware/authorize.js';
+import { type Principal } from '../../middleware/auth.js';
+import { adminAccess, masterAccess } from '../../middleware/authorize.js';
 import { validateBody, validateParams } from '../../middleware/validate.js';
 import {
   asyncRoute,
@@ -34,6 +36,19 @@ import {
   type LinkCreateInput,
   type LinkPatchInput,
 } from './service.js';
+
+/**
+ * M2 — the caller's own links (REQ-F-014, J7).
+ *
+ * `MasterServiceList` is a bare array with no page envelope, so the filter carries
+ * the master and nothing else. The order is R10's, so the two lists agree.
+ */
+async function listMyServicesHandler(_req: Request, res: Response): Promise<void> {
+  const principal = res.locals.principal as Principal;
+  const { items } = await listLinks({ masterId: principal.id });
+
+  sendJson(res, 200, 'MasterServiceList', items);
+}
 
 /** R10 — one page of links, optionally filtered by master, service or state. */
 async function listLinksHandler(_req: Request, res: Response): Promise<void> {
@@ -103,4 +118,5 @@ export function masterServiceRoutes(router: Router): void {
     validateBody('updateMasterService'),
     asyncRoute(updateLinkHandler),
   );
+  router.get('/me/services', ...masterAccess, asyncRoute(listMyServicesHandler));
 }

@@ -68,9 +68,11 @@ import {
   startOffered,
 } from '../../lib/occupancy.js';
 import { HttpProblem } from '../../middleware/error-handler.js';
+import { type Principal } from '../../middleware/auth.js';
+import { masterAccess } from '../../middleware/authorize.js';
 import { validateBody, validateParams } from '../../middleware/validate.js';
 import { readAvailability } from '../availability/service.js';
-import { asyncRoute, sendJson } from '../reference-data/http.js';
+import { asyncRoute, pageBody, pageRequest, sendJson } from '../reference-data/http.js';
 import { rescheduleDecision } from './reschedule.js';
 import {
   offBoundary,
@@ -83,6 +85,7 @@ import {
   bookedBlocks,
   cancelByToken,
   createAppointment,
+  listMyAppointments,
   findByToken,
   findBookableServices,
   findBookingMaster,
@@ -90,6 +93,7 @@ import {
   rescheduleAppointment,
   type Executor,
 } from './service.js';
+import { staffBody } from './staff-view.js';
 import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
 /** `AppointmentCreate` as the contract declares it (closed body, D-22). */
 interface AppointmentCreateBody {
@@ -435,6 +439,27 @@ async function rescheduleAppointmentByTokenHandler(req: Request, res: Response):
 }
 
 /** Registers P8, P9, P10 and P11 on the API router. None of the paths takes authentication. */
+/** M1 — the caller's own calendar (REQ-F-013, J1–J5). */
+async function listMyAppointmentsHandler(req: Request, res: Response): Promise<void> {
+  const principal = res.locals.principal as Principal;
+  const query = res.locals.query as
+    | { from?: string; to?: string; status?: string }
+    | undefined;
+  const request = pageRequest(res);
+  const now = (req.app.locals.now as (() => Date) | undefined)?.() ?? new Date();
+
+  const { items, total } = await listMyAppointments(
+    principal.id,
+    query ?? {},
+    request.pageSize,
+    request.offset,
+    now,
+  );
+
+  sendJson(res, 200, 'AppointmentAdminPage', pageBody(items.map(staffBody), total, request));
+}
+
+/** Registers P8–P11 (public) and M1 (JWT-M) on the API router. */
 export function appointmentRoutes(router: Router): void {
   router.post(
     '/appointments',
@@ -456,5 +481,11 @@ export function appointmentRoutes(router: Router): void {
     validateParams('rescheduleAppointmentByToken'),
     validateBody('rescheduleAppointmentByToken'),
     asyncRoute(rescheduleAppointmentByTokenHandler),
+  );
+  router.get(
+    '/me/appointments',
+    ...masterAccess,
+    validateParams('listMyAppointments'),
+    asyncRoute(listMyAppointmentsHandler),
   );
 }

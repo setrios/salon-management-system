@@ -45,7 +45,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-28 | Feature: client reschedule (recalc + reschedule SMS) | Feature | REQ-F-007, 008, 009 | SMS-10, SMS-26 | Coding Agent | Done |
 | SMS-29 | Feature: reminder engine (24h/2h, skip rule, reactivation) | Feature | REQ-F-010, 011, 029 | SMS-11, SMS-17, SMS-28 | Coding Agent | Done |
 | SMS-30 | Feature: notification service (channels, per-event prefs, admin self-notify suppression) | Feature | REQ-F-016, 023, 026, 030 | SMS-12, SMS-26, SMS-27, SMS-28 | Coding Agent | Done |
-| SMS-31 | Feature: master calendar + own services/prices | Feature | REQ-F-013, 014 | SMS-21, SMS-22 | Coding Agent | Backlog |
+| SMS-31 | Feature: master calendar + own services/prices | Feature | REQ-F-013, 014 | SMS-21, SMS-22 | Coding Agent | Done |
 | SMS-32 | Feature: admin appointment management (create/edit/cancel follows reschedule rules) | Feature | REQ-F-019, 028 | SMS-21, SMS-28 | Coding Agent | Backlog |
 | SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Backlog |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Backlog |

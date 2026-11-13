@@ -327,6 +327,25 @@ P8, P10 and P11; that behaviour is asserted in
 to drive it until R21 arrives in S5.1. SMS-18 carries the test there, and the
 gate's §5 records the carry-forward.
 
+### 6.11 S4.2 — the master's own calendar and own services (SMS-31)
+
+S4.2 adds the two operations that give a master their own data.
+
+| Operation | Test | Code |
+|---|---|---|
+| `listMyAppointments` (M1) | `tests/api/master-calendar.test.ts` — A1–A10 | `src/modules/appointments/routes.ts` (`listMyAppointmentsHandler`), `src/modules/appointments/service.ts` (`listMyAppointments`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
+| `listMyServices` (M2) | `tests/api/master-calendar.test.ts` — B1–B5 | `src/modules/master-services/routes.ts` (`listMyServicesHandler`), `src/modules/master-services/service.ts` (`listLinks`) |
+
+**REQ-F-013 and REQ-F-014 are asserted by this stage.** A1 is the AC verbatim —
+a master's calendar contains only that master's appointments — and B1 is
+REQ-F-014's: the list matches exactly the caller's `MasterService` records.
+
+**The staff view is a subtraction, not a copy.** `staffBody` removes
+`accessToken` and `confirmationUrl` from `appointmentBody` (D18, REQ-NF-006); A2
+asserts the absence *and* that the client's own response still has both, so the
+test fails if the fields are simply renamed or if the shared literal stops
+carrying them.
+
 **What this section is for.** Criterion 4 is a file-path criterion, not a
 judgement: a reader who doubts that `updateMasterService` is delivered can open
 the named test and the named module and see both. Nothing here replaces the

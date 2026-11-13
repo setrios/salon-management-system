@@ -33,7 +33,7 @@
  *         D15.
  */
 
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
 
 import { getDb, type Database } from '../../db/client.js';
 import {
@@ -44,6 +44,7 @@ import {
   notifications,
   services,
 } from '../../db/schema.js';
+import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time.js';
 import type { BookableService } from './rules.js';
 import { isAppointmentStatus, stateOutcome } from './state.js';
 import type { AppointmentLine } from './view.js';
@@ -52,6 +53,7 @@ import {
   dispatchDueReminders,
   insertReminders,
   readReminders,
+  readRemindersFor,
   recalculateReminders,
   recordAppointmentEvent,
 } from '../notifications/service.js';
@@ -710,4 +712,129 @@ export async function rescheduleAppointment(
   }
 
   return { kind: 'moved', record };
+}
+
+/** M1's filters, as the contract declares them. */
+export interface MyAppointmentFilters {
+  readonly from?: string;
+  readonly to?: string;
+  readonly status?: string;
+}
+
+/**
+ * M1 — one page of the caller's own appointments (REQ-F-013, J1–J5).
+ *
+ * The scope is the `masterId` the route takes from the token's subject, not a
+ * parameter: REQ-F-013's AC is that the calendar contains only the caller's
+ * appointments, and a parameter would make that a promise the query could
+ * break.
+ *
+ * `from` and `to` filter on `startAt`, inclusive of the whole day (J3), and the
+ * order is `startAt` then `id` (J4). The dispatch of J5 runs before the rows are
+ * read, so the `reminders[]` the body shows are the ones this read produced.
+ *
+ * The lines and the reminders are loaded for the whole page in two queries
+ * rather than two per appointment: a page is up to 20 records, and the batch is
+ * the same code the single-record read uses.
+ */
+export async function listMyAppointments(
+  masterId: string,
+  filters: MyAppointmentFilters,
+  limit: number,
+  offset: number,
+  now: Date,
+): Promise<{ items: StoredAppointment[]; total: number }> {
+  const db = getDb();
+
+  const conditions = [eq(appointments.masterId, masterId)];
+  if (filters.status !== undefined) {
+    conditions.push(eq(appointments.status, filters.status));
+  }
+
+  const from = filters.from === undefined ? null : parseCalendarDate(filters.from);
+  if (from !== null) {
+    conditions.push(gte(appointments.startAt, new Date(salonInstant(from, 0))));
+  }
+
+  const to = filters.to === undefined ? null : parseCalendarDate(filters.to);
+  if (to !== null) {
+    conditions.push(
+      lt(appointments.startAt, new Date(salonInstant(addCalendarDays(to, 1), 0))),
+    );
+  }
+
+  const where = and(...conditions);
+
+  const rows = await db
+    .select({
+      id: appointments.id,
+      status: appointments.status,
+      clientName: appointments.clientName,
+      clientPhone: appointments.clientPhone,
+      masterId: appointments.masterId,
+      masterFullName: masters.fullName,
+      startAt: appointments.startAt,
+      endAt: appointments.endAt,
+      totalDurationMinutes: appointments.totalDurationMinutes,
+      occupiedDurationMinutes: appointments.occupiedDurationMinutes,
+      totalPriceAmountMinor: appointments.totalPriceAmountMinor,
+      totalPriceCurrency: appointments.totalPriceCurrency,
+      accessToken: appointments.accessToken,
+      createdAt: appointments.createdAt,
+      updatedAt: appointments.updatedAt,
+    })
+    .from(appointments)
+    .innerJoin(masters, eq(masters.id, appointments.masterId))
+    .where(where)
+    .orderBy(asc(appointments.startAt), asc(appointments.id))
+    .limit(limit)
+    .offset(offset);
+
+  const [totals] = await db.select({ total: count() }).from(appointments).where(where);
+  const total = Number(totals?.total ?? 0);
+
+  if (rows.length === 0) return { items: [], total };
+
+  const ids = rows.map((row) => row.id);
+
+  // J5: the dispatch runs before the rows are read, so a reminder that fell due
+  // is `sent` in the body this read returns.
+  for (const id of ids) await dispatchDueReminders(id, now);
+
+  const lines = await db
+    .select({
+      appointmentId: appointmentServices.appointmentId,
+      serviceId: appointmentServices.serviceId,
+      name: appointmentServices.name,
+      baseDurationMinutes: appointmentServices.baseDurationMinutes,
+      priceAmountMinor: appointmentServices.priceAmountMinor,
+      priceCurrency: appointmentServices.priceCurrency,
+    })
+    .from(appointmentServices)
+    .where(inArray(appointmentServices.appointmentId, ids))
+    .orderBy(asc(appointmentServices.appointmentId), asc(appointmentServices.position));
+
+  const linesByAppointment = new Map<string, AppointmentLine[]>();
+  for (const line of lines) {
+    const list = linesByAppointment.get(line.appointmentId) ?? [];
+    list.push({
+      serviceId: line.serviceId,
+      name: line.name,
+      baseDurationMinutes: line.baseDurationMinutes,
+      priceAmountMinor: line.priceAmountMinor,
+      priceCurrency: line.priceCurrency,
+    });
+    linesByAppointment.set(line.appointmentId, list);
+  }
+
+  const reminders = await readRemindersFor(db, ids);
+
+  return {
+    items: rows.map((row) => ({
+      ...row,
+      lines: linesByAppointment.get(row.id) ?? [],
+      reminders: reminders.get(row.id) ?? [],
+    })),
+    total,
+  };
 }

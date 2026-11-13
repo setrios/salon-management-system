@@ -287,8 +287,27 @@ export async function readReminders(
   executor: Executor,
   appointmentId: string,
 ): Promise<ReminderRow[]> {
+  return (await readRemindersFor(executor, [appointmentId])).get(appointmentId) ?? [];
+}
+
+/**
+ * The reminder rows of several appointments, keyed by appointment (S4.2, J5).
+ *
+ * The batch form of `readReminders`, for M1: a calendar page is up to 20
+ * records, and one query for the page is the same code the single-record read
+ * uses rather than 20 copies of it. An appointment with no reminder rows is
+ * absent from the map, which the caller reads as an empty list.
+ */
+export async function readRemindersFor(
+  executor: Executor,
+  appointmentIds: readonly string[],
+): Promise<Map<string, ReminderRow[]>> {
+  const byAppointment = new Map<string, ReminderRow[]>();
+  if (appointmentIds.length === 0) return byAppointment;
+
   const rows = await executor
     .select({
+      appointmentId: notifications.appointmentId,
       eventType: notifications.eventType,
       scheduledAt: notifications.scheduledAt,
       status: notifications.status,
@@ -296,19 +315,23 @@ export async function readReminders(
     .from(notifications)
     .where(
       and(
-        eq(notifications.appointmentId, appointmentId),
+        inArray(notifications.appointmentId, [...appointmentIds]),
         inArray(notifications.eventType, ['reminder_24h', 'reminder_2h']),
       ),
     )
     .orderBy(asc(notifications.scheduledAt));
 
-  return rows.flatMap((row) => {
+  for (const row of rows) {
     const type = reminderTypeOf(row.eventType);
-    if (type === undefined || row.scheduledAt === null) return [];
+    if (type === undefined || row.scheduledAt === null) continue;
     // The table's CHECK constraint limits `status` to the four values the
     // contract enumerates, so the cast is the schema's guarantee, not a guess.
-    return [{ type, scheduledAt: row.scheduledAt, status: row.status as ReminderStatus }];
-  });
+    const list = byAppointment.get(row.appointmentId) ?? [];
+    list.push({ type, scheduledAt: row.scheduledAt, status: row.status as ReminderStatus });
+    byAppointment.set(row.appointmentId, list);
+  }
+
+  return byAppointment;
 }
 
 // ============================================ preferences (S4.1, I1–I11)

@@ -32,8 +32,8 @@
 import { Router, type Request, type Response } from 'express';
 
 import { HttpProblem } from '../../middleware/error-handler.js';
-import { authenticate, type Principal } from '../../middleware/auth.js';
-import { requireRole } from '../../middleware/authorize.js';
+import { type Principal } from '../../middleware/auth.js';
+import { masterAccess } from '../../middleware/authorize.js';
 import { validateBody, validateParams } from '../../middleware/validate.js';
 import {
   roundUpToBlock,
@@ -59,8 +59,6 @@ import {
 import { bookedBlocks } from '../appointments/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
 
-/** Any authenticated caller may read their own record; M3/M4 are JWT-M. */
-const masterAccess = [authenticate, requireRole('master')] as const;
 
 /**
  * Splits the CSV `serviceIds` parameter (contract: `type: string`, "Comma-
