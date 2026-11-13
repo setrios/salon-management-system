@@ -392,6 +392,30 @@ An `issue` larger than the balance is `409 MATERIAL_STOCK_INSUFFICIENT`.
 
 ---
 
+### SCN-16 — A master cannot be double-booked
+
+*Intent: the owner's first complaint in `DESCRIPTION.md` §2 — two clients in one chair.*
+
+Added after the 2026-11-13 run, which proved the availability rule but never
+attempted a **direct** clash (record §2.1). Three attempts and one control:
+
+```bash
+book_at() { # startAt, serviceId → status + body
+  curl -s -w '\nHTTP %{http_code}\n' -X POST "$B/appointments" -H 'Content-Type: application/json' \
+    -d "{\"client\":{\"name\":\"Validation Client\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER_ID\",\"serviceIds\":[\"$1\"],\"startAt\":\"$2\"}"
+}
+book_at "$COLOUR"  '2026-11-16T16:00:00+02:00'   # A: 50 min → occupies 16:00–17:00
+book_at "$HAIRCUT" '2026-11-16T16:00:00+02:00'   # B: same start
+book_at "$HAIRCUT" '2026-11-16T16:30:00+02:00'   # C: starts inside A
+book_at "$HAIRCUT" '2026-11-16T17:00:00+02:00'   # D: control — the first free boundary
+```
+
+**Expect:** A `201`; B `409` with `code: "SLOT_UNAVAILABLE"` (same start); C `409`
+`SLOT_UNAVAILABLE` (overlap); D `201` — the control matters, because a blanket
+refusal would also give 409/409 and prove nothing.
+
+*Automated:* `tests/api/booking.test.ts` K2 (occupied slot); `tests/api/admin-appointment-actions.test.ts` (R19/R21 clash).
+
 ## 2. What the checklist cannot do
 
 - **It cannot be the validation.** A record that repeats these expected values is
