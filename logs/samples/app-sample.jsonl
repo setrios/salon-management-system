@@ -1,0 +1,10 @@
+{"ts":"2026-11-13T20:19:05.574Z","level":"info","event":"http.request","traceId":"c0d53cad-c095-4fea-9b20-0bcf71d75521","method":"POST","path":"/api/v1/auth/login","status":200,"durationMs":61.466654}
+{"ts":"2026-11-13T20:19:05.580Z","level":"info","event":"http.request","traceId":"fbf27e58-e4ff-499f-877f-9d7ad1f01adf","method":"GET","path":"/health","status":200,"durationMs":0.475527}
+{"ts":"2026-11-13T20:19:05.583Z","level":"warn","event":"http.request","traceId":"95171eb9-9bbd-4118-bc3f-f15fe36f92a3","method":"GET","path":"/api/v1/admin/appointments","status":401,"durationMs":1.214149}
+{"ts":"2026-11-13T20:19:05.589Z","level":"warn","event":"http.request","traceId":"0d2f7248-adb2-4b8f-903d-2c5ab03396e6","method":"POST","path":"/api/v1/admin/services","status":422,"durationMs":3.431004}
+{"ts":"2026-11-13T20:19:05.595Z","level":"warn","event":"http.request","traceId":"0e700b15-8637-4380-94e9-21345e80d946","method":"GET","path":"/api/v1/admin/appointments/{appointmentId}","status":404,"durationMs":3.594607}
+{"ts":"2026-11-13T20:19:05.597Z","level":"warn","event":"http.request","traceId":"a2b9c517-08a2-4b66-9633-d5425aab8528","method":"GET","path":"/api/v1/no-such-operation","status":404,"durationMs":0.390276}
+{"ts":"2026-11-13T20:19:05.600Z","level":"warn","event":"http.request","traceId":"66a55f77-fe4a-46bb-97de-46d469e1a67e","method":"DELETE","path":"/api/v1/admin/services","status":405,"durationMs":0.261406}
+{"ts":"2026-11-13T20:19:05.649Z","level":"info","event":"http.request","traceId":"f259815e-134f-4803-9c70-540aca6a1a30","method":"POST","path":"/api/v1/admin/services","status":201,"durationMs":4.756596}
+{"ts":"2026-11-13T20:19:05.702Z","level":"info","event":"http.request","traceId":"c5fed9f3-fcb3-4a59-9061-4fffc90dd77d","method":"POST","path":"/api/v1/admin/appointments","status":201,"durationMs":42.546482}
+{"ts":"2026-11-13T20:19:05.709Z","level":"info","event":"http.request","traceId":"a09ce862-d0c3-4d5e-b8c3-05fe0f1ca5ed","method":"GET","path":"/api/v1/appointments/{token}","status":200,"durationMs":5.410415}
