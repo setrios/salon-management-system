@@ -18,17 +18,67 @@ are derived from it, not from the code.
 ```bash
 cp .env.example .env          # then edit the values you need
 docker compose up -d postgres # the development database
+docker compose exec postgres createdb -U salon salon_test   # the test database
 npm install                   # dependencies are installed manually, not by an agent
+npx drizzle-kit migrate       # applies src/db/migrations to DATABASE_URL
 npm run build                 # contract → validators → tsc → dist/
 npm start                     # http://localhost:3000/health
 ```
+
+The order matters: `npm run build` writes both `dist/` and the derived
+`src/contract/openapi.json`, and `npm start` runs `dist/src/index.js`, so
+starting before building has nothing to run.
 
 The process needs `DATABASE_URL`, `JWT_SECRET` and (for tests)
 `TEST_DATABASE_URL`. `.env` is loaded by the npm scripts; a direct
 `node dist/src/index.js` has to carry the variables itself.
 
-Migrations run from `src/db/migrations/` through the project's own runner; the
-test suite applies them to the test database before it starts.
+`npx drizzle-kit migrate` applies the committed SQL in `src/db/migrations/` to
+the database named by `DATABASE_URL` (`drizzle.config.ts`). The test suite
+migrates `TEST_DATABASE_URL` itself, from the same folder, before every run.
+
+## First run, step by step
+
+| # | Command | What you should see |
+|---|---|---|
+| 1 | `docker compose up -d postgres` | `docker compose ps` reports the container `healthy` |
+| 2 | `docker compose exec postgres createdb -U salon salon_test` | no output; `docker compose exec postgres psql -U salon -l` lists `salon_test` |
+| 3 | `npx drizzle-kit migrate` | the journal from `0000` to `0008`, no error |
+| 4 | `npm run build` | `dist/src/index.js` exists |
+| 5 | `npm start` | `curl -s localhost:3000/health` answers `200` |
+| 6 | `POST /api/v1/auth/login` | `200` and a token, once the administrator below exists |
+
+Health sits outside the versioned surface: `/health`, not `/api/v1/health`.
+
+## The first administrator
+
+No migration seeds an account — the only data a migration inserts is the three
+service categories (`0001`). `POST /admin/masters` creates `master` accounts and
+is itself an administrator operation, so the first administrator is written by
+hand.
+
+A password is stored as `scrypt$N$r$p$salt$key` (D-18). Generate the hash with
+the built code:
+
+```bash
+node --input-type=module -e "import { hashPassword } from './dist/src/modules/auth/password.js'; console.log(hashPassword(process.argv[1]))" 'change-me'
+```
+
+It prints one line; paste it in place of `<hash>`:
+
+```bash
+docker compose exec postgres psql -U salon -d salon -c "INSERT INTO masters (full_name, username, password_hash, role, active) VALUES ('Administrator', 'admin', '<hash>', 'admin', true);"
+```
+
+The credentials above are placeholders. Generate your own hash and do not commit
+a real one: a committed hash is a password with extra steps.
+
+```bash
+curl -s -X POST localhost:3000/api/v1/auth/login -H 'content-type: application/json' -d '{"username":"admin","password":"change-me"}'
+```
+
+The token lives for `JWT_EXPIRES_IN` seconds (one hour by default), so a `401`
+after a while means logging in again, not a broken account.
 
 ## Tests
 
@@ -40,7 +90,20 @@ npm run check:test-first                  # every test commit precedes its imple
 
 `TEST_DATABASE_URL` must name a database whose name ends in `_test`: the suite
 truncates it before each file (decision D-7), so it must not hold anything worth
-keeping.
+keeping. Create it once with step 2 of the quick start and the suite will
+migrate it itself.
+
+## Common failures
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Missing required environment variable: DATABASE_URL` | no `.env` | `cp .env.example .env` |
+| `database "salon_test" does not exist` | the test database was never created | step 2 above |
+| `database "salon_test" already exists` | it was created earlier | skip step 2 |
+| `… the name must end in _test (decision D-7)` | `TEST_DATABASE_URL` names the wrong database | point it at a `_test` database |
+| `ECONNREFUSED 127.0.0.1:5432` | the container is not up yet | `docker compose ps`, then `up -d postgres` |
+| `Cannot find module …/dist/src/index.js` | `npm start` before `npm run build` | step 4 above |
+| `401` on every authenticated call | the token expired | log in again |
 
 ## Contract
 
