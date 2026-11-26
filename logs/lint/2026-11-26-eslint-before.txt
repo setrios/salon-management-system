@@ -1,0 +1,249 @@
+
+src/app.ts
+  44:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/config.ts
+  12:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  14:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/contract/validators.ts
+  40:8   warning  Missing JSDoc comment                                                                         jsdoc/require-jsdoc
+  50:8   warning  Missing JSDoc comment                                                                         jsdoc/require-jsdoc
+  96:17  error    This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+src/middleware/auth.ts
+  21:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  23:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/authorize.ts
+  55:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/error-handler.ts
+  34:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  36:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  39:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  45:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/logger.ts
+  19:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  21:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/not-found.ts
+  27:41  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/trace.ts
+  30:48  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/middleware/validate.ts
+   59:19  error  Unsafe argument of type `any` assigned to a parameter of type `{}`                            @typescript-eslint/no-unsafe-argument
+  241:9   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+src/modules/appointments/admin-actions.ts
+  226:80  error  Async arrow function 'recheck' has no 'await' expression  @typescript-eslint/require-await
+
+src/modules/appointments/admin.ts
+  44:10  error  'HttpProblem' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+src/modules/appointments/reschedule.ts
+  116:22  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+
+src/modules/appointments/routes.ts
+   97:27  error  'CONFIRMATION_ORIGIN' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  130:21  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+
+src/modules/appointments/service.ts
+   112:12  error    Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+   481:8   warning  Missing JSDoc comment                                                             jsdoc/require-jsdoc
+   485:8   warning  Missing JSDoc comment                                                             jsdoc/require-jsdoc
+   934:8   warning  Missing JSDoc comment                                                             jsdoc/require-jsdoc
+  1077:8   warning  Missing JSDoc comment                                                             jsdoc/require-jsdoc
+
+src/modules/auth/tokens.ts
+  24:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/catalog/service.ts
+   67:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+   98:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  129:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/master-services/service.ts
+   46:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+   89:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  113:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/masters/service.ts
+   45:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+   71:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  101:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/materials/service.ts
+   57:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+   91:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  121:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  183:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  250:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  276:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/notifications/reminders.ts
+  60:25  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+
+src/modules/notifications/service.ts
+   86:19  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+  421:15  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead                   @typescript-eslint/array-type
+
+src/modules/public/service.ts
+  66:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/modules/reports/period.ts
+  68:86  error  "repeated" is overridden by string in this union type  @typescript-eslint/no-redundant-type-constituents
+
+src/modules/reports/routes.ts
+  51:36  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+src/modules/reports/service.ts
+   54:22  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+  118:19  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+  168:19  error  Array type using 'readonly T[]' is forbidden for non-simple types. Use 'ReadonlyArray<T>' instead  @typescript-eslint/array-type
+
+src/modules/units/service.ts
+  19:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+src/routes.ts
+  50:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+tests/acceptance/nfr.test.ts
+  79:24  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/admin-appointment-actions.test.ts
+  106:15  error  'Express' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  234:14  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  237:35  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/admin-appointments.test.ts
+   54:15  error  'Express' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  138:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  142:30  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  184:45  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/appointment-payments.test.ts
+  112:10  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  127:10  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  322:19  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+tests/api/availability.test.ts
+   97:7   error  'SUMMER_OFFSET' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  297:50  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead          @typescript-eslint/array-type
+  559:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead          @typescript-eslint/array-type
+  612:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead          @typescript-eslint/array-type
+
+tests/api/booking.test.ts
+   99:6   error  'SchemaValidator' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  276:47  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  340:36  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  366:52  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  377:52  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  407:47  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+
+tests/api/cancellation.test.ts
+  184:50  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  348:39  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/cancelled-reminders.test.ts
+  134:78  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  139:32  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/confirmation.test.ts
+  287:50  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  294:47  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  332:52  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/master-calendar.test.ts
+   52:15  error  'Express' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+   81:23  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  331:38  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  339:29  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  351:39  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/material-transactions.test.ts
+  110:10  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  131:10  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  320:19  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  531:7   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  538:7   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  547:9   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  560:7   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+  564:7   error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+tests/api/my-notifications.test.ts
+  44:15  error  'Express' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+tests/api/notification-preferences.test.ts
+   79:15  error  'Express' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+  139:9   error  'isNotificationPage' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+tests/api/occupancy.test.ts
+  162:50  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  335:42  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/public-catalogue.test.ts
+  198:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  215:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  223:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  240:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  265:45  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  266:46  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  322:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  346:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  362:49  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  371:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  391:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  437:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  474:44  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  488:42  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  489:43  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/reference-data.test.ts
+  807:13  error  'fixtures' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+tests/api/reminder-scheduler.test.ts
+  109:63  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  114:32  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+  235:32  error  Async arrow function has no 'await' expression                                    @typescript-eslint/require-await
+  257:32  error  Async arrow function has no 'await' expression                                    @typescript-eslint/require-await
+
+tests/api/reminders.test.ts
+   86:6   error  'SchemaValidator' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  222:46  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  223:32  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+
+tests/api/reports.test.ts
+  130:10  error  This assertion is unnecessary since the receiver accepts the original type of the expression  @typescript-eslint/no-unnecessary-type-assertion
+
+tests/api/reschedule.test.ts
+  110:6   error  'SchemaValidator' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  220:48  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  221:36  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  337:47  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  534:41  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  581:52  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  591:36  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+  603:37  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead   @typescript-eslint/array-type
+
+tests/api/rounding.test.ts
+  149:50  error  Array type using 'T[]' is forbidden for non-simple types. Use 'Array<T>' instead  @typescript-eslint/array-type
+
+tests/api/structural.test.ts
+  55:7  error  The value assigned to 'raw' is not used in subsequent statements  no-useless-assignment
+
+tests/global-setup.ts
+  24:16  warning  Missing JSDoc comment                                           jsdoc/require-jsdoc
+  32:5   error    There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+tests/helpers/accounts.ts
+  40:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  42:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+  49:8  warning  Missing JSDoc comment  jsdoc/require-jsdoc
+
+✖ 141 problems (98 errors, 43 warnings)
+  78 errors and 43 warnings potentially fixable with the `--fix` option.
+
