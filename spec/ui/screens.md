@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Ticket | SMS-55 (stage S6) |
-| Status | **Draft for UI-GATE (SMS-56)** |
+| Status | **Approved at UI-GATE (SMS-56), 2026-11-26** |
 | Requirements | SRS v1.3 §User Interface; REQ-F-001…034; REQ-NF-001…004, 006, 007 |
 | Contract | `spec/api/openapi.yaml` (API-GATE GO, 2026-10-26) — **unchanged by this document** |
 | Decisions | lab 6 plan D-L6-1…D-L6-4; open decisions for the gate in §9 |
@@ -35,7 +35,7 @@ screen for it.
 |---|---|
 | 2.1 | Static pages served by the same Express process; the API stays under `/api/v1`, the interface takes the paths of §3. No server-side rendering, no new runtime dependency. |
 | 2.2 | Browser code is TypeScript without a framework, compiled by the project's `tsc` (a separate `tsconfig.web.json`, because the browser needs the DOM library and the server must not have it). |
-| 2.3 | The interface calls the API only through `fetch` to `/api/v1/…` and renders the contract's own fields; it computes nothing the server already answers, except the preview sums of §4.1 C1-2. |
+| 2.3 | The interface calls the API only through `fetch` to `/api/v1/…` and renders the contract's own fields; it computes nothing the server already answers, except what C1 needs before a booking exists: the preview sums (C1-1 duration, C1-3 price) and the union of several masters' free slots (C1-2). After booking, the totals shown are the server's (`totalDurationMinutes`, `totalPrice`). |
 | 2.4 | An API error is shown from the RFC 9457 `Problem` (`title`, `detail`, `errors[]` for field messages), never as a raw status code. |
 | 2.5 | No paths other than those in §3 are served as pages; an unknown path still answers the API's 404 `Problem`. |
 | 2.6 | On the administrator's reference-data screens (A4–A7), 409 `DUPLICATE_RESOURCE` is shown next to the field that must be unique (username, master–service pair, material name). |
@@ -75,25 +75,37 @@ shows.
 | | |
 |---|---|
 | Requirements | REQ-F-001, 002, 003, 004, 031; REQ-NF-002, 003, 004, 007, 008 |
-| Operations | P4 `listMasters`, P6 `listMasterServices`, P1 `listServices`, P7 `getMasterAvailability`, P8 `createAppointment` |
+| Operations | P1 `listServices`, P4 `listMasters`, P6 `listMasterServices`, P7 `getMasterAvailability`, P8 `createAppointment` |
 | Scenarios | SCN-01, SCN-13 |
 
-One page, four steps in order; a later step is enabled only when the earlier
-ones are complete.
+One page, four steps in the order the developer chose at UI-GATE (U-2):
+services, then time, then master, then details. A later step is enabled only
+when the earlier ones are complete, and changing an earlier step clears the
+later ones.
+
+An *eligible master* is an active master (P4 `active=true`) whose active links
+(P6 `active=true`) cover **every** selected service. Availability is a
+per-master operation in the contract (P7 needs `masterId`), so the time step
+asks P7 once per eligible master and shows the union of their free slots.
 
 | Step | Heading | Elements | Data |
 |---|---|---|---|
-| C1-1 | **Choose a master** | one radio choice per active master (full name) | P4 `active=true` |
-| C1-2 | **Choose services** | a checkbox per service the master offers: name, duration ("45 min"), price ("450.00 UAH"), grouped by category; below them **Total duration** and **Total price** | P6 (price per master) joined with P1 (name, category, duration); totals are the sums of the ticked rows (REQ-F-001) |
-| C1-3 | **Choose a date and time** | a date field; then one button per slot (`10:00`, `10:30`, …) | P7 `date`, `serviceIds`; only slots with `available: true` are shown (REQ-F-002); starts are on 30-minute boundaries because the server answers only those (REQ-F-031, REQ-NF-008) |
-| C1-4 | **Your details** | **Name**, **Phone** (`+380…`), button **Book** | P8 body `client`, `masterId`, `serviceIds`, `startAt` |
+| C1-1 | **Choose services** | a checkbox per service that at least one active master offers: name and duration ("45 min"), grouped by category; below them **Total duration** | P1 `active=true` joined with the P6 links of the P4 masters; **Total duration** is the sum of the ticked services' base durations (REQ-F-001) |
+| C1-2 | **Choose a date and time** | a date field; then one button per slot (`10:00`, `10:30`, …) | P7 `date`, `serviceIds`, once per eligible master; a slot is shown when it is `available: true` for at least one of them (REQ-F-002); starts are on 30-minute boundaries because the server answers only those (REQ-F-031, REQ-NF-008) |
+| C1-3 | **Choose a master** | one choice per eligible master who is free at the chosen slot: full name and that master's **Total price** ("900.00 UAH") | the master's P6 prices summed over the ticked services (REQ-F-001); a master not free at the slot is not listed |
+| C1-4 | **Your details** | **Name**, **Phone** (`+380…`), button **Book**; above the button the summary **Total duration** and **Total price** | P8 body `client`, `masterId`, `serviceIds`, `startAt` |
+
+| Case | Shown |
+|---|---|
+| no eligible master for the ticked services | at C1-1: **No master offers all of these services together. Remove a service to continue.**; C1-2 stays disabled |
+| no free slot on the chosen date | at C1-2: **No free time on this date. Please choose another date.** |
 
 Outcomes of **Book**:
 
 | Answer | Shown |
 |---|---|
 | 201 | navigate to C2 at the path of `confirmationUrl`, with the banner **Your appointment is confirmed.** (REQ-F-003, REQ-F-004) |
-| 409 `SLOT_UNAVAILABLE` | **This time is no longer available. Please choose another time.**; the slots of C1-3 are reloaded |
+| 409 `SLOT_UNAVAILABLE` | **This time is no longer available. Please choose another time.**; the slots of C1-2 are reloaded and C1-3 is cleared |
 | 422 `VALIDATION_ERROR` | each `errors[]` item next to its field (`client.phone` → Phone) |
 | any other | the Problem's `title` and `detail` in an error box |
 
@@ -137,9 +149,9 @@ the API writes them (REQ-NF-007).
 
 | Element | Content |
 |---|---|
-| **Current time** | the appointment's date and time (P9) |
-| **Master** | select, preset to the current master; only masters who offer **all** of the appointment's services are listed (P4 + P6) |
-| **New date** and slot buttons | P7 for the chosen master, date and the appointment's `serviceIds` |
+| **Current time** | the appointment's date, time and master (P9) |
+| **New date** and slot buttons | P7 for the appointment's `serviceIds`, once per eligible master (as C1), union of the free slots — the same order as C1: time before master (U-2) |
+| **Master** | the eligible masters free at the chosen slot, the current master first and preselected when free |
 | button **Confirm new time** | P11 with `startAt` (and `masterId` when changed) |
 | link **Back to my appointment** | C2 |
 
@@ -177,7 +189,7 @@ counter and no deadline.
 | Screen | Requirements | Operations | Elements and behaviour |
 |---|---|---|---|
 | **A1 Appointments** `/staff/admin/appointments` | REQ-F-019 | R18 | filters **From**, **To**, **Master**, **Status**; table **When**, **Client**, **Master**, **Services**, **Total**, **Status**; row → A3; button **New appointment** → A2 |
-| **A2 New appointment** `/staff/admin/appointments/new` | REQ-F-019, 001, 002, 003, 030, 031 | P4, P6, P1, P7, R19 | the four steps of C1, with **Create appointment** instead of **Book**; 201 → A3. Same 409 / 422 handling. |
+| **A2 New appointment** `/staff/admin/appointments/new` | REQ-F-019, 001, 002, 003, 030, 031 | P1, P4, P6, P7, R19 | the four steps of C1 in the same order (services → time → master → client details), with **Create appointment** instead of **Book**; 201 → A3. Same 409 / 422 handling. |
 | **A3 Appointment details** `/staff/admin/appointments/{id}` | REQ-F-019, 021, 027, 028, 030; REQ-F-008, 010, 011, 029 (reminders shown) | R20, R21, R22, R23, R27, R24, P7 | details as C2 plus **Reminders** (24h / 2h, time, status) and **Payment**. Actions: **Change** (date, time, master, services or client — R21, slots from P7), **Cancel appointment** (R22, with a confirmation step), **Mark as completed** (R23), **Record payment** (R27: **Amount** in UAH, **Method** cash / card, **Status** paid / unpaid). **Record payment** is disabled until the status is completed (REQ-F-021, REQ-F-027); after a payment exists it is shown, not editable. Section **Notifications** lists R24. |
 | **A4 Masters** `/staff/admin/masters` | REQ-F-012, 018 | R1, R2, R3, R4 | table **Name**, **Username**, **Active**; **Add master** (**Full name**, **Username**, **Password**); **Edit** (full name only — `MasterPatch` has no username or password) and **Deactivate** / **Activate**. 409 `DUPLICATE_RESOURCE` → **This username is already taken.** No delete (REQ-F-018, REQ-NF-005). |
 | **A5 Services** `/staff/admin/services` | REQ-F-018, 024 | R5, R6, R7, R8, R9 | table **Name**, **Category**, **Duration**, **Active**; **Add service** with **Category** as a text field offering the existing categories (R9, the three seeds included) **and accepting a new one** (REQ-F-024); **Edit**, **Deactivate** / **Activate**. |
@@ -221,7 +233,7 @@ Every other operation of the 50 is called by at least one screen above.
 | # | Question | Proposal | Why |
 |---|---|---|---|
 | U-1 | `confirmationUrl` points to `https://salon.example/…`, a placeholder, so the SMS link of REQ-F-005 is not "a valid link" and the contract's description "Reachable confirmation page" is not met. | Make the origin configurable (`PUBLIC_BASE_URL`, default `http://localhost:<PORT>`), path unchanged (`/appointments/{token}`). A defect fix, done **before** the UI tests as its own ticket (SMS-70): failing test, TEST-GATE, fix. The contract is unchanged — its schema says `format: uri`, the example host stays an example. | The confirmation page this document specifies must be the page the SMS points to. |
-| U-2 | Order of the client's steps | master → services → date and time → details | A price belongs to a master (MasterService), so the price can only be shown once the master is chosen. |
+| U-2 | Order of the client's steps | **services → date and time → master → details** (decided by the developer at UI-GATE; the draft proposed master first) | The client starts from what they want done and when; the master is chosen among those free at that time. The price, which belongs to a master (MasterService), is shown at the master step, next to each master. |
 | U-3 | Staff session | token in `sessionStorage`, gone when the tab closes; no refresh (the contract has none); a 401 returns to S1 | No client data and no long-lived credential in the browser (REQ-NF-006). |
 | U-4 | Formats | money `1250.00 UAH`; date `Mon 16 Nov 2026`; time `10:00` (24-hour), the salon's wall clock, no zone label | English, UAH, one zone (REQ-NF-003, 004, 007). |
 | U-5 | Where REQ-NF-002 is tested | the mobile viewport for C1–C3, which are the screens its acceptance criterion names; staff screens are tested at a desktop viewport | The AC lists client controls only; the staff dashboard is not required to be mobile-first. |
