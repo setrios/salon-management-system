@@ -278,11 +278,35 @@ describe('REQ-NF-009 — no payment gateway', () => {
 
     // No outbound HTTP at all: the only network edges are the database and the
     // socket this server listens on.
+    //
+    // `src/web` is the interface (SMS-36): it runs in the client's browser and
+    // calls this server's own `/api/v1` — the socket above, seen from the other
+    // side, not an outbound call. It is excluded from the server scan and held
+    // to a stricter rule just below. (Test correction, stage S6; recorded in
+    // logs/gates/2026-11-26-test-S6-corrections.md.)
     const offenders = sourceText()
       .filter(({ path }) => !path.includes('contract/'))
+      .filter(({ path }) => !path.startsWith('src/web/'))
       .filter(({ text }) => /\bfetch\s*\(|https?\.request\s*\(|axios/i.test(text))
       .map(({ path }) => path);
     expect(offenders).toEqual([]);
+
+    // The browser code's network calls are `fetch` to a relative `/api/v1` path
+    // and nothing else: no absolute URL, no other API, no XHR or beacon.
+    const browser = sourceText().filter(({ path }) => path.startsWith('src/web/'));
+    const targets = browser.flatMap(({ path, text }) =>
+      [...stripComments(text).matchAll(/\bfetch\s*\(\s*([^,)]+)/g)].map((match) => ({
+        path,
+        target: (match[1] ?? '').trim(),
+      })),
+    );
+    expect(targets.length).toBeGreaterThan(0);
+    for (const { path, target } of targets) {
+      expect(target, `${path}: ${target}`).toMatch(/^`\/api\/v1/);
+    }
+    expect(
+      browser.filter(({ text }) => /XMLHttpRequest|sendBeacon|WebSocket|EventSource/.test(text)),
+    ).toEqual([]);
 
     // And no provider host is named anywhere.
     const hosts = sourceText().flatMap(({ path, text }) =>

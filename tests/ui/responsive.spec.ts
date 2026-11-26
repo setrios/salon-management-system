@@ -93,6 +93,10 @@ test('M1 books through every step of C1 without horizontal scrolling', async ({ 
 test('M2 reschedules through C3 without horizontal scrolling', async ({ page }) => {
   await bookOnMobile(page, '12:00');
   await page.getByRole('button', { name: 'Reschedule' }).tap();
+  // Measure C3 once it is there: the tap starts a navigation, and measuring
+  // while the old page unloads destroys the evaluation context (test
+  // correction, stage S6).
+  await expect(page.getByLabel('New date')).toBeVisible();
   await measure(page);
 
   await page.getByLabel('New date').fill(NEW_DAY);
