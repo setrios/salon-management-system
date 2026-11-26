@@ -83,6 +83,13 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-66 | Final verification of the repository | Verification | Lab 6 step 13 | SMS-65 | Coding Agent | Backlog |
 | SMS-67 | Final human validation against the initial concept | Validation | Lab 6 steps 14–15; `spec/DESCRIPTION.md` | SMS-66 | Human | Backlog |
 | SMS-68 | FINAL-GATE (lab 6), final SDD log, tag v1.0.0 | Gate | Lab 6 steps 16–17; D-L6-7, D-L6-8 | SMS-67 | Human | Backlog |
+| SMS-69 | Fix: period=repeated answers 400 instead of 422 INVALID_PERIOD | Feature | REQ-F-022; Q1; found by SMS-54 | SMS-54 | Coding Agent | Done |
+| SMS-70 | Fix: confirmationUrl points to a placeholder host instead of this deployment | Feature | REQ-F-004, 005; UI-GATE U-1 | SMS-56 | Coding Agent | Done |
+| SMS-71 | Fix: the administrator is listed, read and changed as a master (R1, R3, R4, R11) | Feature | REQ-F-017, 018; D10, D-19; found by SMS-57 (S3) | SMS-57 | Coding Agent | Done |
+| SMS-72 | Fix: R11 answers 500 for a serviceId naming no service | Feature | REQ-F-018; error-model §3; found verifying SMS-71 | SMS-71 | Coding Agent | Done |
+| SMS-73 | Fix: My availability shows times in the browser's 12-hour format | Feature | UI-GATE U-4; REQ-F-015; found at the developer's hands-on check | SMS-36 | Coding Agent | Done |
+| SMS-74 | Fix: the README's first run fails in a clean environment (F11, F13) | Documentation | Lab 6 step 8; the developer's run | SMS-62 | Joint | Backlog |
+| SMS-75 | Fix: the unhandled-error log omits the cause the database gave (F12) | Feature | Lab 5 step 1 (logging); the developer's run | SMS-36 | Coding Agent | Backlog |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
