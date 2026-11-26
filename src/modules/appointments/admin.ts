@@ -41,7 +41,6 @@
 import { Router, type Request, type Response } from 'express';
 
 import { adminAccess } from '../../middleware/authorize.js';
-import { HttpProblem } from '../../middleware/error-handler.js';
 import { validateBody, validateParams } from '../../middleware/validate.js';
 import { asyncRoute, pageBody, pageRequest, sendJson } from '../reference-data/http.js';
 import { bookAppointment, type AppointmentCreateBody } from './routes.js';

@@ -113,7 +113,7 @@ export function rescheduleDecision(
   request: RescheduleRequest,
   now: Date,
   newMaster: RescheduleMaster | undefined,
-  newMasterServices: readonly (BookableService | undefined)[],
+  newMasterServices: ReadonlyArray<BookableService | undefined>,
 ): RescheduleDecision {
   // The column has `appointments_status_check` behind it, so a value outside the
   // enum is a broken invariant, not a client mistake: it becomes a 500 rather

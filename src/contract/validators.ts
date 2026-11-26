@@ -99,7 +99,7 @@ function getAjv(): Ajv {
     $id: ROOT_SCHEMA_ID,
     $schema: 'http://json-schema.org/draft-07/schema#',
     definitions: loadContract().definitions,
-  } as Parameters<Ajv['addSchema']>[0]);
+  });
 
   ajvCache = ajv;
   return ajv;

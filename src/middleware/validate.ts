@@ -56,7 +56,7 @@ export function validateBody(operationId: string): RequestHandler {
     // `express.json()` leaves `req.body` as `{}` when it parsed nothing, so an
     // empty object plus a declared length means the media type was wrong.
     const hasBody =
-      Object.keys(req.body ?? {}).length > 0 ||
+      Object.keys((req.body ?? {}) as object).length > 0 ||
       Number(req.headers['content-length'] ?? '0') > 0 ||
       req.headers['transfer-encoding'] !== undefined;
 
@@ -242,10 +242,7 @@ export function validateParams(operationId: string): RequestHandler {
         continue;
       }
 
-      const value = coerce(
-        raw,
-        parameter.schema as { type?: string; format?: string; enum?: readonly unknown[] },
-      );
+      const value = coerce(raw, parameter.schema);
       if (value === undefined) {
         return next(
           parameterProblem(operation, parameter, `${parameter.name} has the wrong type.`),

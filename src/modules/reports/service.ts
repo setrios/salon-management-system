@@ -57,11 +57,11 @@ export interface RevenueReportView {
   readonly to: string;
   readonly totalAmount: { readonly amountMinor: number; readonly currency: string };
   readonly paymentsCount: number;
-  readonly byMethod: readonly {
+  readonly byMethod: ReadonlyArray<{
     readonly method: string;
     readonly amount: { readonly amountMinor: number; readonly currency: string };
     readonly count: number;
-  }[];
+  }>;
 }
 
 /**
@@ -121,12 +121,12 @@ export interface PopularServicesReportView {
   readonly period: string;
   readonly from: string;
   readonly to: string;
-  readonly items: readonly {
+  readonly items: ReadonlyArray<{
     readonly rank: number;
     readonly serviceId: string;
     readonly name: string;
     readonly bookingsCount: number;
-  }[];
+  }>;
 }
 
 /**
@@ -171,12 +171,12 @@ export async function popularServicesReport(
 /** `StockLevelsReport` as the contract declares it. */
 export interface StockLevelsReportView {
   readonly asOf: string;
-  readonly items: readonly {
+  readonly items: ReadonlyArray<{
     readonly materialId: string;
     readonly name: string;
     readonly unit: string;
     readonly quantity: number;
-  }[];
+  }>;
 }
 
 /**

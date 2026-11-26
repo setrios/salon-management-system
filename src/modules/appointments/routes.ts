@@ -90,7 +90,7 @@ import {
   type Executor,
 } from './service.js';
 import { staffBody } from './staff-view.js';
-import { appointmentBody, CONFIRMATION_ORIGIN } from './view.js';
+import { appointmentBody } from './view.js';
 import { nowOf } from '../../lib/clock.js';
 import { appointmentNotFoundForToken } from './lookup.js';
 /** `AppointmentCreate` as the contract declares it (closed body, D-22). */
@@ -123,7 +123,7 @@ export interface PendingBooking {
   readonly startAt: Date;
   readonly endAt: Date;
   readonly startMinute: number;
-  readonly windows: readonly { readonly start: number; readonly end: number }[];
+  readonly windows: ReadonlyArray<{ readonly start: number; readonly end: number }>;
   readonly totalDurationMinutes: number;
   readonly occupiedDurationMinutes: number;
   readonly totalPriceAmountMinor: number;

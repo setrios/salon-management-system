@@ -78,7 +78,7 @@ export interface NotificationView {
 
 /** The paged result R24 answers with. */
 export interface NotificationPageResult {
-  readonly items: readonly {
+  readonly items: ReadonlyArray<{
     readonly id: string;
     readonly appointmentId: string;
     readonly audience: string;
@@ -88,7 +88,7 @@ export interface NotificationPageResult {
     readonly scheduledAt: Date | null;
     readonly sentAt: Date | null;
     readonly createdAt: Date;
-  }[];
+  }>;
   readonly total: number;
 }
 
@@ -410,14 +410,14 @@ export async function recordAppointmentEvent(
     .from(masters)
     .where(eq(masters.role, 'admin'));
 
-  const rows: {
+  const rows: Array<{
     appointmentId: string;
     audience: string;
     eventType: string;
     channel: string;
     status: string;
     sentAt: Date;
-  }[] = [];
+  }> = [];
 
   const masterChannels = enabledChannels(
     await readPreferences(executor, appointment.masterId),

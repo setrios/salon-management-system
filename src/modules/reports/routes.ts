@@ -48,7 +48,7 @@ function clockOf(req: Request): Date {
  * contract does not have.
  */
 function windowOf(req: Request): ResolvedPeriod {
-  const resolution = resolvePeriod(req.query as Record<string, unknown>, clockOf(req));
+  const resolution = resolvePeriod(req.query, clockOf(req));
 
   if (resolution.kind === 'invalid') {
     throw new HttpProblem(

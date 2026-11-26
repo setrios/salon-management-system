@@ -107,7 +107,7 @@ export async function findBookingMaster(masterId: string): Promise<BookableMaste
 export async function findBookableServices(
   masterId: string,
   serviceIds: readonly string[],
-): Promise<(BookableService | undefined)[]> {
+): Promise<Array<BookableService | undefined>> {
   if (serviceIds.length === 0) return [];
 
   const db = getDb();

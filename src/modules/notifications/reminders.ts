@@ -57,7 +57,7 @@ export interface ReminderView {
 }
 
 /** Minutes ahead of the appointment at which each reminder is due. */
-const REMINDER_OFFSETS: readonly { type: ReminderType; minutesBefore: number }[] = [
+const REMINDER_OFFSETS: ReadonlyArray<{ type: ReminderType; minutesBefore: number }> = [
   // 24 h first: the contract's example lists it first, and a client reading the
   // array in order sees the reminders in the order they occur.
   { type: '24h', minutesBefore: 24 * 60 },

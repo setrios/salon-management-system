@@ -213,7 +213,7 @@ async function updateAppointmentAdminHandler(req: Request, res: Response): Promi
   const movesBlock = startAt !== undefined || masterChanged || body.serviceIds !== undefined;
   const blockMinutes = Math.round((decision.endAt.getTime() - decision.startAt.getTime()) / 60_000);
 
-  let recheck: (tx: Executor) => Promise<boolean> = async (): Promise<boolean> => true;
+  let recheck: (tx: Executor) => Promise<boolean> = (): Promise<boolean> => Promise.resolve(true);
   if (movesBlock) {
     const date = salonDateOfInstant(decision.startAt);
     const dateKey = dateKeyOf(date);
