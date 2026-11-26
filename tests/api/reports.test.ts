@@ -306,6 +306,24 @@ describe('getRevenueReport (R28, GET /admin/reports/revenue)', () => {
     });
   });
 
+  // SMS-69. Q1 makes every unrecognised preset 422, whatever the word; the word
+  // `repeated` is no exception, and must not be read as "the parameter was
+  // given twice", which is the only 400 for `period`.
+  it('R4b refuses period=repeated as an unknown preset with 422 INVALID_PERIOD (Q1)', async () => {
+    for (const path of [
+      '/api/v1/admin/reports/revenue?period=repeated',
+      '/api/v1/admin/reports/popular-services?period=repeated',
+    ]) {
+      expectProblem(await get(path), { status: 422, code: 'INVALID_PERIOD' });
+    }
+
+    // The parameter really given twice stays 400, as before.
+    expectProblem(await get('/api/v1/admin/reports/revenue?period=day&period=week'), {
+      status: 400,
+      code: 'MALFORMED_REQUEST',
+    });
+  });
+
   it('R5 answers 400 for a value that is not a calendar date, and 401/403 for the guards', async () => {
     for (const value of ['2026-02-30', 'not-a-date', '2026-11-31']) {
       const response = await get(`/api/v1/admin/reports/revenue?from=${value}&to=2026-12-01`);
