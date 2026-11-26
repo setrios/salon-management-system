@@ -44,9 +44,30 @@ spec/test: update everything   # two prefixes
 | `feat:` | Implementation: production code, features, fixes in `src/` | `src/**` |
 | `docs:` | Documentation outside `spec/`: `docs/`, README, guides | `docs/**`, `*.md` (except `spec/`) |
 | `gate:` | SDD control points: reviews, acceptance decisions, quality gates, audit notes | `logs/**`, `docs/**` (decision records) |
+| `refactor:` | Behaviour-preserving restructuring of code: the same tests and contract checks pass before and after, unchanged | `src/**`, `tests/**` |
+| `style:` | Formatting only: whitespace, line breaks, quotes, import order. No identifier, statement or literal changes | `src/**`, `tests/**`, `scripts/**` |
+| `chore:` | Tooling and project configuration: dependencies, lockfiles, linter/formatter/compiler config, npm scripts | `package.json`, `package-lock.json`, `*.config.*`, `tsconfig.json` |
 
 Each prefix value must stay unambiguous: one prefix = one meaning.
 Do not reuse an existing prefix with a different meaning.
+
+The boundaries between the code prefixes:
+
+- `feat:` changes what the system does: a test that failed passes, or an
+  observable response changes.
+- `refactor:` changes how the code is organised; nothing observable changes.
+  A refactor that needs a test edited to stay green is not a refactor.
+- `style:` changes only how the code is laid out; the compiled output is the
+  same apart from whitespace.
+- `chore:` changes the tools around the code, not the code itself.
+
+Examples:
+
+```
+refactor: extract clock, loader and 404 helpers
+style: apply prettier formatting to src and tests
+chore: add eslint and prettier configuration
+```
 
 ## 3. Choosing the prefix
 
@@ -63,3 +84,9 @@ The list may be extended, but every new prefix must:
 3. Include one good example subject.
 
 Unlisted prefixes are not allowed.
+
+## 5. Change history
+
+| Date | Change | Ticket |
+|---|---|---|
+| 2026-11-26 | Added `refactor:`, `style:`, `chore:`. `refactor:` had already been used by `95c5a70` and `3206b05` before it was listed; it is listed now with the meaning those commits already had, so the history needs no rewrite. | SMS-52 |
