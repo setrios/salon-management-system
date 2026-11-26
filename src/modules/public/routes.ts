@@ -136,10 +136,6 @@ export function publicRoutes(router: Router): void {
   router.get('/masters/:masterId', validateParams('getMaster'), asyncRoute(getMasterHandler));
   router.get('/masters', validateParams('listMasters'), asyncRoute(listMastersHandler));
   router.get('/services', validateParams('listServices'), asyncRoute(listServicesHandler));
-  router.get(
-    '/services/:serviceId',
-    validateParams('getService'),
-    asyncRoute(getServiceHandler),
-  );
+  router.get('/services/:serviceId', validateParams('getService'), asyncRoute(getServiceHandler));
   router.get('/categories', asyncRoute(listCategoriesHandler));
 }

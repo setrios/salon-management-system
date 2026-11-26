@@ -119,9 +119,7 @@ export function rescheduleDecision(
   // enum is a broken invariant, not a client mistake: it becomes a 500 rather
   // than a status the contract does not define.
   if (!isAppointmentStatus(current.status)) {
-    throw new Error(
-      `appointment status "${current.status}" is not defined by error-model.md §3.1`,
-    );
+    throw new Error(`appointment status "${current.status}" is not defined by error-model.md §3.1`);
   }
 
   // 1. The state (G2). `edit` on `confirmed` is `allowed`; on `completed` and
@@ -198,9 +196,7 @@ export function rescheduleDecision(
     if (price === undefined) {
       // The caller resolved exactly the record's service ids, so a miss is a
       // broken invariant, not a client mistake.
-      throw new Error(
-        `service ${line.serviceId} was not resolved for master ${newMaster.id}`,
-      );
+      throw new Error(`service ${line.serviceId} was not resolved for master ${newMaster.id}`);
     }
     return {
       ...line,

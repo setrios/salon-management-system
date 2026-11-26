@@ -139,10 +139,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
     });
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);

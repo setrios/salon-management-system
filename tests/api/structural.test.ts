@@ -183,10 +183,7 @@ describe('S1.0 infrastructure — structural behaviour', () => {
     const response = await request(app).get('/api/v1/no-such-resource');
     const traceId = response.body.traceId as string;
 
-    const records = await waitForRecords(
-      (record) => record.traceId === traceId,
-      1,
-    );
+    const records = await waitForRecords((record) => record.traceId === traceId, 1);
 
     // `traceId` is a fresh UUID per request, so an exact match is unambiguous
     // even though the log is append-only and shared with every other run.

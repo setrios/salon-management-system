@@ -61,8 +61,7 @@ interface TransactionBody {
 async function listTransactionsHandler(_req: Request, res: Response): Promise<void> {
   const { materialId } = res.locals.params as { materialId: string };
   const query = res.locals.query as
-    | { type?: 'receipt' | 'issue'; from?: string; to?: string }
-    | undefined;
+    { type?: 'receipt' | 'issue'; from?: string; to?: string } | undefined;
   const request = pageRequest(res);
 
   const page = await listMaterialTransactions(materialId, {

@@ -50,7 +50,8 @@ function convert(node) {
       if (typeof value === 'number') out[key] = value;
       else if (value === true && typeof bound === 'number') out[key] = bound;
     } else if (key === 'minimum' || key === 'maximum') {
-      if (node[key === 'minimum' ? 'exclusiveMinimum' : 'exclusiveMaximum'] !== true) out[key] = value;
+      if (node[key === 'minimum' ? 'exclusiveMinimum' : 'exclusiveMaximum'] !== true)
+        out[key] = value;
     } else if (key === 'properties') {
       out.properties = Object.fromEntries(
         Object.entries(value).map(([name, schema]) => [name, convert(schema)]),

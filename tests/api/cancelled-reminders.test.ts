@@ -91,11 +91,13 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
   });
 
   /** A master of this case's own, so no two cases share a calendar. */
-  async function freshMaster(windows = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
-    dayOfWeek,
-    startTime: '08:00',
-    endTime: '18:00',
-  }))): Promise<MasterFixture> {
+  async function freshMaster(
+    windows = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+      dayOfWeek,
+      startTime: '08:00',
+      endTime: '18:00',
+    })),
+  ): Promise<MasterFixture> {
     const master = await arrangeMaster(app, unique('Addendum Master'));
     await arrangeLink(app, admin.token, master.id, haircut.id, 40000);
     await request(app)
@@ -131,7 +133,10 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
   }
 
   /** R24's page of notification rows, filtered to the reminders. */
-  async function remindersOf(clock: Express, appointmentId: string): Promise<Record<string, any>[]> {
+  async function remindersOf(
+    clock: Express,
+    appointmentId: string,
+  ): Promise<Record<string, any>[]> {
     const page = await request(clock)
       .get(`/api/v1/admin/appointments/${appointmentId}/notifications`)
       .set('Authorization', `Bearer ${admin.token}`);
@@ -206,7 +211,10 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
 
     const cancelled = await request(app).post(`/api/v1/appointments/${token}/cancel`);
     expect(cancelled.status).toBe(200);
-    expect(cancelled.body.reminders.map((row: any) => row.status)).toEqual(['skipped', 'cancelled']);
+    expect(cancelled.body.reminders.map((row: any) => row.status)).toEqual([
+      'skipped',
+      'cancelled',
+    ]);
   });
 
   it('C4 leaves a reminder that was already sent as sent', async () => {
@@ -317,10 +325,9 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
       scheduledAt: '2026-12-06T10:00:00+02:00',
       createdAt: '2026-11-12T09:00:00+02:00',
     };
-    expect(
-      notificationSchema(notification),
-      JSON.stringify(notificationSchema.errors ?? []),
-    ).toBe(true);
+    expect(notificationSchema(notification), JSON.stringify(notificationSchema.errors ?? [])).toBe(
+      true,
+    );
     expect(notificationSchema({ ...notification, status: 'cancelledX' })).toBe(false);
 
     // The old values still validate: the addendum widens, it does not replace.

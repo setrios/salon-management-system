@@ -216,17 +216,16 @@ describe('S4.1 notification preferences — channel × event', () => {
 
   // ======================================== M5 and M6 (REQ-F-016, REQ-F-026)
 
-  describe('the caller\'s own settings (M5, M6)', () => {
+  describe("the caller's own settings (M5, M6)", () => {
     it('P1 answers the six combinations, all enabled, for a fresh master', async () => {
       const master = await arrangeMaster(app, unique('Preference Fresh'));
 
       const response = await preferences(master.token);
 
       expect(response.status).toBe(200);
-      expect(
-        isPreferenceList(response.body),
-        JSON.stringify(isPreferenceList.errors ?? []),
-      ).toBe(true);
+      expect(isPreferenceList(response.body), JSON.stringify(isPreferenceList.errors ?? [])).toBe(
+        true,
+      );
       expect(response.body).toEqual(ALL_COMBINATIONS);
     });
 
@@ -376,9 +375,7 @@ describe('S4.1 notification preferences — channel × event', () => {
       expect(created.status).toBe(201);
 
       const all = await rows(created.body.id as string);
-      const masterRows = all.filter(
-        (row) => row.audience === 'master' && row.eventType === 'new',
-      );
+      const masterRows = all.filter((row) => row.audience === 'master' && row.eventType === 'new');
 
       expect(masterRows.map(pick)).toEqual([
         { audience: 'master', eventType: 'new', channel: 'in_app', status: 'sent' },
@@ -398,12 +395,12 @@ describe('S4.1 notification preferences — channel × event', () => {
       // The event did write rows — the administrator's are there (REQ-F-023) —
       // so the empty master list is a suppression, not a booking that wrote
       // nothing.
-      expect(
-        all.filter((row) => row.audience === 'admin' && row.eventType === 'new').length,
-      ).toBe(2);
+      expect(all.filter((row) => row.audience === 'admin' && row.eventType === 'new').length).toBe(
+        2,
+      );
     });
 
-    it('P12 leaves the client\'s confirmation SMS alone (I7)', async () => {
+    it("P12 leaves the client's confirmation SMS alone (I7)", async () => {
       const master = await arrangeBookable();
       await toggle(master.token, { channel: 'sms', eventType: 'new', enabled: false });
 
@@ -415,9 +412,9 @@ describe('S4.1 notification preferences — channel × event', () => {
 
       // The same event, two audiences, one preference: the master's SMS is off
       // and the client's is not.
-      expect(
-        newRows.filter((row) => row.audience === 'master').map((row) => row.channel),
-      ).toEqual(['in_app']);
+      expect(newRows.filter((row) => row.audience === 'master').map((row) => row.channel)).toEqual([
+        'in_app',
+      ]);
       expect(newRows.filter((row) => row.audience === 'client').map(pick)).toEqual([
         { audience: 'client', eventType: 'new', channel: 'sms', status: 'sent' },
       ]);
@@ -432,9 +429,7 @@ describe('S4.1 notification preferences — channel × event', () => {
       expect(created.status).toBe(201);
 
       const all = await rows(created.body.id as string);
-      const adminRows = all.filter(
-        (row) => row.audience === 'admin' && row.eventType === 'new',
-      );
+      const adminRows = all.filter((row) => row.audience === 'admin' && row.eventType === 'new');
 
       expect(adminRows.map((row) => row.channel).sort()).toEqual(['in_app', 'sms']);
       expect(adminRows.every((row) => row.status === 'sent')).toBe(true);

@@ -54,8 +54,7 @@ async function listMyServicesHandler(_req: Request, res: Response): Promise<void
 async function listLinksHandler(_req: Request, res: Response): Promise<void> {
   const request = pageRequest(res);
   const query = res.locals.query as
-    | { masterId?: string; serviceId?: string; active?: boolean }
-    | undefined;
+    { masterId?: string; serviceId?: string; active?: boolean } | undefined;
 
   const { items, total } = await listLinks({
     ...(query?.masterId === undefined ? {} : { masterId: query.masterId }),

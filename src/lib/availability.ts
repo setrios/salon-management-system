@@ -40,11 +40,7 @@ import {
   isoWeekday,
   type CalendarDate,
 } from './time.js';
-import {
-  SLOT_GRANULARITY_MINUTES,
-  offeredStarts,
-  type MinuteInterval,
-} from './occupancy.js';
+import { SLOT_GRANULARITY_MINUTES, offeredStarts, type MinuteInterval } from './occupancy.js';
 
 /** The granularity every bookable start falls on (`REQ-NF-008`). */
 export { SLOT_GRANULARITY_MINUTES } from './occupancy.js';

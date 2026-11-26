@@ -124,10 +124,7 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
     await arrangeWeeklyWindow(app, masterB.token, 1, '09:00', '18:00');
   });
 
-  function expectProblem(
-    res: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(res: JsonResponse, expected: { status: number; code: string }): void {
     expect(res.status).toBe(expected.status);
     expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
     expect(isProblem(res.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -138,7 +135,10 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
   function expectPage(res: JsonResponse): Record<string, any>[] {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/json/);
-    expect(isAppointmentAdminPage(res.body), JSON.stringify(isAppointmentAdminPage.errors ?? [])).toBe(true);
+    expect(
+      isAppointmentAdminPage(res.body),
+      JSON.stringify(isAppointmentAdminPage.errors ?? []),
+    ).toBe(true);
     return res.body.items as Record<string, any>[];
   }
 
@@ -520,7 +520,10 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
         .set('Authorization', `Bearer ${admin.token}`);
 
       expect(response.status).toBe(200);
-      expect(isAppointmentAdmin(response.body), JSON.stringify(isAppointmentAdmin.errors ?? [])).toBe(true);
+      expect(
+        isAppointmentAdmin(response.body),
+        JSON.stringify(isAppointmentAdmin.errors ?? []),
+      ).toBe(true);
 
       const appt = response.body;
       expect(appt.id).toBe(apptId);

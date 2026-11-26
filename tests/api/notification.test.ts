@@ -132,31 +132,28 @@ describe('S2.2 confirmation SMS — R24 listAppointmentNotifications', () => {
     options: { readonly token?: string } = { token: admin.token },
   ): Promise<JsonResponse> {
     const call = request(app).get(`/api/v1/admin/appointments/${appointmentId}/notifications`);
-    return options.token === undefined ? call : call.set('Authorization', `Bearer ${options.token}`);
+    return options.token === undefined
+      ? call
+      : call.set('Authorization', `Bearer ${options.token}`);
   }
 
   /** The client's booking-confirmation rows: REQ-F-005's subject. */
   function clientNewSms(page: JsonResponse): NotificationRow[] {
     const rows = page.body.items as NotificationRow[];
     return rows.filter(
-      (row) =>
-        row.audience === 'client' && row.eventType === 'new' && row.channel === 'sms',
+      (row) => row.audience === 'client' && row.eventType === 'new' && row.channel === 'sms',
     );
   }
 
   function expectPage(response: JsonResponse): void {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isNotificationPage(response.body),
-      JSON.stringify(isNotificationPage.errors ?? []),
-    ).toBe(true);
+    expect(isNotificationPage(response.body), JSON.stringify(isNotificationPage.errors ?? [])).toBe(
+      true,
+    );
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -236,19 +233,19 @@ describe('S2.2 confirmation SMS — R24 listAppointmentNotifications', () => {
 
   // ===================================================== the declared refusals
 
-  describe('the operation is the administrator\'s (R24\'s declared set)', () => {
+  describe("the operation is the administrator's (R24's declared set)", () => {
     it('N4 answers 401 UNAUTHENTICATED without a bearer token', async () => {
       const { master, service } = await arrangeBookable('Sms Noauth');
       const created = await book({ master, service });
       expect(created.status).toBe(201);
 
-      expectProblem(
-        await listNotifications(created.body.id as string, { token: undefined }),
-        { status: 401, code: 'UNAUTHENTICATED' },
-      );
+      expectProblem(await listNotifications(created.body.id as string, { token: undefined }), {
+        status: 401,
+        code: 'UNAUTHENTICATED',
+      });
     });
 
-    it('N5 answers 403 FORBIDDEN for a master\'s token', async () => {
+    it("N5 answers 403 FORBIDDEN for a master's token", async () => {
       // The operation is `tags: [Admin]` behind the administrator gate; a
       // master is authenticated but not permitted (error-model.md §4).
       const { master, service } = await arrangeBookable('Sms Forbidden');

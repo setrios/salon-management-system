@@ -37,7 +37,13 @@
 import { and, asc, count, desc, eq, gte, lt, sum } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
-import { appointmentServices, appointments, materials, payments, services } from '../../db/schema.js';
+import {
+  appointmentServices,
+  appointments,
+  materials,
+  payments,
+  services,
+} from '../../db/schema.js';
 import { salonDateTime } from '../../lib/occupancy.js';
 import type { ResolvedPeriod } from './period.js';
 

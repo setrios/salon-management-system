@@ -89,7 +89,12 @@ function main() {
     fail(`spec/api/openapi.yaml is not valid YAML: ${error.message}`);
   }
 
-  if (doc === null || typeof doc !== 'object' || typeof doc.paths !== 'object' || doc.paths === null) {
+  if (
+    doc === null ||
+    typeof doc !== 'object' ||
+    typeof doc.paths !== 'object' ||
+    doc.paths === null
+  ) {
     fail('spec/api/openapi.yaml has no paths object');
   }
 
@@ -110,7 +115,9 @@ function main() {
     }
   }
 
-  process.stdout.write(`contract: ${doc.openapi ?? 'unknown version'} — ${operations} operations\n`);
+  process.stdout.write(
+    `contract: ${doc.openapi ?? 'unknown version'} — ${operations} operations\n`,
+  );
 
   if (missingOperationId.length > 0) {
     fail(`operations without operationId:\n  ${missingOperationId.join('\n  ')}`);

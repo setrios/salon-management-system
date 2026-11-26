@@ -66,12 +66,7 @@ import { readAvailability } from '../availability/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
 import { dateKeyOf } from './routes.js';
 import { rescheduleDecision } from './reschedule.js';
-import {
-  offBoundary,
-  serviceRejection,
-  totalsFor,
-  type BookableService,
-} from './rules.js';
+import { offBoundary, serviceRejection, totalsFor, type BookableService } from './rules.js';
 import {
   bookedBlocks,
   editAppointment,
@@ -102,7 +97,7 @@ interface AppointmentPatchBody {
  * causes; `error-model.md` §3 lists R21 among the operations that answer it.
  */
 const EDIT_SLOT_UNAVAILABLE_DETAIL =
-  'The requested slot cannot be taken with this master: it is outside the master\'s availability or overlaps an existing appointment.';
+  "The requested slot cannot be taken with this master: it is outside the master's availability or overlaps an existing appointment.";
 
 /** R21 — edit one appointment. */
 async function updateAppointmentAdminHandler(req: Request, res: Response): Promise<void> {
@@ -210,18 +205,13 @@ async function updateAppointmentAdminHandler(req: Request, res: Response): Promi
   // L3: R21 answers 422 for a boundary R19 would refuse, where P11 answers 409
   // (register row 13). The body's fault is named before the calendar's.
   if (startAt !== undefined && offBoundary(decision.startAt)) {
-    throw new HttpProblem(
-      'BUSINESS_RULE_VIOLATION',
-      'startAt must fall on a 30-minute boundary.',
-    );
+    throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'startAt must fall on a 30-minute boundary.');
   }
 
   // The slot is re-checked only when the block can move. A client-only patch
   // (K4) keeps every value the calendar depends on.
   const movesBlock = startAt !== undefined || masterChanged || body.serviceIds !== undefined;
-  const blockMinutes = Math.round(
-    (decision.endAt.getTime() - decision.startAt.getTime()) / 60_000,
-  );
+  const blockMinutes = Math.round((decision.endAt.getTime() - decision.startAt.getTime()) / 60_000);
 
   let recheck: (tx: Executor) => Promise<boolean> = async (): Promise<boolean> => true;
   if (movesBlock) {

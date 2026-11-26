@@ -74,10 +74,7 @@ function notificationBody(row: NotificationPageResult['items'][number]): Record<
 }
 
 /** R24 — one page of an appointment's notification records. */
-async function listAppointmentNotificationsHandler(
-  req: Request,
-  res: Response,
-): Promise<void> {
+async function listAppointmentNotificationsHandler(req: Request, res: Response): Promise<void> {
   const { appointmentId } = res.locals.params as { appointmentId: string };
 
   if (!(await appointmentExists(appointmentId))) {
@@ -88,18 +85,9 @@ async function listAppointmentNotificationsHandler(
   await dispatchDueReminders(appointmentId, now);
 
   const request = pageRequest(res);
-  const { items, total } = await listNotifications(
-    appointmentId,
-    request.pageSize,
-    request.offset,
-  );
+  const { items, total } = await listNotifications(appointmentId, request.pageSize, request.offset);
 
-  sendJson(
-    res,
-    200,
-    'NotificationPage',
-    pageBody(items.map(notificationBody), total, request),
-  );
+  sendJson(res, 200, 'NotificationPage', pageBody(items.map(notificationBody), total, request));
 }
 
 /**
@@ -108,19 +96,13 @@ async function listAppointmentNotificationsHandler(
  * `authenticate` only, not `masterAccess`: the contract declares no 403 for M5,
  * and the administrator has preferences of their own (REQ-F-023, I3).
  */
-async function getMyNotificationPreferencesHandler(
-  _req: Request,
-  res: Response,
-): Promise<void> {
+async function getMyNotificationPreferencesHandler(_req: Request, res: Response): Promise<void> {
   const principal = res.locals.principal as Principal;
   sendJson(res, 200, 'NotificationPreferenceList', await readPreferences(getDb(), principal.id));
 }
 
 /** M6 — toggles exactly one combination (REQ-F-026, I4). */
-async function updateMyNotificationPreferenceHandler(
-  req: Request,
-  res: Response,
-): Promise<void> {
+async function updateMyNotificationPreferenceHandler(req: Request, res: Response): Promise<void> {
   const principal = res.locals.principal as Principal;
   const body = res.locals.body as {
     channel: PreferenceChannel;
@@ -141,8 +123,7 @@ async function updateMyNotificationPreferenceHandler(
 async function listMyNotificationsHandler(req: Request, res: Response): Promise<void> {
   const principal = res.locals.principal as Principal;
   const query = res.locals.query as
-    | { status?: string; eventType?: string; from?: string; to?: string }
-    | undefined;
+    { status?: string; eventType?: string; from?: string; to?: string } | undefined;
   const request = pageRequest(res);
 
   const { items, total } = await listMyNotifications(

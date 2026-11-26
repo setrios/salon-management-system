@@ -50,9 +50,7 @@ import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time
 import type { BookableService } from './rules.js';
 import { isAppointmentStatus, stateOutcome } from './state.js';
 import type { AppointmentLine, PaymentView } from './view.js';
-import {
-  settleCancelledReminders,
-} from '../notifications/cancellation.js';
+import { settleCancelledReminders } from '../notifications/cancellation.js';
 import { isUniqueViolation } from '../reference-data/http.js';
 import {
   dispatchDueReminders,
@@ -196,9 +194,7 @@ export async function bookedBlocks(
         ne(appointments.status, 'cancelled'),
         sql`${appointments.startAt} < ${to}`,
         sql`${appointments.endAt} > ${from}`,
-        excludeAppointmentId === undefined
-          ? undefined
-          : ne(appointments.id, excludeAppointmentId),
+        excludeAppointmentId === undefined ? undefined : ne(appointments.id, excludeAppointmentId),
       ),
     );
 
@@ -286,7 +282,9 @@ export async function createAppointment(
       // ints, not a uuid, so the uuid is hashed to 64 bits. `hashtextextended`
       // rather than `hashtext` because the latter returns 32 bits, and a
       // collision there would serialise two unrelated masters.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`);
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`,
+      );
 
       if (!(await recheck(tx))) return undefined;
 
@@ -719,7 +717,9 @@ export async function editAppointment(
     outcome = await db.transaction(async (tx): Promise<Outcome> => {
       // Transaction-scoped, keyed on the new master: released on commit or
       // rollback, and two edits for different masters do not wait.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`);
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.masterId}::text, 0))`,
+      );
 
       if (!(await recheck(tx))) return { kind: 'slot-unavailable' };
 
@@ -738,12 +738,7 @@ export async function editAppointment(
             : { clientName: input.client.name, clientPhone: input.client.phone }),
           updatedAt: input.now,
         })
-        .where(
-          and(
-            eq(appointments.id, input.appointmentId),
-            eq(appointments.status, 'confirmed'),
-          ),
-        )
+        .where(and(eq(appointments.id, input.appointmentId), eq(appointments.status, 'confirmed')))
         .returning({ id: appointments.id });
 
       const row = updated[0];
@@ -890,12 +885,7 @@ export async function transitionAppointmentById(
       const updated = await tx
         .update(appointments)
         .set({ status: outcome.to, updatedAt: now })
-        .where(
-          and(
-            eq(appointments.id, current.id),
-            eq(appointments.status, 'confirmed'),
-          ),
-        )
+        .where(and(eq(appointments.id, current.id), eq(appointments.status, 'confirmed')))
         .returning({ id: appointments.id });
 
       if (updated.length === 0) return; // a concurrent transition won
@@ -968,9 +958,7 @@ export async function listAppointmentsAdmin(
 
   const to = filters.to === undefined ? null : parseCalendarDate(filters.to);
   if (to !== null) {
-    conditions.push(
-      lt(appointments.startAt, new Date(salonInstant(addCalendarDays(to, 1), 0))),
-    );
+    conditions.push(lt(appointments.startAt, new Date(salonInstant(addCalendarDays(to, 1), 0))));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

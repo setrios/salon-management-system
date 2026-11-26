@@ -42,11 +42,7 @@ import {
   type AvailabilityInput,
   type MinuteInterval,
 } from '../../lib/availability.js';
-import {
-  MINUTES_PER_DAY,
-  instantAt,
-  minutesOnDate,
-} from '../../lib/occupancy.js';
+import { MINUTES_PER_DAY, instantAt, minutesOnDate } from '../../lib/occupancy.js';
 import { parseCalendarDate } from '../../lib/time.js';
 import { windowViolations } from './rules.js';
 import {
@@ -58,7 +54,6 @@ import {
 } from './service.js';
 import { bookedBlocks } from '../appointments/service.js';
 import { asyncRoute, sendJson } from '../reference-data/http.js';
-
 
 /**
  * Splits the CSV `serviceIds` parameter (contract: `type: string`, "Comma-
@@ -93,7 +88,10 @@ async function getMasterAvailabilityHandler(_req: Request, res: Response): Promi
   if (!serviceIds.every((id) => UUID.test(id))) {
     // An entry that is not a uuid is an ill-typed query parameter, which
     // error-model §3 puts at 400 and P7 declares.
-    throw new HttpProblem('MALFORMED_REQUEST', 'serviceIds must be a comma-separated list of uuids.');
+    throw new HttpProblem(
+      'MALFORMED_REQUEST',
+      'serviceIds must be a comma-separated list of uuids.',
+    );
   }
 
   const durations = await findServiceDurations(serviceIds);
@@ -172,10 +170,7 @@ async function replaceMyAvailabilityHandler(_req: Request, res: Response): Promi
     // self-contradictory input, so it is the business rule M4 declares. Two
     // overlapping windows are NOT rejected — they are undefined (gate §5 G4),
     // and `windowViolations` does not look at them.
-    throw new HttpProblem(
-      'BUSINESS_RULE_VIOLATION',
-      'Every window must end after it starts.',
-    );
+    throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'Every window must end after it starts.');
   }
 
   sendJson(res, 200, 'Availability', await replaceAvailability(principal.id, body));
@@ -189,11 +184,7 @@ export function availabilityRoutes(router: Router): void {
     asyncRoute(getMasterAvailabilityHandler),
   );
 
-  router.get(
-    '/me/availability',
-    ...masterAccess,
-    asyncRoute(getMyAvailabilityHandler),
-  );
+  router.get('/me/availability', ...masterAccess, asyncRoute(getMyAvailabilityHandler));
 
   router.put(
     '/me/availability',

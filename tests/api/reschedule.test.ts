@@ -200,10 +200,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
   }
 
   /** Calls P11 with the given body. */
-  async function reschedule(
-    token: string,
-    body: Record<string, unknown>,
-  ): Promise<JsonResponse> {
+  async function reschedule(token: string, body: Record<string, unknown>): Promise<JsonResponse> {
     return request(app).post(`/api/v1/appointments/${token}/reschedule`).send(body);
   }
 
@@ -229,10 +226,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       .set('Authorization', `Bearer ${admin.token}`);
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -244,10 +238,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
   function expectAppointment(response: JsonResponse, status = 200): void {
     expect(response.status).toBe(status);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
   }
 
   // ============================================ the move (REQ-F-007, F-008, F-009)
@@ -558,10 +549,10 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
         .set('Authorization', `Bearer ${admin.token}`)
         .send({ active: false });
 
-      expectProblem(
-        await reschedule(token, { startAt: onMonday('14:00'), masterId: retired.id }),
-        { status: 422, code: 'BUSINESS_RULE_VIOLATION' },
-      );
+      expectProblem(await reschedule(token, { startAt: onMonday('14:00'), masterId: retired.id }), {
+        status: 422,
+        code: 'BUSINESS_RULE_VIOLATION',
+      });
     });
   });
 

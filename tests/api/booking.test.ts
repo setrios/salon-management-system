@@ -221,10 +221,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
     });
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -236,10 +233,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
   function expectAppointment(response: JsonResponse): void {
     expect(response.status).toBe(201);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
   }
 
   // ======================================================= SCN-01 — booking

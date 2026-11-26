@@ -73,10 +73,7 @@ async function createAppointmentAdminHandler(req: Request, res: Response): Promi
 
   const { created, booking } = await bookAppointment(body, now, 'admin');
 
-  res.setHeader(
-    'Location',
-    `${res.locals.baseUrl ?? '/api/v1'}/admin/appointments/${created.id}`,
-  );
+  res.setHeader('Location', `${res.locals.baseUrl ?? '/api/v1'}/admin/appointments/${created.id}`);
 
   sendJson(
     res,
@@ -111,8 +108,7 @@ async function createAppointmentAdminHandler(req: Request, res: Response): Promi
 /** R20 — list appointments across all masters. */
 async function listAppointmentsAdminHandler(req: Request, res: Response): Promise<void> {
   const query = res.locals.query as
-    | { from?: string; to?: string; masterId?: string; status?: string }
-    | undefined;
+    { from?: string; to?: string; masterId?: string; status?: string } | undefined;
   const request = pageRequest(res);
   const now = nowOf(req);
 
@@ -123,12 +119,7 @@ async function listAppointmentsAdminHandler(req: Request, res: Response): Promis
     now,
   );
 
-  sendJson(
-    res,
-    200,
-    'AppointmentAdminPage',
-    pageBody(items.map(staffBody), total, request),
-  );
+  sendJson(res, 200, 'AppointmentAdminPage', pageBody(items.map(staffBody), total, request));
 }
 
 /** getAppointmentAdmin — read one appointment in staff representation. */

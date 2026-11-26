@@ -181,10 +181,9 @@ describe('stage R — the reminder scheduler (row 11)', () => {
     // A cancelled record's rows are settled by addendum 001, so a tick finds
     // nothing to send there either.
     const cancelled = await book(masterId, `${MONDAY}T12:00:00${OFFSET}`);
-    await request(app).post(`/api/v1/admin/appointments/${cancelled.body.id}/cancel`).set(
-      'Authorization',
-      `Bearer ${admin.token}`,
-    );
+    await request(app)
+      .post(`/api/v1/admin/appointments/${cancelled.body.id}/cancel`)
+      .set('Authorization', `Bearer ${admin.token}`);
     // The same tick may send other records' rows; this one must not gain a
     // `sent` whatever it does.
     await runDueReminders(new Date(AFTER_BOTH_MOMENTS));

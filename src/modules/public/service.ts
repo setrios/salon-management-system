@@ -112,7 +112,9 @@ export async function listActiveServices(
     // `q` is "case-insensitive substring match on the service name" (P1's own
     // description). `ILIKE` is the database's case-insensitive match, and the
     // wildcards are escaped so a client searching for `%` searches for `%`.
-    ...(filter.q === undefined ? [] : [sql`${services.name} ilike ${'%' + escapeLike(filter.q) + '%'}`]),
+    ...(filter.q === undefined
+      ? []
+      : [sql`${services.name} ilike ${'%' + escapeLike(filter.q) + '%'}`]),
   ];
   const where = and(...conditions);
 
@@ -181,7 +183,10 @@ export async function listBookableMasters(
 
   const [totalRow] = await db.select({ value: count() }).from(masters).where(where);
 
-  return { items: rows.map((row) => ({ id: row.id, fullName: row.fullName })), total: totalRow?.value ?? 0 };
+  return {
+    items: rows.map((row) => ({ id: row.id, fullName: row.fullName })),
+    total: totalRow?.value ?? 0,
+  };
 }
 
 /**

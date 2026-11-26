@@ -189,9 +189,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
   });
 
   async function login(username: string, password: string): Promise<string> {
-    const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ username, password });
+    const response = await request(app).post('/api/v1/auth/login').send({ username, password });
 
     expect(response.status).toBe(200);
     return response.body.accessToken as string;
@@ -226,10 +224,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
     expect(response.status).toBe(201);
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -256,7 +251,9 @@ describe('S1.3 availability — P7, M3, M4', () => {
   }
 
   async function putAvailability(body: unknown, token?: string): Promise<JsonResponse> {
-    const pending = request(app).put('/api/v1/me/availability').send(body as object);
+    const pending = request(app)
+      .put('/api/v1/me/availability')
+      .send(body as object);
     return token === undefined ? pending : pending.set('Authorization', `Bearer ${token}`);
   }
 
@@ -273,9 +270,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
 
   /** Petro's Monday window, 10:00–18:00: the Given most P7 cases start from. */
   async function arrangeMondayWindow(): Promise<void> {
-    await arrangeAvailability(petroToken, [
-      { dayOfWeek: 1, startTime: '10:00', endTime: '18:00' },
-    ]);
+    await arrangeAvailability(petroToken, [{ dayOfWeek: 1, startTime: '10:00', endTime: '18:00' }]);
   }
 
   // ------------------------------------------------------------ P7 transport

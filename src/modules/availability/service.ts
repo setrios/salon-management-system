@@ -52,7 +52,9 @@ export async function masterExists(masterId: string): Promise<boolean> {
  * (`error-model.md` §3 lists P7 under 404), which the route decides from the
  * length of this list against the length of the request.
  */
-export async function findServiceDurations(serviceIds: readonly string[]): Promise<ServiceDuration[]> {
+export async function findServiceDurations(
+  serviceIds: readonly string[],
+): Promise<ServiceDuration[]> {
   if (serviceIds.length === 0) return [];
 
   const rows = await getDb()

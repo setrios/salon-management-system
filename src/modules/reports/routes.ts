@@ -80,11 +80,7 @@ async function getStockLevelsReportHandler(req: Request, res: Response): Promise
 
 /** Registers R28–R30 on the admin router. */
 export function reportRoutes(router: Router): void {
-  router.get(
-    '/admin/reports/revenue',
-    ...adminAccess,
-    asyncRoute(getRevenueReportHandler),
-  );
+  router.get('/admin/reports/revenue', ...adminAccess, asyncRoute(getRevenueReportHandler));
   router.get(
     '/admin/reports/popular-services',
     ...adminAccess,

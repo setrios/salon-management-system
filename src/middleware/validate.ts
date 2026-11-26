@@ -154,13 +154,21 @@ function coerce(
     if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) {
       return undefined;
     }
-    if (schema.exclusiveMinimum === true && schema.minimum !== undefined && value <= schema.minimum) {
+    if (
+      schema.exclusiveMinimum === true &&
+      schema.minimum !== undefined &&
+      value <= schema.minimum
+    ) {
       return undefined;
     }
     if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) {
       return undefined;
     }
-    if (schema.exclusiveMaximum === true && schema.maximum !== undefined && value >= schema.maximum) {
+    if (
+      schema.exclusiveMaximum === true &&
+      schema.maximum !== undefined &&
+      value >= schema.maximum
+    ) {
       return undefined;
     }
   }
@@ -229,9 +237,7 @@ export function validateParams(operationId: string): RequestHandler {
 
       if (raw === undefined) {
         if (parameter.required) {
-          return next(
-            parameterProblem(operation, parameter, `${parameter.name} is required.`),
-          );
+          return next(parameterProblem(operation, parameter, `${parameter.name} is required.`));
         }
         continue;
       }

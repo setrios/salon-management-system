@@ -42,9 +42,14 @@ export function hashPassword(password: string): string {
   const salt = randomBytes(16);
   const key = scryptSync(password, salt, KEY_LENGTH, { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P });
 
-  return ['scrypt', SCRYPT_N, SCRYPT_R, SCRYPT_P, salt.toString('base64'), key.toString('base64')].join(
-    '$',
-  );
+  return [
+    'scrypt',
+    SCRYPT_N,
+    SCRYPT_R,
+    SCRYPT_P,
+    salt.toString('base64'),
+    key.toString('base64'),
+  ].join('$');
 }
 
 /**

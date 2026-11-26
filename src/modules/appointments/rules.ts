@@ -26,7 +26,11 @@
  *         500); `error-model.md` §3.
  */
 
-import { SLOT_GRANULARITY_MINUTES, minutesOnDate, salonDateOfInstant } from '../../lib/occupancy.js';
+import {
+  SLOT_GRANULARITY_MINUTES,
+  minutesOnDate,
+  salonDateOfInstant,
+} from '../../lib/occupancy.js';
 
 /**
  * True when `startAt` does not fall on a 30-minute boundary of the salon's own
@@ -38,7 +42,10 @@ import { SLOT_GRANULARITY_MINUTES, minutesOnDate, salonDateOfInstant } from '../
  */
 export function offBoundary(startAt: Date): boolean {
   const minutes = minutesOnDate(salonDateOfInstant(startAt), startAt);
-  return ((minutes % SLOT_GRANULARITY_MINUTES) + SLOT_GRANULARITY_MINUTES) % SLOT_GRANULARITY_MINUTES !== 0;
+  return (
+    ((minutes % SLOT_GRANULARITY_MINUTES) + SLOT_GRANULARITY_MINUTES) % SLOT_GRANULARITY_MINUTES !==
+    0
+  );
 }
 
 /**
@@ -101,8 +108,7 @@ export interface BookingTotals {
 export function totalsFor(services: readonly BookableService[]): BookingTotals {
   const total = services.reduce((sum, service) => sum + service.baseDurationMinutes, 0);
   const remainder = total % SLOT_GRANULARITY_MINUTES;
-  const occupied =
-    remainder === 0 ? total : total + (SLOT_GRANULARITY_MINUTES - remainder);
+  const occupied = remainder === 0 ? total : total + (SLOT_GRANULARITY_MINUTES - remainder);
 
   const totalPriceAmountMinor = services.reduce(
     (sum, service) => sum + (service.priceAmountMinor ?? 0),

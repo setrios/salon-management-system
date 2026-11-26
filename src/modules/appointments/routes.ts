@@ -62,11 +62,7 @@
 import { Router, type Request, type Response } from 'express';
 
 import { windowsOn } from '../../lib/availability.js';
-import {
-  minutesOnDate,
-  salonDateOfInstant,
-  startOffered,
-} from '../../lib/occupancy.js';
+import { minutesOnDate, salonDateOfInstant, startOffered } from '../../lib/occupancy.js';
 import { HttpProblem } from '../../middleware/error-handler.js';
 import { type Principal } from '../../middleware/auth.js';
 import { masterAccess } from '../../middleware/authorize.js';
@@ -111,7 +107,7 @@ export interface AppointmentCreateBody {
  * which is the one place in the suite that compares `detail`.
  */
 const SLOT_UNAVAILABLE_DETAIL =
-  'The requested slot cannot be booked with this master: it is outside the master\'s availability or overlaps an existing appointment.';
+  "The requested slot cannot be booked with this master: it is outside the master's availability or overlaps an existing appointment.";
 
 /** `YYYY-MM-DD` for a salon date. */
 export function dateKeyOf(date: { year: number; month: number; day: number }): string {
@@ -227,7 +223,12 @@ export async function bookAppointment(
     },
     // Runs inside the transaction, after the advisory lock (D2).
     async (tx: Executor): Promise<boolean> => {
-      const fits = startOffered(booking.startMinute, booking.windows, booking.occupiedDurationMinutes, []);
+      const fits = startOffered(
+        booking.startMinute,
+        booking.windows,
+        booking.occupiedDurationMinutes,
+        [],
+      );
       if (!fits) return false;
       const blocks = await bookedBlocks(master.id, booking.startAt, booking.endAt, tx);
       return blocks.length === 0;
@@ -256,32 +257,31 @@ async function createAppointmentHandler(req: Request, res: Response): Promise<vo
     res,
     201,
     'Appointment',
-    appointmentBody(
-      {
-        id: created.id,
-        status: created.status,
-        clientName: booking.client.name,
-        clientPhone: booking.client.phone,
-        masterId: booking.master.id,
-        masterFullName: booking.master.fullName,
-        startAt: created.startAt,
-        endAt: created.endAt,
-        totalDurationMinutes: created.totalDurationMinutes,
-        occupiedDurationMinutes: created.occupiedDurationMinutes,
-        totalPriceAmountMinor: created.totalPriceAmountMinor,
-        totalPriceCurrency: created.totalPriceCurrency,
-        accessToken: created.accessToken,
-        createdAt: created.createdAt,
-        updatedAt: created.updatedAt,
-        lines: created.lines,
-        reminders: created.reminders.map((r) => ({
-          type: r.type,
-          scheduledAt: r.scheduledAt,
-          status: r.status,
-        })),
-      }),
-    );
-  }
+    appointmentBody({
+      id: created.id,
+      status: created.status,
+      clientName: booking.client.name,
+      clientPhone: booking.client.phone,
+      masterId: booking.master.id,
+      masterFullName: booking.master.fullName,
+      startAt: created.startAt,
+      endAt: created.endAt,
+      totalDurationMinutes: created.totalDurationMinutes,
+      occupiedDurationMinutes: created.occupiedDurationMinutes,
+      totalPriceAmountMinor: created.totalPriceAmountMinor,
+      totalPriceCurrency: created.totalPriceCurrency,
+      accessToken: created.accessToken,
+      createdAt: created.createdAt,
+      updatedAt: created.updatedAt,
+      lines: created.lines,
+      reminders: created.reminders.map((r) => ({
+        type: r.type,
+        scheduledAt: r.scheduledAt,
+        status: r.status,
+      })),
+    }),
+  );
+}
 
 /**
  * P9 — the appointment a token names.
@@ -334,10 +334,7 @@ async function cancelAppointmentByTokenHandler(req: Request, res: Response): Pro
   }
 
   if (result.kind === 'rejected') {
-    throw new HttpProblem(
-      result.code,
-      'A completed appointment cannot be cancelled.',
-    );
+    throw new HttpProblem(result.code, 'A completed appointment cannot be cancelled.');
   }
 
   sendJson(res, 200, 'Appointment', appointmentBody(result.record));
@@ -430,12 +427,7 @@ async function rescheduleAppointmentByTokenHandler(req: Request, res: Response):
       now,
     },
     async (tx: Executor): Promise<boolean> => {
-      const fits = startOffered(
-        startMinute,
-        windows,
-        record.occupiedDurationMinutes,
-        [],
-      );
+      const fits = startOffered(startMinute, windows, record.occupiedDurationMinutes, []);
       if (!fits) return false;
       // The record itself is excluded: a reschedule must not see its own block
       // as a conflict (R18, the same-time case).
@@ -468,9 +460,7 @@ async function rescheduleAppointmentByTokenHandler(req: Request, res: Response):
 /** M1 — the caller's own calendar (REQ-F-013, J1–J5). */
 async function listMyAppointmentsHandler(req: Request, res: Response): Promise<void> {
   const principal = res.locals.principal as Principal;
-  const query = res.locals.query as
-    | { from?: string; to?: string; status?: string }
-    | undefined;
+  const query = res.locals.query as { from?: string; to?: string; status?: string } | undefined;
   const request = pageRequest(res);
   const now = nowOf(req);
 

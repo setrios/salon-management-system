@@ -35,12 +35,7 @@
 import { and, asc, count, eq, gte, inArray, lt } from 'drizzle-orm';
 
 import { getDb, type Database } from '../../db/client.js';
-import {
-  appointments,
-  masters,
-  notificationPreferences,
-  notifications,
-} from '../../db/schema.js';
+import { appointments, masters, notificationPreferences, notifications } from '../../db/schema.js';
 import { addCalendarDays, parseCalendarDate, salonInstant } from '../../lib/time.js';
 import { markDueRemindersSent } from './dispatch.js';
 import {
@@ -242,10 +237,7 @@ export async function recalculateReminders(
  * transaction. The booking and the reschedule write their rows inside theirs,
  * and a dispatch that ran inside one would be rolled back with it.
  */
-export async function dispatchDueReminders(
-  appointmentId: string,
-  now: Date,
-): Promise<number> {
+export async function dispatchDueReminders(appointmentId: string, now: Date): Promise<number> {
   const db = getDb();
 
   const rows = await readReminders(db, appointmentId);
@@ -510,9 +502,7 @@ export async function listMyNotifications(
 
   const to = filters.to === undefined ? null : parseCalendarDate(filters.to);
   if (to !== null) {
-    conditions.push(
-      lt(notifications.createdAt, new Date(salonInstant(addCalendarDays(to, 1), 0))),
-    );
+    conditions.push(lt(notifications.createdAt, new Date(salonInstant(addCalendarDays(to, 1), 0))));
   }
 
   const where = and(...conditions);

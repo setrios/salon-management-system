@@ -195,16 +195,10 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
   function expectAppointment(response: JsonResponse): void {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -295,7 +289,7 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
 
   // ========================================================= the declared 404
 
-  describe('the token names the record (P10\'s declared refusals)', () => {
+  describe("the token names the record (P10's declared refusals)", () => {
     it('K4 answers 404 NOT_FOUND for a uuid that names no appointment', async () => {
       // The 200 comes from **this operation**, not from a neighbouring read: a
       // case that only asserted "404" would be green against the unmounted
@@ -401,10 +395,11 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
       const created = await book(bookable, onMonday('10:00'));
       expect(created.status).toBe(201);
 
-      await getPool().query(
-        'update appointments set start_at = $2, end_at = $3 where id = $1',
-        [created.body.id, onPastMonday('10:00'), onPastMonday('10:30')],
-      );
+      await getPool().query('update appointments set start_at = $2, end_at = $3 where id = $1', [
+        created.body.id,
+        onPastMonday('10:00'),
+        onPastMonday('10:30'),
+      ]);
 
       const cancelled = await cancel(created.body.accessToken as string);
 

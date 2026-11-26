@@ -250,7 +250,10 @@ describe('getRevenueReport (R28, GET /admin/reports/revenue)', () => {
     // Thursday 12 November 2026 sits in the ISO week Monday 9 – Sunday 15.
     expect(week).toMatchObject({ period: 'week', from: '2026-11-09', to: '2026-11-15' });
 
-    const month = expectBody(await get('/api/v1/admin/reports/revenue?period=month'), revenueSchema);
+    const month = expectBody(
+      await get('/api/v1/admin/reports/revenue?period=month'),
+      revenueSchema,
+    );
     expect(month).toMatchObject({ period: 'month', from: '2026-11-01', to: '2026-11-30' });
 
     const custom = expectBody(
@@ -344,9 +347,7 @@ describe('getPopularServicesReport (R29, GET /admin/reports/popular-services)', 
       await get('/api/v1/admin/reports/popular-services?period=month'),
       popularSchema,
     );
-    expect(
-      month.items.map((item: any) => [item.name.split(' ')[0], item.bookingsCount]),
-    ).toEqual([
+    expect(month.items.map((item: any) => [item.name.split(' ')[0], item.bookingsCount])).toEqual([
       ['Zeta', 3],
       ['Alpha', 2],
       ['Beta', 1],

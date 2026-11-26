@@ -58,10 +58,7 @@ export async function settleCancelledReminders(
     .update(notifications)
     .set({ status: CANCELLED_REMINDER_STATUS })
     .where(
-      and(
-        eq(notifications.appointmentId, appointmentId),
-        eq(notifications.status, 'scheduled'),
-      ),
+      and(eq(notifications.appointmentId, appointmentId), eq(notifications.status, 'scheduled')),
     )
     .returning({ id: notifications.id });
 

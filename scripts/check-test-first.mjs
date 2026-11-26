@@ -226,7 +226,9 @@ function main() {
 
   const structural = entries.flatMap(validateEntry);
   if (structural.length > 0) {
-    process.stderr.write(`check-test-first: invalid manifest\n${structural.map((p) => `  - ${p}`).join('\n')}\n`);
+    process.stderr.write(
+      `check-test-first: invalid manifest\n${structural.map((p) => `  - ${p}`).join('\n')}\n`,
+    );
     process.exit(1);
   }
 

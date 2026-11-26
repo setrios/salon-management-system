@@ -80,7 +80,7 @@ const NOW = '2026-11-12T09:00:00+02:00';
 const FAR_MONDAY = '2026-12-07';
 const WINTER_OFFSET = '+02:00';
 
-describe('S4.1 the caller\'s own notification records (M7)', () => {
+describe("S4.1 the caller's own notification records (M7)", () => {
   const app = createApp({ now: () => new Date(NOW) });
 
   const isNotificationPage = getSchemaValidator('NotificationPage');
@@ -129,10 +129,9 @@ describe('S4.1 the caller\'s own notification records (M7)', () => {
 
   function expectPage(response: JsonResponse): NotificationRow[] {
     expect(response.status).toBe(200);
-    expect(
-      isNotificationPage(response.body),
-      JSON.stringify(isNotificationPage.errors ?? []),
-    ).toBe(true);
+    expect(isNotificationPage(response.body), JSON.stringify(isNotificationPage.errors ?? [])).toBe(
+      true,
+    );
     return response.body.items as NotificationRow[];
   }
 
@@ -159,7 +158,7 @@ describe('S4.1 the caller\'s own notification records (M7)', () => {
       expect(items.map((row) => row.channel).sort()).toEqual(['in_app', 'sms']);
     });
 
-    it('N2 shows the administrator the administrator rows, not a master\'s', async () => {
+    it("N2 shows the administrator the administrator rows, not a master's", async () => {
       const master = await arrangeBookable();
       const created = await book(master.id);
       expect(created.status).toBe(201);
@@ -170,7 +169,7 @@ describe('S4.1 the caller\'s own notification records (M7)', () => {
       expect(items.every((row) => row.audience === 'admin')).toBe(true);
     });
 
-    it('N3 keeps one master\'s rows out of another master\'s list', async () => {
+    it("N3 keeps one master's rows out of another master's list", async () => {
       const first = await arrangeBookable();
       const second = await arrangeBookable();
       expect((await book(first.id)).status).toBe(201);
@@ -200,13 +199,11 @@ describe('S4.1 the caller\'s own notification records (M7)', () => {
       const byStatus = expectPage(await myNotifications(master.token, '?status=sent'));
       expect(byStatus.length).toBe(2);
 
-      const byOtherStatus = expectPage(
-        await myNotifications(master.token, '?status=skipped'),
-      );
+      const byOtherStatus = expectPage(await myNotifications(master.token, '?status=skipped'));
       expect(byOtherStatus).toEqual([]);
     });
 
-    it('N5 filters by from and to on the record\'s own date (I10)', async () => {
+    it("N5 filters by from and to on the record's own date (I10)", async () => {
       const master = await arrangeBookable();
       const created = await book(master.id);
       expect(created.status).toBe(201);

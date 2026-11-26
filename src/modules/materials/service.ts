@@ -222,10 +222,7 @@ export async function listMaterialTransactions(
   const to = filter.to === undefined ? null : parseCalendarDate(filter.to);
   if (to !== null) {
     conditions.push(
-      lt(
-        materialTransactions.occurredAt,
-        new Date(salonInstant(addCalendarDays(to, 1), 0)),
-      ),
+      lt(materialTransactions.occurredAt, new Date(salonInstant(addCalendarDays(to, 1), 0))),
     );
   }
 
@@ -239,10 +236,7 @@ export async function listMaterialTransactions(
     .limit(filter.limit)
     .offset(filter.offset);
 
-  const [totalRow] = await db
-    .select({ value: count() })
-    .from(materialTransactions)
-    .where(where);
+  const [totalRow] = await db.select({ value: count() }).from(materialTransactions).where(where);
 
   return { items: rows.map(toTransaction), total: totalRow?.value ?? 0 };
 }

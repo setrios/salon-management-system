@@ -109,9 +109,11 @@ function postTransaction(
   if (token !== '') call.set('Authorization', `Bearer ${token}`);
   return (options.contentType === undefined
     ? call.send(body as object)
-    : call.set('Content-Type', options.contentType).send(
-        typeof body === 'string' ? body : JSON.stringify(body),
-      )) as unknown as Promise<JsonResponse>;
+    : call
+        .set('Content-Type', options.contentType)
+        .send(
+          typeof body === 'string' ? body : JSON.stringify(body),
+        )) as unknown as Promise<JsonResponse>;
 }
 
 /** The material's current balance through R15. */
@@ -355,18 +357,18 @@ describe('createMaterialTransaction (R26, POST /admin/materials/{materialId}/tra
       occurredAt: '2026-11-13T10:00:00+02:00',
     };
 
-    expectProblem(
-      await postTransaction(material.id, body, { token: '' }),
-      { status: 401, code: 'UNAUTHENTICATED' },
-    );
+    expectProblem(await postTransaction(material.id, body, { token: '' }), {
+      status: 401,
+      code: 'UNAUTHENTICATED',
+    });
     expectProblem(await postTransaction(material.id, body, { token: masterToken }), {
       status: 403,
       code: 'FORBIDDEN',
     });
-    expectProblem(
-      await postTransaction(material.id, body, { contentType: 'text/plain' }),
-      { status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' },
-    );
+    expectProblem(await postTransaction(material.id, body, { contentType: 'text/plain' }), {
+      status: 415,
+      code: 'UNSUPPORTED_MEDIA_TYPE',
+    });
 
     // A transaction on an inactive material is not refused (M6).
     await request(app)
@@ -440,10 +442,7 @@ describe('listMaterialTransactions (R25, GET /admin/materials/{materialId}/trans
       .set('Authorization', `Bearer ${adminToken}`);
     expect(issues.status).toBe(200);
     expect(issues.body.total).toBe(2);
-    expect(issues.body.items.map((item: { id: string }) => item.id)).toEqual([
-      second.id,
-      third.id,
-    ]);
+    expect(issues.body.items.map((item: { id: string }) => item.id)).toEqual([second.id, third.id]);
 
     const receipts = await request(app)
       .get(`/api/v1/admin/materials/${material.id}/transactions?type=receipt`)
@@ -556,10 +555,10 @@ describe('listMaterialTransactions (R25, GET /admin/materials/{materialId}/trans
     const material = await arrangeMaterial();
     const path = `/api/v1/admin/materials/${material.id}/transactions`;
 
-    expectProblem(
-      (await request(app).get(path)) as unknown as JsonResponse,
-      { status: 401, code: 'UNAUTHENTICATED' },
-    );
+    expectProblem((await request(app).get(path)) as unknown as JsonResponse, {
+      status: 401,
+      code: 'UNAUTHENTICATED',
+    });
     expectProblem(
       (await request(app)
         .get(path)

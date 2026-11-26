@@ -50,9 +50,7 @@ function readInteger(env: NodeJS.ProcessEnv, name: string, fallback: number): nu
 function readNodeEnv(env: NodeJS.ProcessEnv): NodeEnv {
   const raw = env.NODE_ENV ?? 'development';
   if (raw === 'development' || raw === 'test' || raw === 'production') return raw;
-  throw new ConfigError(
-    `NODE_ENV must be one of development, test, production; got: ${raw}`,
-  );
+  throw new ConfigError(`NODE_ENV must be one of development, test, production; got: ${raw}`);
 }
 
 /**

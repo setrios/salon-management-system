@@ -50,9 +50,7 @@ export async function markDueRemindersSent(
     .set({ status: 'sent', sentAt: now })
     .where(
       and(
-        ...(appointmentId === undefined
-          ? []
-          : [eq(notifications.appointmentId, appointmentId)]),
+        ...(appointmentId === undefined ? [] : [eq(notifications.appointmentId, appointmentId)]),
         inArray(notifications.eventType, [...REMINDER_EVENT_TYPES]),
         eq(notifications.status, 'scheduled'),
         lte(notifications.scheduledAt, now),

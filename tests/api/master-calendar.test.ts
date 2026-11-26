@@ -89,7 +89,7 @@ const FIRST_MONDAY = '2026-12-07';
 const SECOND_MONDAY = '2026-12-14';
 const WINTER_OFFSET = '+02:00';
 
-describe('S4.2 the master\'s own calendar and own services (M1, M2)', () => {
+describe("S4.2 the master's own calendar and own services (M1, M2)", () => {
   const app = createApp({ now: () => new Date(NOW) });
 
   const isCalendarPage = getSchemaValidator('AppointmentAdminPage');
@@ -149,10 +149,7 @@ describe('S4.2 the master\'s own calendar and own services (M1, M2)', () => {
 
   function expectPage(response: JsonResponse): CalendarRow[] {
     expect(response.status).toBe(200);
-    expect(
-      isCalendarPage(response.body),
-      JSON.stringify(isCalendarPage.errors ?? []),
-    ).toBe(true);
+    expect(isCalendarPage(response.body), JSON.stringify(isCalendarPage.errors ?? [])).toBe(true);
     return response.body.items as CalendarRow[];
   }
 
@@ -331,14 +328,12 @@ describe('S4.2 the master\'s own calendar and own services (M1, M2)', () => {
       const items = response.body as { masterId: string; serviceId: string }[];
       expect(items).toHaveLength(2);
       expect(items.every((row) => row.masterId === first.id)).toBe(true);
-      expect(items.map((row) => row.serviceId).sort()).toEqual(
-        [haircut.id, colouring.id].sort(),
-      );
+      expect(items.map((row) => row.serviceId).sort()).toEqual([haircut.id, colouring.id].sort());
 
       const other = await myServices(second.token);
-      expect((other.body as { masterId: string }[]).every((row) => row.masterId === second.id)).toBe(
-        true,
-      );
+      expect(
+        (other.body as { masterId: string }[]).every((row) => row.masterId === second.id),
+      ).toBe(true);
       expect(other.body).toHaveLength(1);
     });
 

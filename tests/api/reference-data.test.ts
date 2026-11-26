@@ -217,9 +217,7 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
   });
 
   async function login(username: string, password: string): Promise<string> {
-    const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ username, password });
+    const response = await request(app).post('/api/v1/auth/login').send({ username, password });
 
     expect(response.status).toBe(200);
     return response.body.accessToken as string;
@@ -241,10 +239,7 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
     return pending;
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);

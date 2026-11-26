@@ -139,16 +139,10 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
   function expectAppointment(response: JsonResponse): void {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toBe('application/problem+json');
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);

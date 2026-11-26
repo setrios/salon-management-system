@@ -194,9 +194,7 @@ describe('S1.1 authentication — login and bearer tokens', () => {
     it('answers a login missing the password with 400 MALFORMED_REQUEST', async () => {
       // CL-09: `login` declares no 422 response, unlike every other operation
       // with a request body, so the schema violation is reported as 400.
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send({ username: 'admin' });
+      const response = await request(app).post('/api/v1/auth/login').send({ username: 'admin' });
 
       expectProblem(response, { status: 400, code: 'MALFORMED_REQUEST' });
     });
@@ -268,9 +266,7 @@ describe('S1.1 authentication — login and bearer tokens', () => {
     });
 
     async function login(username: string, password: string): Promise<JsonResponse> {
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send({ username, password });
+      const response = await request(app).post('/api/v1/auth/login').send({ username, password });
       return response;
     }
 

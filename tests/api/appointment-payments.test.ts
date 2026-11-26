@@ -111,9 +111,11 @@ function pay(
   if (token !== '') call.set('Authorization', `Bearer ${token}`);
   return (options.contentType === undefined
     ? call.send(body as object)
-    : call.set('Content-Type', options.contentType).send(
-        typeof body === 'string' ? body : JSON.stringify(body),
-      )) as unknown as Promise<JsonResponse>;
+    : call
+        .set('Content-Type', options.contentType)
+        .send(
+          typeof body === 'string' ? body : JSON.stringify(body),
+        )) as unknown as Promise<JsonResponse>;
 }
 
 const paid = (amountMinor = TOTAL_PRICE_AMOUNT_MINOR): Record<string, unknown> => ({
@@ -203,9 +205,10 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
     // N2: the recorded payment is part of the administrator's view of the
     // record, and the appointment's own status is untouched by it.
     const after = await readAppointment(id);
-    expect(appointmentAdminSchema(after.body), JSON.stringify(appointmentAdminSchema.errors ?? [])).toBe(
-      true,
-    );
+    expect(
+      appointmentAdminSchema(after.body),
+      JSON.stringify(appointmentAdminSchema.errors ?? []),
+    ).toBe(true);
     expect(after.body.status).toBe('completed');
     expect(after.body.payment).toMatchObject({
       id: body.id,
@@ -231,7 +234,11 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
     const id = await completedAppointment('2026-11-16T12:00:00+02:00');
 
     const body = expectPayment(
-      await pay(id, { amount: { amountMinor: 10000, currency: 'UAH' }, method: 'cash', status: 'unpaid' }),
+      await pay(id, {
+        amount: { amountMinor: 10000, currency: 'UAH' },
+        method: 'cash',
+        status: 'unpaid',
+      }),
     );
 
     expect(body).toMatchObject({ status: 'unpaid', method: 'cash' });
@@ -276,7 +283,10 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
 
     // The first row is what the appointment carries, unchanged.
     const after = await readAppointment(id);
-    expect(after.body.payment).toMatchObject({ id: first.id, amount: { amountMinor: TOTAL_PRICE_AMOUNT_MINOR } });
+    expect(after.body.payment).toMatchObject({
+      id: first.id,
+      amount: { amountMinor: TOTAL_PRICE_AMOUNT_MINOR },
+    });
 
     // D12's immutability: the contract has no method that changes a payment.
     const patch = await request(app)
@@ -295,7 +305,10 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
     // Zero is the contract's own minimum (`Money.amountMinor`), so it is not a
     // schema violation and no rule elsewhere refuses it.
     const secondId = await completedAppointment('2026-11-16T17:00:00+02:00');
-    const zero = await pay(secondId, { amount: { amountMinor: 0, currency: 'UAH' }, method: 'cash' });
+    const zero = await pay(secondId, {
+      amount: { amountMinor: 0, currency: 'UAH' },
+      method: 'cash',
+    });
     expect(expectPayment(zero).amount.amountMinor).toBe(0);
   });
 
@@ -324,20 +337,20 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
       code: 'MALFORMED_REQUEST',
     });
 
-    expectProblem(
-      await pay(id, '{"amount":{}}', { contentType: 'text/plain' }),
-      { status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' },
-    );
+    expectProblem(await pay(id, '{"amount":{}}', { contentType: 'text/plain' }), {
+      status: 415,
+      code: 'UNSUPPORTED_MEDIA_TYPE',
+    });
 
     // None of them created a payment.
     expect((await readAppointment(id)).body.payment).toBeUndefined();
   });
 
   it('P9 answers 404 for an unknown appointment, 400 for a non-uuid id, 401 and 403', async () => {
-    expectProblem(
-      await pay('00000000-0000-4000-8000-000000000888', paid()),
-      { status: 404, code: 'NOT_FOUND' },
-    );
+    expectProblem(await pay('00000000-0000-4000-8000-000000000888', paid()), {
+      status: 404,
+      code: 'NOT_FOUND',
+    });
     expectProblem(await pay('not-a-valid-uuid', paid()), {
       status: 400,
       code: 'MALFORMED_REQUEST',

@@ -58,9 +58,7 @@ export interface ResolvedPeriod {
 
 /** What the query resolved to: a window, a period conflict, or a bad date. */
 export type PeriodResolution =
-  | ResolvedPeriod
-  | { readonly kind: 'invalid' }
-  | { readonly kind: 'malformed' };
+  ResolvedPeriod | { readonly kind: 'invalid' } | { readonly kind: 'malformed' };
 
 const PRESETS: ReadonlySet<string> = new Set(['day', 'week', 'month']);
 

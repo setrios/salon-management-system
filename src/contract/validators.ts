@@ -76,7 +76,9 @@ export function loadContract(): ConvertedContract {
   }
 
   if (parsed?.definitions === undefined) {
-    throw new Error('src/contract/openapi.json has an unexpected shape. Re-run `npm run convert:contract`.');
+    throw new Error(
+      'src/contract/openapi.json has an unexpected shape. Re-run `npm run convert:contract`.',
+    );
   }
 
   contractCache = parsed;
@@ -111,7 +113,9 @@ export function getSchemaValidator(name: string): ValidateFunction {
   const uri = `${ROOT_SCHEMA_ID}#/definitions/${name}`;
   const compiled = getAjv().getSchema(uri);
   if (compiled === undefined) {
-    throw new Error(`No schema "${name}" in the generated contract; re-run \`npm run convert:contract\`.`);
+    throw new Error(
+      `No schema "${name}" in the generated contract; re-run \`npm run convert:contract\`.`,
+    );
   }
 
   // `getSchema` is typed as possibly-async; the contract has no `$async` schema,
@@ -123,7 +127,9 @@ export function getSchemaValidator(name: string): ValidateFunction {
 
 /** Returns the operation metadata for an `operationId`, or throws. */
 export function getOperation(operationId: string): ConvertedOperation {
-  const found = loadContract().operations.find((operation) => operation.operationId === operationId);
+  const found = loadContract().operations.find(
+    (operation) => operation.operationId === operationId,
+  );
   if (found === undefined) throw new Error(`Unknown operationId "${operationId}" in the contract.`);
   return found;
 }

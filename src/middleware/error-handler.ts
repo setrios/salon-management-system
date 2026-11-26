@@ -34,7 +34,12 @@ export const PROBLEM_CATALOG = {
 export type ProblemCode = keyof typeof PROBLEM_CATALOG;
 
 export type ValidationItemCode =
-  'REQUIRED' | 'PATTERN_MISMATCH' | 'FORMAT_INVALID' | 'ENUM_MISMATCH' | 'OUT_OF_RANGE' | 'UNKNOWN_FIELD';
+  | 'REQUIRED'
+  | 'PATTERN_MISMATCH'
+  | 'FORMAT_INVALID'
+  | 'ENUM_MISMATCH'
+  | 'OUT_OF_RANGE'
+  | 'UNKNOWN_FIELD';
 
 export interface ValidationErrorItem {
   field: string;

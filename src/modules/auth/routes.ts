@@ -52,8 +52,7 @@ const login: RequestHandler = async (req, res, next) => {
 /** `GET /auth/me`: the principal the bearer token proves, not a fresh lookup. */
 const getCurrentPrincipal: RequestHandler = (_req, res) => {
   const principal = res.locals.principal as
-    | { id: string; role: 'master' | 'admin'; displayName: string }
-    | undefined;
+    { id: string; role: 'master' | 'admin'; displayName: string } | undefined;
 
   if (principal === undefined) {
     // Unreachable when `authenticate` is mounted in front of this handler; the

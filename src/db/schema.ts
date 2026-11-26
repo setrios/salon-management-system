@@ -285,9 +285,7 @@ export const availabilityDates = pgTable(
     endTime: text('end_time').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    check('availability_dates_window_check', sql`${table.endTime} > ${table.startTime}`),
-  ],
+  (table) => [check('availability_dates_window_check', sql`${table.endTime} > ${table.startTime}`)],
 );
 
 /**
@@ -343,7 +341,10 @@ export const appointments = pgTable(
       sql`${table.status} in ('confirmed', 'completed', 'cancelled')`,
     ),
     check('appointments_block_check', sql`${table.endAt} > ${table.startAt}`),
-    check('appointments_durations_check', sql`${table.totalDurationMinutes} > 0 and ${table.occupiedDurationMinutes} >= 30`),
+    check(
+      'appointments_durations_check',
+      sql`${table.totalDurationMinutes} > 0 and ${table.occupiedDurationMinutes} >= 30`,
+    ),
     check('appointments_price_check', sql`${table.totalPriceAmountMinor} >= 0`),
     uniqueIndex('appointments_master_start_unique')
       .on(table.masterId, table.startAt)
@@ -471,10 +472,7 @@ export const notifications = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    check(
-      'notifications_audience_check',
-      sql`${table.audience} in ('client', 'master', 'admin')`,
-    ),
+    check('notifications_audience_check', sql`${table.audience} in ('client', 'master', 'admin')`),
     check(
       'notifications_event_type_check',
       sql`${table.eventType} in ('new', 'reschedule', 'cancellation', 'reminder_24h', 'reminder_2h')`,
@@ -520,10 +518,7 @@ export const notificationPreferences = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    check(
-      'notification_preferences_channel_check',
-      sql`${table.channel} in ('sms', 'in_app')`,
-    ),
+    check('notification_preferences_channel_check', sql`${table.channel} in ('sms', 'in_app')`),
     check(
       'notification_preferences_event_type_check',
       sql`${table.eventType} in ('new', 'reschedule', 'cancellation')`,

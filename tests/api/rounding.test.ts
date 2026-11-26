@@ -121,10 +121,7 @@ describe('S2.1 rounding — SCN-13, the rounded block is the scheduling unit', (
     return master;
   }
 
-  async function getSlots(
-    masterId: string,
-    serviceIds: ServiceFixture[],
-  ): Promise<JsonResponse> {
+  async function getSlots(masterId: string, serviceIds: ServiceFixture[]): Promise<JsonResponse> {
     return request(app)
       .get(`/api/v1/masters/${masterId}/availability`)
       .query({ date: MONDAY, serviceIds: serviceIds.map((service) => service.id).join(',') });
@@ -177,10 +174,7 @@ describe('S2.1 rounding — SCN-13, the rounded block is the scheduling unit', (
     const response = await book(master.id, [service45, service30], onMonday('10:00'));
 
     expect(response.status).toBe(201);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
     expect(response.body).toMatchObject({
       totalDurationMinutes: 75,
       occupiedDurationMinutes: 90,

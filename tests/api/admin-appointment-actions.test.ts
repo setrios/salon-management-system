@@ -201,7 +201,10 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
   }
 
   /** R21. */
-  async function patch(appointmentId: string, body: Record<string, unknown>): Promise<JsonResponse> {
+  async function patch(
+    appointmentId: string,
+    body: Record<string, unknown>,
+  ): Promise<JsonResponse> {
     return request(app)
       .patch(`/api/v1/admin/appointments/${appointmentId}`)
       .set('Authorization', `Bearer ${admin.token}`)
@@ -240,19 +243,15 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
   function expectAppointmentAdmin(response: JsonResponse, status = 200): void {
     expect(response.status).toBe(status);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointmentAdmin(response.body),
-      JSON.stringify(isAppointmentAdmin.errors ?? []),
-    ).toBe(true);
+    expect(isAppointmentAdmin(response.body), JSON.stringify(isAppointmentAdmin.errors ?? [])).toBe(
+      true,
+    );
     // J2/D18: the staff view never carries the client's credential.
     expect(response.body.accessToken).toBeUndefined();
     expect(response.body.confirmationUrl).toBeUndefined();
   }
 
-  function expectProblem(
-    response: JsonResponse,
-    expected: { status: number; code: string },
-  ): void {
+  function expectProblem(response: JsonResponse, expected: { status: number; code: string }): void {
     expect(response.status).toBe(expected.status);
     expect(response.headers['content-type']).toMatch(/application\/problem\+json/);
     expect(isProblem(response.body), JSON.stringify(isProblem.errors ?? [])).toBe(true);
@@ -323,11 +322,9 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
 
       // REQ-F-016: the assigned master's notification is unaffected. S4.1 writes
       // one row per enabled channel, so the count is the preferences'.
-      expect(
-        items.some(
-          (row) => row.audience === 'master' && row.eventType === 'reschedule',
-        ),
-      ).toBe(true);
+      expect(items.some((row) => row.audience === 'master' && row.eventType === 'reschedule')).toBe(
+        true,
+      );
     });
 
     it('U3 changes the master, re-prices from their link and writes the client reschedule (L1, G8)', async () => {
@@ -422,10 +419,10 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       const completed = await book(masterA.id, onMonday(SECOND_MONDAY, '09:00'));
       expectAppointmentAdmin(await completeAction(completed.body.id));
 
-      expectProblem(
-        await patch(completed.body.id, { startAt: onMonday(SECOND_MONDAY, '11:00') }),
-        { status: 409, code: 'INVALID_STATE_TRANSITION' },
-      );
+      expectProblem(await patch(completed.body.id, { startAt: onMonday(SECOND_MONDAY, '11:00') }), {
+        status: 409,
+        code: 'INVALID_STATE_TRANSITION',
+      });
 
       const cancelled = await book(masterA.id, onMonday(SECOND_MONDAY, '10:00'));
       expectAppointmentAdmin(await cancelAction(cancelled.body.id));
@@ -440,10 +437,10 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       const first = await book(masterA.id, onMonday(THIRD_MONDAY, '11:00'));
       await book(masterA.id, onMonday(THIRD_MONDAY, '14:00'));
 
-      expectProblem(
-        await patch(first.body.id, { startAt: onMonday(THIRD_MONDAY, '14:00') }),
-        { status: 409, code: 'SLOT_UNAVAILABLE' },
-      );
+      expectProblem(await patch(first.body.id, { startAt: onMonday(THIRD_MONDAY, '14:00') }), {
+        status: 409,
+        code: 'SLOT_UNAVAILABLE',
+      });
 
       // L1: the new master's block may be taken where the old master's was not.
       const onA = await book(masterA.id, onMonday(THIRD_MONDAY, '11:30'));
@@ -484,16 +481,16 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       });
 
       // 422: the 30-minute boundary (L3, REQ-NF-008).
-      expectProblem(
-        await patch(target.body.id, { startAt: onMonday(SECOND_MONDAY, '10:15') }),
-        { status: 422, code: 'BUSINESS_RULE_VIOLATION' },
-      );
+      expectProblem(await patch(target.body.id, { startAt: onMonday(SECOND_MONDAY, '10:15') }), {
+        status: 422,
+        code: 'BUSINESS_RULE_VIOLATION',
+      });
 
       // 422: a start at or before the injected clock (CL-11).
-      expectProblem(
-        await patch(target.body.id, { startAt: '2026-11-12T08:30:00+02:00' }),
-        { status: 422, code: 'BUSINESS_RULE_VIOLATION' },
-      );
+      expectProblem(await patch(target.body.id, { startAt: '2026-11-12T08:30:00+02:00' }), {
+        status: 422,
+        code: 'BUSINESS_RULE_VIOLATION',
+      });
 
       // 415: a body that is not JSON.
       const nonJson = await request(app)
@@ -541,14 +538,12 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
       // per enabled channel).
       expect(items.some((row) => row.audience === 'admin')).toBe(false);
       expect(
-        items.some(
-          (row) => row.audience === 'master' && row.eventType === 'cancellation',
-        ),
+        items.some((row) => row.audience === 'master' && row.eventType === 'cancellation'),
       ).toBe(true);
       // SRS v1.3:253–256 (P10's reading): a cancellation sends the client nothing.
-      expect(items.some((row) => row.audience === 'client' && row.eventType === 'cancellation')).toBe(
-        false,
-      );
+      expect(
+        items.some((row) => row.audience === 'client' && row.eventType === 'cancellation'),
+      ).toBe(false);
 
       // L2/H5: the reminder rows are untouched by the cancellation.
       expect(response.body.reminders).toHaveLength(2);
@@ -588,9 +583,7 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
         code: 'NOT_FOUND',
       });
 
-      const noAuth = await request(app).post(
-        `/api/v1/admin/appointments/${unknownUuid}/cancel`,
-      );
+      const noAuth = await request(app).post(`/api/v1/admin/appointments/${unknownUuid}/cancel`);
       expectProblem(noAuth, { status: 401, code: 'UNAUTHENTICATED' });
 
       const masterAuth = await request(app)
@@ -665,9 +658,7 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
         code: 'NOT_FOUND',
       });
 
-      const noAuth = await request(app).post(
-        `/api/v1/admin/appointments/${unknownUuid}/complete`,
-      );
+      const noAuth = await request(app).post(`/api/v1/admin/appointments/${unknownUuid}/complete`);
       expectProblem(noAuth, { status: 401, code: 'UNAUTHENTICATED' });
 
       const masterAuth = await request(app)

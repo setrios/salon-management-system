@@ -191,10 +191,7 @@ describe('S2.1 occupancy — booked time is not offered, and cannot be double-bo
 
     const accepted = await book(master.id, offered[0] as string);
     expect(accepted.status).toBe(201);
-    expect(
-      isAppointment(accepted.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(accepted.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
 
     // 09:00 is before the window, so P7 does not offer it and P8 refuses it.
     expect(offered).not.toContain(onMonday('09:00'));
@@ -238,7 +235,7 @@ describe('S2.1 occupancy — booked time is not offered, and cannot be double-bo
     expect(after).toContain(onMonday('11:30'));
   });
 
-  it('O5 keeps a booking on one master out of another master\'s slots', async () => {
+  it("O5 keeps a booking on one master out of another master's slots", async () => {
     const booked = await freshMaster();
     const other = await freshMaster();
 

@@ -42,7 +42,9 @@ export function createLogger(logDir: string): Logger {
   return {
     record(level, event, fields) {
       stream ??= openStream(logDir);
-      stream?.write(`${JSON.stringify({ ts: new Date().toISOString(), level, event, ...fields })}\n`);
+      stream?.write(
+        `${JSON.stringify({ ts: new Date().toISOString(), level, event, ...fields })}\n`,
+      );
     },
   };
 }
@@ -89,8 +91,7 @@ export function requestLogger(logDir: string): RequestHandler {
       const contractTemplate = contractPathFor(requestPath)?.template;
       const route = (req as unknown as { route?: { path?: unknown } }).route?.path;
       const path =
-        contractTemplate ??
-        (typeof route === 'string' ? `${req.baseUrl}${route}` : requestPath);
+        contractTemplate ?? (typeof route === 'string' ? `${req.baseUrl}${route}` : requestPath);
       logger.record(levelFor(res.statusCode), 'http.request', {
         // `traceMiddleware` always runs before this one, but the field is typed
         // optional; `null` keeps the record's key set stable across events.

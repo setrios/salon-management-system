@@ -205,10 +205,7 @@ describe('S3.2 reminders — the 24 h and 2 h rows', () => {
   function expectAppointment(response: JsonResponse, status = 200): void {
     expect(response.status).toBe(status);
     expect(response.headers['content-type']).toMatch(/^application\/json/);
-    expect(
-      isAppointment(response.body),
-      JSON.stringify(isAppointment.errors ?? []),
-    ).toBe(true);
+    expect(isAppointment(response.body), JSON.stringify(isAppointment.errors ?? [])).toBe(true);
   }
 
   /**

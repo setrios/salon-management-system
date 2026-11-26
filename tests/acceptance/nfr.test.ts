@@ -91,9 +91,7 @@ function sourceText(): { path: string; text: string }[] {
  * check on what the program does rather than on how it is described.
  */
 function stripComments(text: string): string {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  return text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
 let app: Express;
@@ -173,11 +171,7 @@ describe('REQ-NF-006 — client data is visible only to authorised parties', () 
     // names nothing is 404 — the refusal never says whether a token ever
     // existed, and there is no other way in.
     expect(
-      (
-        await request(app).get(
-          '/api/v1/appointments/00000000-0000-4000-8000-000000000001',
-        )
-      ).status,
+      (await request(app).get('/api/v1/appointments/00000000-0000-4000-8000-000000000001')).status,
     ).toBe(404);
   });
 });
@@ -185,7 +179,8 @@ describe('REQ-NF-006 — client data is visible only to authorised parties', () 
 describe('REQ-NF-007 — one location, one time zone, no selector', () => {
   it('N3 declares no location or time-zone parameter or field anywhere in the contract', () => {
     const contract = readFileSync(join(ROOT, 'src/contract/openapi.json'), 'utf8');
-    const pattern = /"(?:name|([A-Za-z]+))"\s*:\s*"[^"]*(?:location|time_?zone|zone|offset|utc)[^"]*"/i;
+    const pattern =
+      /"(?:name|([A-Za-z]+))"\s*:\s*"[^"]*(?:location|time_?zone|zone|offset|utc)[^"]*"/i;
 
     // Parameters and properties are the places a selector would have to appear:
     // a query parameter, a path parameter or a body field.
@@ -259,7 +254,10 @@ describe('REQ-NF-005 — no automatic deletion', () => {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    const names = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})];
+    const names = [
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.devDependencies ?? {}),
+    ];
     expect(names.filter((name) => /cron|schedul|agenda|bull/i.test(name))).toEqual([]);
   });
 });
@@ -270,10 +268,13 @@ describe('REQ-NF-009 — no payment gateway', () => {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    const names = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})];
-    expect(names.filter((name) => /stripe|liqpay|monobank|wayforpay|fondy|paypal|adyen/i.test(name))).toEqual(
-      [],
-    );
+    const names = [
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.devDependencies ?? {}),
+    ];
+    expect(
+      names.filter((name) => /stripe|liqpay|monobank|wayforpay|fondy|paypal|adyen/i.test(name)),
+    ).toEqual([]);
 
     // No outbound HTTP at all: the only network edges are the database and the
     // socket this server listens on.
@@ -318,7 +319,9 @@ describe('REQ-NF-001 and REQ-NF-008 — restated in one line each', () => {
     const masters = await request(app)
       .get('/api/v1/admin/masters?page=1&pageSize=100')
       .set('Authorization', `Bearer ${adminToken}`);
-    const masterId = masters.body.items.find((item: any) => item.fullName === 'NFR Owner Master').id;
+    const masterId = masters.body.items.find(
+      (item: any) => item.fullName === 'NFR Owner Master',
+    ).id;
 
     await arrangeLink(app, adminToken, masterId, service.body.id, 20000);
 

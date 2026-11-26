@@ -32,11 +32,7 @@ export type PreferenceEvent = 'new' | 'reschedule' | 'cancellation';
 export const PREFERENCE_CHANNELS: readonly PreferenceChannel[] = ['sms', 'in_app'];
 
 /** The event types, in the order M5 answers them (I2). */
-export const PREFERENCE_EVENTS: readonly PreferenceEvent[] = [
-  'new',
-  'reschedule',
-  'cancellation',
-];
+export const PREFERENCE_EVENTS: readonly PreferenceEvent[] = ['new', 'reschedule', 'cancellation'];
 
 /** One combination, as M5 and M6 answer it. */
 export interface PreferenceView {
@@ -70,9 +66,7 @@ export function isPreferenceEvent(value: string): value is PreferenceEvent {
  * impossible, and a read is not the place to raise an invariant that the schema
  * already enforces.
  */
-export function preferenceViews(
-  overrides: readonly PreferenceOverride[],
-): PreferenceView[] {
+export function preferenceViews(overrides: readonly PreferenceOverride[]): PreferenceView[] {
   const stored = new Map<string, boolean>();
   for (const row of overrides) {
     if (!isPreferenceChannel(row.channel) || !isPreferenceEvent(row.eventType)) continue;
