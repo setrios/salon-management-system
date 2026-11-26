@@ -21,6 +21,12 @@ export interface AppConfig {
   readonly jwtExpiresIn: number;
   /** Directory for the JSONL application log. */
   readonly logDir: string;
+  /**
+   * Origin of the pages a client opens, without a trailing slash — the host of
+   * `Appointment.confirmationUrl` (REQ-F-005, UI-GATE U-1). Defaults to this
+   * process on localhost.
+   */
+  readonly publicBaseUrl: string;
 }
 
 class ConfigError extends Error {
@@ -47,6 +53,27 @@ function readInteger(env: NodeJS.ProcessEnv, name: string, fallback: number): nu
   return parsed;
 }
 
+/**
+ * Reads an absolute `http(s)` origin and drops a trailing slash, so that
+ * `${origin}/path` never has a doubled slash.
+ *
+ * @throws ConfigError when the value is not an absolute http or https URL.
+ */
+function readOrigin(env: NodeJS.ProcessEnv, name: string, fallback: string): string {
+  const raw = env[name];
+  if (raw === undefined || raw === '') return fallback;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new ConfigError(`${name} must be an absolute http(s) URL, got: ${raw}`);
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new ConfigError(`${name} must be an absolute http(s) URL, got: ${raw}`);
+  }
+  return raw.replace(/\/+$/, '');
+}
+
 function readNodeEnv(env: NodeJS.ProcessEnv): NodeEnv {
   const raw = env.NODE_ENV ?? 'development';
   if (raw === 'development' || raw === 'test' || raw === 'production') return raw;
@@ -68,13 +95,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       ? (env.TEST_DATABASE_URL ?? env.DATABASE_URL ?? '')
       : readString(env, 'DATABASE_URL');
 
+  const port = readInteger(env, 'PORT', 3000);
+
   return Object.freeze({
     nodeEnv,
-    port: readInteger(env, 'PORT', 3000),
+    port,
     databaseUrl,
     jwtSecret: readString(env, 'JWT_SECRET', nodeEnv === 'production' ? undefined : 'change-me'),
     jwtExpiresIn: readInteger(env, 'JWT_EXPIRES_IN', 3600),
     logDir: readString(env, 'LOG_DIR', 'logs/runtime'),
+    publicBaseUrl: readOrigin(env, 'PUBLIC_BASE_URL', `http://localhost:${port}`),
   });
 }
 

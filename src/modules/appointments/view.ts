@@ -26,6 +26,7 @@
  *         v1.3 glossary "Confirmation Page"; decisions E8, H1.
  */
 
+import { config } from '../../config.js';
 import { salonDateTime } from '../../lib/occupancy.js';
 import { reminderViews, type ReminderRow } from '../notifications/reminders.js';
 
@@ -82,20 +83,14 @@ export interface AppointmentRecord {
 }
 
 /**
- * The confirmation page's origin — the contract's own example.
- *
- * `openapi.yaml` shows `https://salon.example/appointments/{token}` and nothing
- * in the contract or the SRS configures another origin, so the URL is built from
- * that one. It lives here, not in `routes.ts`, because both P8's 201 body and
- * P9's 200 body build `confirmationUrl`.
- *
- * **Nothing serves this URL.** The reachable resource is
- * `/api/v1/appointments/{token}` (P9); whether an HTML page is served at
- * `salon.example` is UI work (SMS-36), and it is recorded in the G2 carry-forward
- * register rather than promised here. `confirmationUrl` is an absolute URI as the
- * schema declares, and a client that follows it reaches the page once one exists.
+ * The confirmation page's URL: screen C2 of `spec/ui/screens.md`, served by this
+ * process at `/appointments/{token}`, on the origin `PUBLIC_BASE_URL` configures
+ * (REQ-F-005, UI-GATE U-1, SMS-70). Both P8's 201 body and P9's 200 body build
+ * `confirmationUrl` through it.
  */
-export const CONFIRMATION_ORIGIN = 'https://salon.example';
+function confirmationUrlOf(accessToken: string): string {
+  return `${config.publicBaseUrl}/appointments/${accessToken}`;
+}
 
 /**
  * The `Appointment` body for one record.
@@ -130,7 +125,7 @@ export function appointmentBody(record: AppointmentRecord): Record<string, unkno
     // all rather than `payment: null`.
     ...(record.payment === undefined ? {} : { payment: paymentBody(record.payment) }),
     accessToken: record.accessToken,
-    confirmationUrl: `${CONFIRMATION_ORIGIN}/appointments/${record.accessToken}`,
+    confirmationUrl: confirmationUrlOf(record.accessToken),
     createdAt: salonDateTime(record.createdAt),
     updatedAt: salonDateTime(record.updatedAt),
   };
