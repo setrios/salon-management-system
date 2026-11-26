@@ -1,0 +1,14 @@
+# Prettier formats the code only (docs/coding-convention.md §3).
+# Specification, signed records and generated files are not reformatted:
+# a signed gate record or an approved contract must not change by tooling.
+dist/
+coverage/
+node_modules/
+spec/
+logs/
+docs/
+*.md
+package-lock.json
+src/contract/openapi.json
+src/db/migrations/
+*.yml
