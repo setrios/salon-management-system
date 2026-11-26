@@ -90,6 +90,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-73 | Fix: My availability shows times in the browser's 12-hour format | Feature | UI-GATE U-4; REQ-F-015; found at the developer's hands-on check | SMS-36 | Coding Agent | Done |
 | SMS-74 | Fix: the README's first run fails in a clean environment (F11, F13) | Documentation | Lab 6 step 8; the developer's run | SMS-62 | Joint | Backlog |
 | SMS-75 | Fix: the unhandled-error log omits the cause the database gave (F12) | Feature | Lab 5 step 1 (logging); the developer's run | SMS-36 | Coding Agent | Backlog |
+| SMS-76 | Fix: three usability findings of the developer's review before G5 | Feature | the developer's review; REQ-F-022; REQ-NF-002; K2, K10 | SMS-36 | Coding Agent | In progress |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
