@@ -52,7 +52,7 @@ function logFile(): string {
 
 /** Every access-log record written so far today. */
 function accessRecords(): RequestRecord[] {
-  let raw = '';
+  let raw: string;
   try {
     raw = readFileSync(logFile(), 'utf8');
   } catch {

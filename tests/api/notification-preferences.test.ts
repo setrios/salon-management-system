@@ -76,7 +76,6 @@
  */
 
 import request from 'supertest';
-import type { Express } from 'express';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';
@@ -136,7 +135,6 @@ describe('S4.1 notification preferences — channel × event', () => {
 
   const isPreferenceList = getSchemaValidator('NotificationPreferenceList');
   const isPreference = getSchemaValidator('NotificationPreference');
-  const isNotificationPage = getSchemaValidator('NotificationPage');
   const isProblem = getSchemaValidator('Problem');
 
   let admin: AdminFixture;

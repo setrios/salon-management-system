@@ -51,7 +51,6 @@
  */
 
 import request from 'supertest';
-import type { Express } from 'express';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';
@@ -132,14 +131,14 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
     expect(res.body.status).toBe(expected.status);
   }
 
-  function expectPage(res: JsonResponse): Record<string, any>[] {
+  function expectPage(res: JsonResponse): Array<Record<string, any>> {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/json/);
     expect(
       isAppointmentAdminPage(res.body),
       JSON.stringify(isAppointmentAdminPage.errors ?? []),
     ).toBe(true);
-    return res.body.items as Record<string, any>[];
+    return res.body.items as Array<Record<string, any>>;
   }
 
   // =========================================================================
@@ -181,7 +180,7 @@ describe('S5.1a administrator appointments — R19, R20, getAppointmentAdmin', (
         .set('Authorization', `Bearer ${admin.token}`);
       expect(notifsRes.status).toBe(200);
 
-      const items = notifsRes.body.items as { audience: string; eventType: string }[];
+      const items = notifsRes.body.items as Array<{ audience: string; eventType: string }>;
       expect(items.some((row) => row.audience === 'client' && row.eventType === 'new')).toBe(true);
       expect(items.some((row) => row.audience === 'master' && row.eventType === 'new')).toBe(true);
       expect(items.some((row) => row.audience === 'admin')).toBe(false);

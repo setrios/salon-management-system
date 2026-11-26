@@ -96,8 +96,6 @@ interface JsonResponse {
   readonly body: Record<string, any>;
 }
 
-type SchemaValidator = ReturnType<typeof getSchemaValidator>;
-
 /**
  * The instant every case treats as "now" (D9). Kyiv is +02:00 in November, and
  * 2026-11-12 is a Thursday (ISO weekday 4), which the short-notice cases use.
@@ -267,7 +265,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
       const response = await bookPair();
 
       expectAppointment(response);
-      const lines = response.body.services as Record<string, any>[];
+      const lines = response.body.services as Array<Record<string, any>>;
 
       expect(lines).toHaveLength(2);
       expect(lines).toEqual(
@@ -331,7 +329,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
 
       expectAppointment(response);
       const reminders = (
-        response.body.reminders as { type: string; scheduledAt: string; status: string }[]
+        response.body.reminders as Array<{ type: string; scheduledAt: string; status: string }>
       )
         .slice()
         .sort((a, b) => a.type.localeCompare(b.type));
@@ -357,7 +355,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
       const response = await book({ startAt: '2026-11-12T12:00:00+02:00' });
 
       expectAppointment(response);
-      const reminders = response.body.reminders as { type: string; status: string }[];
+      const reminders = response.body.reminders as Array<{ type: string; status: string }>;
 
       expect(reminders.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
       expect(reminders.find((reminder) => reminder.type === '2h')?.status).toBe('scheduled');
@@ -368,7 +366,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
       const response = await book({ startAt: '2026-11-12T10:00:00+02:00' });
 
       expectAppointment(response);
-      const reminders = response.body.reminders as { type: string; status: string }[];
+      const reminders = response.body.reminders as Array<{ type: string; status: string }>;
 
       expect(reminders.every((reminder) => reminder.status === 'skipped')).toBe(true);
     });
@@ -398,7 +396,7 @@ describe('S2.1 booking — P8 createAppointment', () => {
       const response = await book({ client: { name: 'Iryna Kovalenko', phone: 'call me' } });
 
       expectProblem(response, { status: 422, code: 'VALIDATION_ERROR' });
-      const fields = (response.body.errors as { field: string }[]).map((error) => error.field);
+      const fields = (response.body.errors as Array<{ field: string }>).map((error) => error.field);
       expect(fields).toContain('client.phone');
     });
 

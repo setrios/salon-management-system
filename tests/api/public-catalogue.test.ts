@@ -192,7 +192,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listServices({ category: 'Hair' });
 
       expectJson(response, 200, isServicePage);
-      const items = response.body.items as { id: string; baseDurationMinutes: number }[];
+      const items = response.body.items as Array<{ id: string; baseDurationMinutes: number }>;
       const found = items.find((item) => item.id === olenaHaircut.id);
       expect(found).toMatchObject({ baseDurationMinutes: 45, category: 'Hair', active: true });
     });
@@ -209,7 +209,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listServices({ pageSize: 100 });
 
       expectJson(response, 200, isServicePage);
-      const ids = (response.body.items as { id: string }[]).map((item) => item.id);
+      const ids = (response.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(ids).not.toContain(retired.id);
     });
 
@@ -217,7 +217,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listServices({ category: 'Coloring', pageSize: 100 });
 
       expectJson(response, 200, isServicePage);
-      const ids = (response.body.items as { id: string }[]).map((item) => item.id);
+      const ids = (response.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(ids).toContain(olenaColoring.id);
       expect(ids).not.toContain(olenaHaircut.id);
     });
@@ -234,7 +234,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listServices({ q: 'zz-', pageSize: 100 });
 
       expectJson(response, 200, isServicePage);
-      const ids = (response.body.items as { id: string }[]).map((item) => item.id);
+      const ids = (response.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(ids).toContain(service.id);
     });
 
@@ -259,8 +259,8 @@ describe('S2.1 public catalogue — P1–P6', () => {
       expect(page1.body).toMatchObject({ page: 1, pageSize: 1, total: 2 });
       expect(page2.body).toMatchObject({ page: 2, pageSize: 1, total: 2 });
 
-      const firstIds = (page1.body.items as { id: string }[]).map((item) => item.id);
-      const secondIds = (page2.body.items as { id: string }[]).map((item) => item.id);
+      const firstIds = (page1.body.items as Array<{ id: string }>).map((item) => item.id);
+      const secondIds = (page2.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(new Set([...firstIds, ...secondIds])).toEqual(new Set([first.id, second.id]));
       expect(firstIds).not.toEqual(secondIds);
     });
@@ -316,7 +316,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listCategories();
 
       expectJson(response, 200, isCategoryList);
-      const categories = response.body as { name: string; seeded: boolean }[];
+      const categories = response.body as Array<{ name: string; seeded: boolean }>;
 
       for (const seed of ['Hair', 'Coloring', 'Barbering']) {
         expect(categories.find((category) => category.name === seed)).toMatchObject({
@@ -340,7 +340,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listMasters({ pageSize: 100 });
 
       expectJson(response, 200, isMasterPage);
-      const items = response.body.items as Record<string, unknown>[];
+      const items = response.body.items as Array<Record<string, unknown>>;
       const found = items.find((item) => item.id === olena.id);
 
       expect(found).toEqual({ id: olena.id, fullName: 'Olena Catalogue' });
@@ -356,7 +356,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       expectJson(response, 200, isMasterPage);
       const body = JSON.stringify(response.body);
       expect(body).not.toContain('password');
-      for (const item of response.body.items as Record<string, unknown>[]) {
+      for (const item of response.body.items as Array<Record<string, unknown>>) {
         expect(Object.keys(item).sort()).toEqual(['fullName', 'id']);
       }
     });
@@ -365,7 +365,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listMasters({ pageSize: 100 });
 
       expectJson(response, 200, isMasterPage);
-      const ids = (response.body.items as { id: string }[]).map((item) => item.id);
+      const ids = (response.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(ids).not.toContain(admin.id);
     });
 
@@ -385,7 +385,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listMasters({ active: false, pageSize: 100 });
 
       expectJson(response, 200, isMasterPage);
-      const ids = (response.body.items as { id: string }[]).map((item) => item.id);
+      const ids = (response.body.items as Array<{ id: string }>).map((item) => item.id);
       expect(ids).toContain(retired.id);
       expect(ids).not.toContain(admin.id);
     });
@@ -431,7 +431,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listMasterServices(olena.id, { pageSize: 100 });
 
       expectJson(response, 200, isMasterServicePage);
-      const items = response.body.items as Record<string, any>[];
+      const items = response.body.items as Array<Record<string, any>>;
       const found = items.find((item) => item.serviceId === olenaHaircut.id);
 
       expect(found).toMatchObject({
@@ -468,7 +468,7 @@ describe('S2.1 public catalogue — P1–P6', () => {
       const response = await listMasterServices(petro.id, { active: false, pageSize: 100 });
 
       expectJson(response, 200, isMasterServicePage);
-      const items = response.body.items as Record<string, any>[];
+      const items = response.body.items as Array<Record<string, any>>;
       expect(items.map((item) => item.serviceId)).toContain(retired.id);
       expect(items.every((item) => item.active === false)).toBe(true);
     });
@@ -482,8 +482,8 @@ describe('S2.1 public catalogue — P1–P6', () => {
       expect(page1.body).toMatchObject({ page: 1, pageSize: 1, total: 2 });
       expect(page2.body).toMatchObject({ page: 2, pageSize: 1, total: 2 });
 
-      const first = (page1.body.items as { id: string }[])[0]?.id;
-      const second = (page2.body.items as { id: string }[])[0]?.id;
+      const first = (page1.body.items as Array<{ id: string }>)[0]?.id;
+      const second = (page2.body.items as Array<{ id: string }>)[0]?.id;
       expect(first).not.toBe(second);
     });
 

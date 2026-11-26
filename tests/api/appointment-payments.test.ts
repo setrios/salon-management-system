@@ -109,13 +109,11 @@ function pay(
   const token = options.token === undefined ? adminToken : options.token;
   const call = request(app).post(`/api/v1/admin/appointments/${appointmentId}/payments`);
   if (token !== '') call.set('Authorization', `Bearer ${token}`);
-  return (options.contentType === undefined
+  return options.contentType === undefined
     ? call.send(body as object)
     : call
         .set('Content-Type', options.contentType)
-        .send(
-          typeof body === 'string' ? body : JSON.stringify(body),
-        )) as unknown as Promise<JsonResponse>;
+        .send(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
 const paid = (amountMinor = TOTAL_PRICE_AMOUNT_MINOR): Record<string, unknown> => ({
@@ -126,9 +124,9 @@ const paid = (amountMinor = TOTAL_PRICE_AMOUNT_MINOR): Record<string, unknown> =
 
 /** Reads the appointment through `getAppointmentAdmin`. */
 async function readAppointment(id: string): Promise<JsonResponse> {
-  return (await request(app)
+  return await request(app)
     .get(`/api/v1/admin/appointments/${id}`)
-    .set('Authorization', `Bearer ${adminToken}`)) as unknown as JsonResponse;
+    .set('Authorization', `Bearer ${adminToken}`);
 }
 
 /** Asserts a 201 `Payment` and returns its body. */
@@ -332,7 +330,7 @@ describe('createPayment (R27, POST /admin/appointments/{appointmentId}/payments)
     const noBody = await request(app)
       .post(`/api/v1/admin/appointments/${id}/payments`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expectProblem(noBody as unknown as JsonResponse, {
+    expectProblem(noBody, {
       status: 400,
       code: 'MALFORMED_REQUEST',
     });

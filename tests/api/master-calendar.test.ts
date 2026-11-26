@@ -49,7 +49,6 @@
  */
 
 import request from 'supertest';
-import type { Express } from 'express';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';
@@ -78,7 +77,7 @@ interface CalendarRow {
   readonly id: string;
   readonly status: string;
   readonly startAt: string;
-  readonly reminders: { readonly type: string; readonly status: string }[];
+  readonly reminders: Array<{ readonly type: string; readonly status: string }>;
 }
 
 /** The instant every case treats as "now" (D9). Kyiv is +02:00 in November. */
@@ -325,14 +324,14 @@ describe("S4.2 the master's own calendar and own services (M1, M2)", () => {
       expect(response.status).toBe(200);
       expect(isServiceList(response.body), JSON.stringify(isServiceList.errors ?? [])).toBe(true);
 
-      const items = response.body as { masterId: string; serviceId: string }[];
+      const items = response.body as Array<{ masterId: string; serviceId: string }>;
       expect(items).toHaveLength(2);
       expect(items.every((row) => row.masterId === first.id)).toBe(true);
       expect(items.map((row) => row.serviceId).sort()).toEqual([haircut.id, colouring.id].sort());
 
       const other = await myServices(second.token);
       expect(
-        (other.body as { masterId: string }[]).every((row) => row.masterId === second.id),
+        (other.body as Array<{ masterId: string }>).every((row) => row.masterId === second.id),
       ).toBe(true);
       expect(other.body).toHaveLength(1);
     });
@@ -343,7 +342,7 @@ describe("S4.2 the master's own calendar and own services (M1, M2)", () => {
       const response = await myServices(master.token);
       expect(response.status).toBe(200);
 
-      const [link] = response.body as Record<string, unknown>[];
+      const [link] = response.body as Array<Record<string, unknown>>;
       expect(link).toMatchObject({
         masterId: master.id,
         serviceId: haircut.id,

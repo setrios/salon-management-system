@@ -103,7 +103,6 @@
  */
 
 import request from 'supertest';
-import type { Express } from 'express';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';
@@ -234,10 +233,10 @@ describe('S5.1b administrator appointment actions — R21, R22, R23, SMS-18', ()
 
   async function notificationItems(
     appointmentId: string,
-  ): Promise<{ audience: string; eventType: string; status: string }[]> {
+  ): Promise<Array<{ audience: string; eventType: string; status: string }>> {
     const response = await notifications(appointmentId);
     expect(response.status).toBe(200);
-    return response.body.items as { audience: string; eventType: string; status: string }[];
+    return response.body.items as Array<{ audience: string; eventType: string; status: string }>;
   }
 
   function expectAppointmentAdmin(response: JsonResponse, status = 200): void {

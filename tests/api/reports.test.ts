@@ -127,7 +127,7 @@ async function pay(
 function get(path: string, token = adminToken): Promise<JsonResponse> {
   const call = request(app).get(path);
   if (token !== '') call.set('Authorization', `Bearer ${token}`);
-  return call as unknown as Promise<JsonResponse>;
+  return call;
 }
 
 /** Asserts a 200 body against the operation's schema. */

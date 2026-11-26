@@ -76,7 +76,7 @@ function sources(): string[] {
 }
 
 /** The text of every source file, keyed by its path relative to the root. */
-function sourceText(): { path: string; text: string }[] {
+function sourceText(): Array<{ path: string; text: string }> {
   return sources().map((file) => ({
     path: relative(ROOT, file),
     text: readFileSync(file, 'utf8'),

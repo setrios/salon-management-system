@@ -136,12 +136,12 @@ describe('addendum 001 — cancelled reminders (REQ-F-034)', () => {
   async function remindersOf(
     clock: Express,
     appointmentId: string,
-  ): Promise<Record<string, any>[]> {
+  ): Promise<Array<Record<string, any>>> {
     const page = await request(clock)
       .get(`/api/v1/admin/appointments/${appointmentId}/notifications`)
       .set('Authorization', `Bearer ${admin.token}`);
     expect(page.status).toBe(200);
-    return (page.body.items as Record<string, any>[])
+    return (page.body.items as Array<Record<string, any>>)
       .filter((item) => String(item.eventType).startsWith('reminder_'))
       .sort((left, right) => String(left.scheduledAt).localeCompare(String(right.scheduledAt)));
   }

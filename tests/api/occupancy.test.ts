@@ -159,7 +159,7 @@ describe('S2.1 occupancy — booked time is not offered, and cannot be double-bo
   }
 
   function startsOf(response: JsonResponse): string[] {
-    const slots = (response.body.slots ?? []) as { startAt: string }[];
+    const slots = (response.body.slots ?? []) as Array<{ startAt: string }>;
     return slots.map((slot) => slot.startAt).sort();
   }
 
@@ -329,7 +329,7 @@ describe('S2.1 occupancy — booked time is not offered, and cannot be double-bo
     expect(created.status).toBe(201);
 
     const response = await getSlots(master.id);
-    const slots = response.body.slots as { startAt: string; available: boolean }[];
+    const slots = response.body.slots as Array<{ startAt: string; available: boolean }>;
 
     expect(slots.length).toBeGreaterThan(0);
     expect(slots.every((slot) => slot.available === true)).toBe(true);

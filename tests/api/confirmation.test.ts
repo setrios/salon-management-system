@@ -278,14 +278,14 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
 
       const atBooking = await getByToken(created.body.accessToken as string);
       expectAppointment(atBooking);
-      const before = atBooking.body.reminders as { type: string; status: string }[];
+      const before = atBooking.body.reminders as Array<{ type: string; status: string }>;
       expect(before.find((reminder) => reminder.type === '2h')?.status).toBe('scheduled');
       expect(before.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
 
       const later = createApp({ now: () => new Date(LATER) });
       const atLater = await getByToken(created.body.accessToken as string, later);
       expectAppointment(atLater);
-      const after = atLater.body.reminders as { type: string; status: string }[];
+      const after = atLater.body.reminders as Array<{ type: string; status: string }>;
 
       expect(after.find((reminder) => reminder.type === '2h')?.status).toBe('sent');
       expect(after.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
@@ -323,7 +323,7 @@ describe('S2.2 confirmation page — P9 getAppointmentByToken', () => {
       const bookable = await arrangeBookable('Confirmation Retired');
       const created = await book(bookable);
       expect(created.status).toBe(201);
-      const bookedLines = created.body.services as Record<string, any>[];
+      const bookedLines = created.body.services as Array<Record<string, any>>;
 
       const deactivated = await request(app)
         .patch(`/api/v1/admin/services/${bookable.service.id}`)

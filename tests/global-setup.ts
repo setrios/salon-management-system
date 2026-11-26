@@ -29,6 +29,8 @@ export default function setup(): void {
     // is carried into the exception instead of being lost.
     const stderr = (error as { stderr?: Buffer }).stderr?.toString().trim() ?? '';
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`contract conversion failed: ${stderr === '' ? message : stderr}`);
+    throw new Error(`contract conversion failed: ${stderr === '' ? message : stderr}`, {
+      cause: error,
+    });
   }
 }

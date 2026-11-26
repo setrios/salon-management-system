@@ -143,7 +143,7 @@ describe('S2.1 rounding — SCN-13, the rounded block is the scheduling unit', (
   }
 
   function startsOf(response: JsonResponse): string[] {
-    const slots = (response.body.slots ?? []) as { startAt: string }[];
+    const slots = (response.body.slots ?? []) as Array<{ startAt: string }>;
     return slots.map((slot) => slot.startAt).sort();
   }
 

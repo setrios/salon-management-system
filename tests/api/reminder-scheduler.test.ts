@@ -106,12 +106,12 @@ describe('stage R — the reminder scheduler (row 11)', () => {
   }
 
   /** The rows as R24 reports them, oldest moment first. */
-  async function reminderRows(appointmentId: string): Promise<Record<string, any>[]> {
+  async function reminderRows(appointmentId: string): Promise<Array<Record<string, any>>> {
     const page = await request(app)
       .get(`/api/v1/admin/appointments/${appointmentId}/notifications`)
       .set('Authorization', `Bearer ${admin.token}`);
     expect(page.status).toBe(200);
-    return (page.body.items as Record<string, any>[])
+    return (page.body.items as Array<Record<string, any>>)
       .filter((item) => String(item.eventType).startsWith('reminder_'))
       .sort((left, right) => String(left.scheduledAt).localeCompare(String(right.scheduledAt)));
   }
@@ -231,7 +231,7 @@ describe('stage R — the reminder scheduler (row 11)', () => {
 
   it('S6 calls the tick on its interval and stops when stopped', async () => {
     vi.useFakeTimers();
-    const run = vi.fn(async () => 0);
+    const run = vi.fn(() => Promise.resolve(0));
     const stop = startReminderScheduler({
       now: () => new Date(NOW),
       intervalMs: 1_000,
@@ -253,10 +253,10 @@ describe('stage R — the reminder scheduler (row 11)', () => {
     vi.useFakeTimers();
     const reported: string[] = [];
     let calls = 0;
-    const run = vi.fn(async () => {
+    const run = vi.fn(() => {
       calls += 1;
-      if (calls === 1) throw new Error('the database blinked');
-      return 0;
+      if (calls === 1) return Promise.reject(new Error('the database blinked'));
+      return Promise.resolve(0);
     });
 
     const stop = startReminderScheduler({

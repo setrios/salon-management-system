@@ -41,7 +41,6 @@
  */
 
 import request from 'supertest';
-import type { Express } from 'express';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../src/app.js';

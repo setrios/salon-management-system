@@ -107,13 +107,11 @@ function postTransaction(
   const token = options.token === undefined ? adminToken : options.token;
   const call = request(app).post(`/api/v1/admin/materials/${materialId}/transactions`);
   if (token !== '') call.set('Authorization', `Bearer ${token}`);
-  return (options.contentType === undefined
+  return options.contentType === undefined
     ? call.send(body as object)
     : call
         .set('Content-Type', options.contentType)
-        .send(
-          typeof body === 'string' ? body : JSON.stringify(body),
-        )) as unknown as Promise<JsonResponse>;
+        .send(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
 /** The material's current balance through R15. */
@@ -130,7 +128,7 @@ async function ledgerOf(materialId: string): Promise<JsonResponse> {
   const response = await request(app)
     .get(`/api/v1/admin/materials/${materialId}/transactions`)
     .set('Authorization', `Bearer ${adminToken}`);
-  return response as unknown as JsonResponse;
+  return response;
 }
 
 /** Asserts a 201 `MaterialTransaction` and returns its body. */
@@ -319,7 +317,7 @@ describe('createMaterialTransaction (R26, POST /admin/materials/{materialId}/tra
     const noBody = await request(app)
       .post(`/api/v1/admin/materials/${material.id}/transactions`)
       .set('Authorization', `Bearer ${adminToken}`);
-    expectProblem(noBody as unknown as JsonResponse, { status: 400, code: 'MALFORMED_REQUEST' });
+    expectProblem(noBody, { status: 400, code: 'MALFORMED_REQUEST' });
 
     // And nothing was written by any of them.
     expect(await stockOf(material.id)).toBe(0);
@@ -527,25 +525,25 @@ describe('listMaterialTransactions (R25, GET /admin/materials/{materialId}/trans
 
   it('L5 answers 404 for an unknown material, 400 for a non-uuid id and for bad query values', async () => {
     expectProblem(
-      (await request(app)
+      await request(app)
         .get('/api/v1/admin/materials/00000000-0000-4000-8000-000000000777/transactions')
-        .set('Authorization', `Bearer ${adminToken}`)) as unknown as JsonResponse,
+        .set('Authorization', `Bearer ${adminToken}`),
       { status: 404, code: 'NOT_FOUND' },
     );
 
     expectProblem(
-      (await request(app)
+      await request(app)
         .get('/api/v1/admin/materials/not-a-valid-uuid/transactions')
-        .set('Authorization', `Bearer ${adminToken}`)) as unknown as JsonResponse,
+        .set('Authorization', `Bearer ${adminToken}`),
       { status: 400, code: 'MALFORMED_REQUEST' },
     );
 
     const material = await arrangeMaterial();
     for (const query of ['type=transfer', 'from=2026-02-30', 'to=not-a-date', 'pageSize=0']) {
       expectProblem(
-        (await request(app)
+        await request(app)
           .get(`/api/v1/admin/materials/${material.id}/transactions?${query}`)
-          .set('Authorization', `Bearer ${adminToken}`)) as unknown as JsonResponse,
+          .set('Authorization', `Bearer ${adminToken}`),
         { status: 400, code: 'MALFORMED_REQUEST' },
       );
     }
@@ -555,15 +553,13 @@ describe('listMaterialTransactions (R25, GET /admin/materials/{materialId}/trans
     const material = await arrangeMaterial();
     const path = `/api/v1/admin/materials/${material.id}/transactions`;
 
-    expectProblem((await request(app).get(path)) as unknown as JsonResponse, {
+    expectProblem(await request(app).get(path), {
       status: 401,
       code: 'UNAUTHENTICATED',
     });
-    expectProblem(
-      (await request(app)
-        .get(path)
-        .set('Authorization', `Bearer ${masterToken}`)) as unknown as JsonResponse,
-      { status: 403, code: 'FORBIDDEN' },
-    );
+    expectProblem(await request(app).get(path).set('Authorization', `Bearer ${masterToken}`), {
+      status: 403,
+      code: 'FORBIDDEN',
+    });
   });
 });

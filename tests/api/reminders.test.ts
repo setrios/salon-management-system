@@ -83,8 +83,6 @@ interface JsonResponse {
   readonly body: Record<string, any>;
 }
 
-type SchemaValidator = ReturnType<typeof getSchemaValidator>;
-
 /**
  * The instant every case treats as "now" (D9). Kyiv is +02:00 in November, and
  * 2026-11-12 is a Thursday, which the short-notice cases use.
@@ -216,8 +214,8 @@ describe('S3.2 reminders — the 24 h and 2 h rows', () => {
    * uuid's. The page's order is therefore stable but not the engine's, and this
    * helper restores the engine's: earliest moment first, which is 24 h then 2 h.
    */
-  function reminderRows(page: JsonResponse): Record<string, any>[] {
-    return (page.body.items as Record<string, any>[])
+  function reminderRows(page: JsonResponse): Array<Record<string, any>> {
+    return (page.body.items as Array<Record<string, any>>)
       .filter((item) => String(item.eventType).startsWith('reminder_'))
       .sort((left, right) => String(left.scheduledAt).localeCompare(String(right.scheduledAt)));
   }

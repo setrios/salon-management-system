@@ -799,7 +799,7 @@ describe('S1.2 reference data — administrator catalogue (R1–R17)', () => {
     });
 
     it('R11 answers a non-JSON body with 415 UNSUPPORTED_MEDIA_TYPE', async () => {
-      const fixtures = await createLinkFixtures();
+      await createLinkFixtures();
       const response = await request(app)
         .post('/api/v1/admin/master-services')
         .set('Authorization', `Bearer ${adminToken}`)

@@ -107,8 +107,6 @@ interface JsonResponse {
   readonly body: Record<string, any>;
 }
 
-type SchemaValidator = ReturnType<typeof getSchemaValidator>;
-
 /**
  * The instant every case treats as "now" (D9). Kyiv is +02:00 in November, and
  * 2026-11-12 is a Thursday (ISO weekday 4), which the short-notice cases use.
@@ -214,8 +212,8 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
    * predicate — the treatment `notification.test.ts` already uses for
    * REQ-F-005.
    */
-  function clientRows(response: JsonResponse): { audience: string; eventType: string }[] {
-    return (response.body.items as { audience: string; eventType: string }[]).filter(
+  function clientRows(response: JsonResponse): Array<{ audience: string; eventType: string }> {
+    return (response.body.items as Array<{ audience: string; eventType: string }>).filter(
       (row) => row.audience === 'client',
     );
   }
@@ -325,9 +323,9 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       // The client's rows: one `new`, two `reschedule`, and the two reminders
       // (H1).
       expect(clientRows(rows)).toHaveLength(5);
-      const reschedules = (rows.body.items as { audience: string; eventType: string }[]).filter(
-        (item) => item.audience === 'client' && item.eventType === 'reschedule',
-      );
+      const reschedules = (
+        rows.body.items as Array<{ audience: string; eventType: string }>
+      ).filter((item) => item.audience === 'client' && item.eventType === 'reschedule');
       expect(reschedules).toHaveLength(2);
     });
 
@@ -522,7 +520,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       expect(response.body.master).toEqual({ id: second.id, fullName: second.fullName });
       // G8: the price is the new master's link, not the old snapshot.
       expect(response.body.totalPrice).toEqual({ amountMinor: 55000, currency: 'UAH' });
-      expect((response.body.services as { price: unknown }[])[0]?.price).toEqual({
+      expect((response.body.services as Array<{ price: unknown }>)[0]?.price).toEqual({
         amountMinor: 55000,
         currency: 'UAH',
       });
@@ -569,7 +567,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       });
 
       expectAppointment(response);
-      const reminders = response.body.reminders as { type: string; status: string }[];
+      const reminders = response.body.reminders as Array<{ type: string; status: string }>;
       expect(reminders.find((reminder) => reminder.type === '24h')?.status).toBe('skipped');
       expect(reminders.find((reminder) => reminder.type === '2h')?.status).toBe('scheduled');
     });
@@ -579,7 +577,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
       const created = await book(master.id, onThursday('12:00'));
       expectAppointment(created, 201);
       expect(
-        (created.body.reminders as { type: string; status: string }[]).find(
+        (created.body.reminders as Array<{ type: string; status: string }>).find(
           (reminder) => reminder.type === '24h',
         )?.status,
       ).toBe('skipped');
@@ -591,7 +589,7 @@ describe('S3.1 reschedule — P11 rescheduleAppointmentByToken', () => {
 
       expectAppointment(response);
       expect(
-        (response.body.reminders as { type: string; status: string }[]).find(
+        (response.body.reminders as Array<{ type: string; status: string }>).find(
           (reminder) => reminder.type === '24h',
         )?.status,
       ).toBe('scheduled');

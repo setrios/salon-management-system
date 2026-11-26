@@ -94,7 +94,6 @@ const THURSDAY = '2026-12-31';
 const NEXT_MONDAY = '2026-12-14';
 
 const WINTER_OFFSET = '+02:00';
-const SUMMER_OFFSET = '+03:00';
 
 /** `600` → `10:00`; minutes from midnight as the contract writes a wall clock. */
 function hhmm(minutes: number): string {
@@ -289,7 +288,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
 
   /** Sorted `startAt` instants, so a comparison never depends on response order. */
   function startsOf(response: JsonResponse): string[] {
-    const slots = (response.body.slots ?? []) as { startAt: string }[];
+    const slots = (response.body.slots ?? []) as Array<{ startAt: string }>;
     return slots.map((slot) => slot.startAt).sort();
   }
 
@@ -551,7 +550,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
 
     it('occupies 90 minutes for the 75-minute total (SCN-13)', async () => {
       const response = await getSlots(petroId, WINTER_MONDAY, `${service45},${service30}`);
-      const slots = response.body.slots as { durationMinutes: number }[];
+      const slots = response.body.slots as Array<{ durationMinutes: number }>;
 
       expect(slots.length).toBeGreaterThan(0);
       expect(slots.every((slot) => slot.durationMinutes === 90)).toBe(true);
@@ -604,7 +603,7 @@ describe('S1.3 availability — P7, M3, M4', () => {
 
     it('ends each slot 90 minutes after its start', async () => {
       const response = await getSlots(petroId, WINTER_MONDAY, `${service45},${service30}`);
-      const slots = response.body.slots as { startAt: string; endAt: string }[];
+      const slots = response.body.slots as Array<{ startAt: string; endAt: string }>;
 
       expect(slots.length).toBe(14);
       expect(slots[0]).toMatchObject({

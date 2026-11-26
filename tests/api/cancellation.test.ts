@@ -181,7 +181,7 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
       .get(`/api/v1/masters/${bookable.master.id}/availability`)
       .query({ date, serviceIds: bookable.service.id });
     expect(response.status).toBe(200);
-    const slots = (response.body.slots ?? []) as { startAt: string }[];
+    const slots = (response.body.slots ?? []) as Array<{ startAt: string }>;
     return slots.map((slot) => slot.startAt).sort();
   }
 
@@ -339,7 +339,7 @@ describe('S2.3 client cancellation — P10 cancelAppointmentByToken', () => {
 
       const page = await listNotifications(created.body.id as string);
       expect(page.status).toBe(200);
-      const rows = page.body.items as { audience: string; eventType: string }[];
+      const rows = page.body.items as Array<{ audience: string; eventType: string }>;
 
       // The booking's own confirmation row is still there (REQ-NF-005).
       expect(
