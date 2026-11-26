@@ -1,0 +1,22 @@
+{
+  // The interface's browser code (SMS-36). Its own project because it needs the
+  // DOM library, which the server code must not see, and it emits plain ES
+  // modules the browser loads from /assets/ (imports keep their .js suffix).
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "rootDir": ".",
+    "outDir": "../../dist/src/web/assets",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "types": []
+  },
+  "include": ["./**/*.ts"]
+}

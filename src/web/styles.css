@@ -1,0 +1,375 @@
+/*
+ * The interface's stylesheet (SMS-36).
+ *
+ * Mobile first (REQ-NF-002): one column, no fixed widths, nothing wider than
+ * the screen. A wide table scrolls inside its own wrapper, never the page, so
+ * the page's width stays the device's width (spec/ui/screens.md §11 K13).
+ */
+
+:root {
+  --ink: #1d2433;
+  --muted: #5b6475;
+  --line: #d9dde5;
+  --surface: #ffffff;
+  --ground: #f5f6f8;
+  --accent: #2f5d8a;
+  --accent-ink: #ffffff;
+  --ok: #1f6b45;
+  --ok-ground: #e7f4ec;
+  --error: #a4262c;
+  --error-ground: #fbeaea;
+  --info-ground: #eaf1f8;
+  --radius: 8px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  background: var(--ground);
+  line-height: 1.45;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.app {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.page,
+.staff-main {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.narrow {
+  max-width: 26rem;
+  margin-inline: auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.region {
+  border-top: 1px solid var(--line);
+  padding-block: 1rem;
+}
+
+/* --- Controls -------------------------------------------------------------- */
+
+button {
+  font: inherit;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--radius);
+  padding: 0.55rem 1rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+button.secondary,
+button.link-button {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 1.25rem;
+  min-height: 1.25rem;
+  margin: 0;
+  flex: none;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.field-error {
+  color: var(--error);
+  margin: 0;
+}
+
+.form button[type='submit'] {
+  margin-top: 0.5rem;
+}
+
+fieldset.choices,
+.choices {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+fieldset.choices legend {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.slot {
+  background: var(--surface);
+  color: var(--accent);
+  min-width: 4.5rem;
+}
+
+.slot[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.actions,
+.row-actions,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.filters .field {
+  flex: 1 1 10rem;
+}
+
+.total {
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+/* --- Messages -------------------------------------------------------------- */
+
+.notice {
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+}
+
+.notice-ok {
+  background: var(--ok-ground);
+  color: var(--ok);
+}
+
+.notice-error {
+  background: var(--error-ground);
+  color: var(--error);
+}
+
+.notice-info {
+  background: var(--info-ground);
+}
+
+.hint {
+  color: var(--muted);
+}
+
+.question,
+.panel:not(:empty) {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+/* --- Details and tables ---------------------------------------------------- */
+
+.details {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+  gap: 0.35rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.details dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.details dd {
+  margin: 0;
+}
+
+.plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.block {
+  display: block;
+}
+
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.5rem 0 1rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+tr.clickable {
+  cursor: pointer;
+}
+
+tr.clickable:hover {
+  background: var(--ground);
+}
+
+.calendar .day {
+  margin-bottom: 1rem;
+}
+
+.entry {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* --- Staff header ------------------------------------------------------------ */
+
+.staff-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.staff-who {
+  margin: 0;
+  font-weight: 600;
+}
+
+.menu {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+.menu a {
+  color: var(--accent);
+}
+
+.menu a[aria-current='page'] {
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.tabs [role='tab'] {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.tabs [role='tab'][aria-selected='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.loading {
+  color: var(--muted);
+}
+
+@media (min-width: 40rem) {
+  .app {
+    padding: 1.5rem;
+  }
+
+  .page,
+  .staff-main {
+    padding: 1.5rem;
+  }
+}

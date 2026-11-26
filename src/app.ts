@@ -33,6 +33,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/logger.js';
 import { notFound } from './middleware/not-found.js';
 import { traceMiddleware } from './middleware/trace.js';
+import { webRouter } from './modules/web/routes.js';
 import { registerRoutes } from './routes.js';
 
 /** What a caller may inject; every field has a production default. */
@@ -67,6 +68,10 @@ export function createApp(options: AppOptions = {}): Express {
   });
 
   registerRoutes(app);
+
+  // The interface's pages and assets (SMS-36): only the page paths of
+  // spec/ui/screens.md §3 and /assets/; everything else reaches notFound.
+  app.use(webRouter());
 
   app.use(notFound);
   app.use(errorHandler);

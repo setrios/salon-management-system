@@ -6,6 +6,7 @@
   // but the scaffold has one config by design.
   // The browser tests (tests/ui) are the exception: they need the DOM library,
   // which the server must not see, so tests/ui/tsconfig.json is their project.
+  // The same holds for the browser code itself: src/web/tsconfig.json.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023"],
@@ -26,5 +27,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist", "spec", "tests/ui"]
+  "exclude": ["node_modules", "dist", "spec", "tests/ui", "src/web"]
 }
