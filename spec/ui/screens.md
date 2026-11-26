@@ -244,3 +244,28 @@ Every other operation of the 50 is called by at least one screen above.
 Client accounts, password reset, a real SMS gateway (the SMS is a recorded row),
 a payment gateway, an administrator screen for a master's availability (the
 contract has none), languages other than English, offline use.
+
+## 11. Control conventions (accepted at TEST-GATE SMS-57)
+
+The specification above fixes labels and messages. The browser tests also
+need a way to find a control; where §4–§5 were silent, the conventions below
+were proposed by the tests and accepted by the developer at TEST-GATE SMS-57
+(`logs/gates/2026-11-26-test-SMS-57.md`, GO). They are part of this
+specification from that gate on, so the implementation (SMS-36) and the user
+guide (SMS-63) follow them.
+
+| # | Convention | What it settles |
+|---|---|---|
+| K1 | Each step of C1 (and of A2) is a **region** named by its heading: *Choose services*, *Choose a date and time*, *Choose a master*, *Your details*. M3's two parts are regions *Weekly hours* and *Specific dates*. A3's parts are regions *Reminders* and *Payment*. | "one page, four steps" |
+| K2 | Every staff form is submitted with a button **Save** (Add master, Add service, Add price, Add material, Add transaction, Record payment, Change, My availability). | the forms' submit buttons are not named |
+| K3 | Totals are rendered as one text each: `Total duration: 75 min`, `Total price: 900.00 UAH`; on A9 `Total: … UAH` and `Payments: n`; on A8 `In stock: 15 ml`. | "below them Total duration" |
+| K4 | The date fields are labelled **Date** (C1, A2, A3 Change, A8), **New date** (C3), **From** / **To** (M1, A1, A9). | "a date field" |
+| K5 | A notification-settings switch is a checkbox or switch whose accessible name is the event and the channel, e.g. `Reschedule SMS`; a change shows **Saved.** | "one switch per cell" |
+| K6 | A master choice is a **radio** whose accessible name holds the full name and that master's total price. | "one choice per eligible master" |
+| K7 | A 422 field error marks its input with `aria-invalid="true"`. | "each errors[] item next to its field" |
+| K8 | The A4–A7 *Active* column reads **Yes** / **No**; the row's button reads **Deactivate** / **Activate**. | "Deactivate / Activate", column *Active* |
+| K9 | A5's *Category* and A7's *Unit* are text inputs with a suggestion list (`<datalist>`), which is what "offering … and accepting a new one" means in HTML. | "a text field offering the existing categories" |
+| K10 | A9 has tabs **Revenue**, **Popular services**, **Stock levels**; the period control is a select **Period** with Day / Week / Month / **Custom range**, then **From** / **To**, and a button **Show**. | "the same period control" |
+| K11 | A transaction's *Type* is a select **Receipt** / **Issue**; a payment's *Method* **Cash** / **Card** and *Status* **Paid** / **Unpaid**. | the options' labels |
+| K12 | A2's details step keeps the C1 fields **Name** and **Phone**; its region's name contains *details*. | "client details" |
+| K13 | REQ-NF-002 is measured as: layout width equals the device width (a `device-width` viewport), and `scrollWidth ≤ clientWidth`, after every step of the mobile flows. The first half was added after the red run showed a page without a viewport meta laid out at 980 px — never scrolling, never usable. | "usable without horizontal scrolling" |
