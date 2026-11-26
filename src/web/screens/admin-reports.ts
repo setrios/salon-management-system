@@ -2,7 +2,8 @@
  * A9 — Reports: revenue, popular services, stock levels.
  *
  * Three tabs. Revenue and popular services share one period control: a preset
- * (Day / Week / Month) **or** a custom From / To, never both (REQ-F-022);
+ * (Day / Week / Month) **or** a custom From / To, never both (REQ-F-022) —
+ * typing a date selects *Custom range*, choosing a preset clears the dates;
  * stock levels is a snapshot with no period (REQ-F-033). The figures are the
  * server's report, rendered as they come; 422 `INVALID_PERIOD` shows its
  * detail.
@@ -63,12 +64,20 @@ function periodControl(): { element: HTMLElement; query: () => string | null } {
     { value: 'month', label: 'Month' },
     { value: 'custom', label: 'Custom range' },
   ]);
-  const from = h('input', { type: 'date', disabled: true });
-  const to = h('input', { type: 'date', disabled: true });
+  const from = h('input', { type: 'date' });
+  const to = h('input', { type: 'date' });
+  // One form at a time (REQ-F-022), without a field that ignores a click
+  // (SMS-76 V1): typing a date chooses the custom range, and choosing a preset
+  // empties the dates, so a request never carries both forms.
+  for (const input of [from, to]) {
+    input.addEventListener('input', () => {
+      if (input.value !== '') period.value = 'custom';
+    });
+  }
   period.addEventListener('change', () => {
-    const custom = period.value === 'custom';
-    from.disabled = !custom;
-    to.disabled = !custom;
+    if (period.value === 'custom') return;
+    from.value = '';
+    to.value = '';
   });
   return {
     element: h(

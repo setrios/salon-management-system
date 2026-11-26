@@ -194,6 +194,33 @@ fieldset.choices legend {
   color: var(--accent-ink);
 }
 
+/* A rule row of M3 (SMS-76 V2): its fields and its Remove side by side,
+   wrapping on a narrow screen, separated from the next row. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: flex-end;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.row .field {
+  flex: 1 1 8rem;
+  margin-bottom: 0;
+}
+
+button.add {
+  margin-top: 0.75rem;
+}
+
+/* The bar that holds a screen's saving action (SMS-76 V3). */
+.form-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
 .actions,
 .row-actions,
 .filters {

@@ -263,16 +263,30 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
       'Weekly hours',
       'h2',
       weeklyRows,
-      h('button', { type: 'button', onclick: () => weeklyRows.append(weeklyRow()) }, 'Add'),
+      h(
+        'button',
+        { type: 'button', class: 'secondary add', onclick: () => weeklyRows.append(weeklyRow()) },
+        'Add',
+      ),
     ),
     region(
       'Specific dates',
       'h2',
       dateRows,
-      h('button', { type: 'button', onclick: () => dateRows.append(dateRow()) }, 'Add'),
+      h(
+        'button',
+        { type: 'button', class: 'secondary add', onclick: () => dateRows.append(dateRow()) },
+        'Add',
+      ),
     ),
     times,
     message,
-    h('button', { type: 'button', onclick: () => void save() }, 'Save'),
+    // The one action that stores the rules, apart from the ones that edit the
+    // form (SMS-76 V3): the only filled button, in its own bar.
+    h(
+      'div',
+      { class: 'form-actions' },
+      h('button', { type: 'button', class: 'primary', onclick: () => void save() }, 'Save'),
+    ),
   );
 }
