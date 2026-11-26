@@ -11,7 +11,21 @@
  */
 
 import { call, read, readAll } from '../api.js';
-import { field, h, notice, region, replace, select, table } from '../dom.js';
+import {
+  clearInvalid,
+  field,
+  h,
+  halfHours,
+  markInvalid,
+  notice,
+  region,
+  replace,
+  select,
+  suggestions,
+  table,
+  TIME_24H,
+  timeInput,
+} from '../dom.js';
 import {
   addDays,
   formatDate,
@@ -161,6 +175,7 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
   const weeklyRows = h('div', { class: 'rows' });
   const dateRows = h('div', { class: 'rows' });
   const message = h('div', { class: 'messages' });
+  const times = suggestions(halfHours());
 
   function removable(row: HTMLElement): HTMLElement {
     row.append(
@@ -175,18 +190,8 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
       { 'data-part': 'day' },
     );
     if (rule !== undefined) day.value = String(rule.dayOfWeek);
-    const start = h('input', {
-      type: 'time',
-      step: 1800,
-      'data-part': 'start',
-      value: rule?.startTime ?? '',
-    });
-    const end = h('input', {
-      type: 'time',
-      step: 1800,
-      'data-part': 'end',
-      value: rule?.endTime ?? '',
-    });
+    const start = timeInput(rule?.startTime ?? '', times.id, { 'data-part': 'start' });
+    const end = timeInput(rule?.endTime ?? '', times.id, { 'data-part': 'end' });
     return removable(
       h('div', { class: 'row' }, field('Day', day), field('From', start), field('To', end)),
     );
@@ -194,18 +199,8 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
 
   function dateRow(rule?: DateRule): HTMLElement {
     const date = h('input', { type: 'date', 'data-part': 'date', value: rule?.date ?? '' });
-    const start = h('input', {
-      type: 'time',
-      step: 1800,
-      'data-part': 'start',
-      value: rule?.startTime ?? '',
-    });
-    const end = h('input', {
-      type: 'time',
-      step: 1800,
-      'data-part': 'end',
-      value: rule?.endTime ?? '',
-    });
+    const start = timeInput(rule?.startTime ?? '', times.id, { 'data-part': 'start' });
+    const end = timeInput(rule?.endTime ?? '', times.id, { 'data-part': 'end' });
     return removable(
       h('div', { class: 'row' }, field('Date', date), field('From', start), field('To', end)),
     );
@@ -217,17 +212,35 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
   const part = (row: Element, name: string): string =>
     row.querySelector<HTMLInputElement | HTMLSelectElement>(`[data-part="${name}"]`)?.value ?? '';
 
+  /** Marks every time that is not `HH:MM` in 24 hours (K7); true when all are. */
+  function timesValid(): boolean {
+    let valid = true;
+    for (const input of [weeklyRows, dateRows].flatMap((rows) => [
+      ...rows.querySelectorAll<HTMLInputElement>('[data-part="start"], [data-part="end"]'),
+    ])) {
+      if (TIME_24H.test(input.value.trim())) continue;
+      markInvalid(input, 'Use the 24-hour format, for example 09:00 or 18:30.');
+      valid = false;
+    }
+    return valid;
+  }
+
   async function save(): Promise<void> {
     replace(message);
+    clearInvalid(context.root);
+    if (!timesValid()) {
+      replace(message, notice('Please correct the marked times.', 'error'));
+      return;
+    }
     const weekly = [...weeklyRows.children].map((row) => ({
       dayOfWeek: Number(part(row, 'day')),
-      startTime: part(row, 'start'),
-      endTime: part(row, 'end'),
+      startTime: part(row, 'start').trim(),
+      endTime: part(row, 'end').trim(),
     }));
     const dates = [...dateRows.children].map((row) => ({
       date: part(row, 'date'),
-      startTime: part(row, 'start'),
-      endTime: part(row, 'end'),
+      startTime: part(row, 'start').trim(),
+      endTime: part(row, 'end').trim(),
     }));
     const result = await call('PUT', '/me/availability', { staff: true, body: { weekly, dates } });
     replace(
@@ -258,6 +271,7 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
       dateRows,
       h('button', { type: 'button', onclick: () => dateRows.append(dateRow()) }, 'Add'),
     ),
+    times,
     message,
     h('button', { type: 'button', onclick: () => void save() }, 'Save'),
   );
