@@ -2,6 +2,10 @@ node_modules/
 dist/
 coverage/
 
+# Playwright output (npm run test:ui).
+test-results/
+playwright-report/
+
 # Local environment. .env.example is committed; .env is not.
 .env
 .env.local

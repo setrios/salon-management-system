@@ -4,6 +4,8 @@
   // gain is that a test file using a stale symbol fails the build instead of
   // failing at run time. Splitting into a second config would fix the emission,
   // but the scaffold has one config by design.
+  // The browser tests (tests/ui) are the exception: they need the DOM library,
+  // which the server must not see, so tests/ui/tsconfig.json is their project.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023"],
@@ -24,5 +26,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist", "spec"]
+  "exclude": ["node_modules", "dist", "spec", "tests/ui"]
 }

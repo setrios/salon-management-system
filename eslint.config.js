@@ -24,7 +24,9 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         // The two tool configs at the root are outside tsconfig's `include`.
-        projectService: { allowDefaultProject: ['vitest.config.ts', 'drizzle.config.ts'] },
+        projectService: {
+          allowDefaultProject: ['vitest.config.ts', 'drizzle.config.ts', 'playwright.config.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
       globals: { ...globals.node },
@@ -114,7 +116,14 @@ export default tseslint.config(
 
   {
     // Tooling entry points whose consumer requires a default export.
-    files: ['eslint.config.js', 'vitest.config.ts', 'drizzle.config.ts', 'tests/global-setup.ts'],
+    files: [
+      'eslint.config.js',
+      'vitest.config.ts',
+      'drizzle.config.ts',
+      'playwright.config.ts',
+      'tests/global-setup.ts',
+      'tests/ui/support/global-setup.ts',
+    ],
     rules: { 'no-restricted-syntax': 'off' },
   },
 
