@@ -50,8 +50,8 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Done |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Done |
 | SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Done |
-| SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26 | Coding Agent | Backlog |
-| SMS-37 | Feature: retention & no-gateway constraints | Feature | REQ-NF-005, 009 | SMS-20, SMS-34 | Coding Agent | Backlog |
+| SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26, SMS-57 | Coding Agent | Backlog (lab 6 stage S6) |
+| SMS-37 | Feature: retention & no-gateway constraints | Feature | REQ-NF-005, 009 | SMS-20, SMS-34 | Coding Agent | Done (absence constraints, evidence SMS-20) |
 | SMS-38 | Define REST resource model and URI/method conventions | Specification | Plan §5; SRS §4–5 | — | Joint | Done |
 | SMS-39 | Define component schemas and unified error model | Specification | Plan §6–7; SRS §6–7 | SMS-38 | Joint | Done |
 | SMS-40 | Author OpenAPI 3.0.3 specification | Specification | Plan §8 Part 2 | SMS-38, SMS-39 | Coding Agent | Done |
@@ -66,6 +66,23 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-49 | Second refactoring: one due-reminder statement (step 6) | Refactoring | Plan §9; task step 6 | SMS-45, SMS-46 | Coding Agent | Done |
 | SMS-50 | Local setup instructions in the README | Documentation | Plan §9; the setup gap in the README | — | Joint | Done |
 | SMS-51 | curl examples for the operation families | Documentation | Plan §9; the README | SMS-50 | Joint | Done |
+| SMS-52 | Lab 6 preparation: plan, commit prefixes, lockfile, SRS v1.3 PDF, tracker alignment | Documentation | Lab 6; `logs/2026-11-26-lab6-plan.md` | — | Joint | In progress |
+| SMS-53 | Coding convention document and linter/formatter configuration | Documentation | Lab 6 step 1; D-L6-5 | SMS-52 | Joint | Backlog |
+| SMS-54 | Convention analysis of the existing code: lint report, formatting, fixes | Verification | Lab 6 step 2 | SMS-53 | Coding Agent | Backlog |
+| SMS-55 | UI screen specification (screens ↔ REQ-IDs ↔ API operations) | Specification | SRS v1.3 §User Interface; REQ-NF-002…007; D-L6-3 | SMS-52 | Joint | Backlog |
+| SMS-56 | UI-GATE: approve the screen specification | Gate | D-L6-3 | SMS-55 | Human | Backlog |
+| SMS-57 | Test the UI end to end (SCN-01…16 flows, REQ-NF-002/003/004/006/007) | Test | `spec/ui/screens.md`; D-L6-4 | SMS-54, SMS-56 | Coding Agent | Backlog |
+| SMS-58 | G5: approve stage S6 (user interface) exit | Gate | Lab 6 plan §4 | SMS-36 | Human | Backlog |
+| SMS-59 | Terminology audit: glossary ↔ code ↔ API ↔ UI | Verification | Lab 6 step 3; SRS v1.3 glossary | SMS-58 | Joint | Backlog |
+| SMS-60 | Docstrings: audit and complete TSDoc for public exports | Documentation | Lab 6 step 4 | SMS-59 | Coding Agent | Backlog |
+| SMS-61 | API reference (Redocly), code reference (TypeDoc), architecture | Documentation | Lab 6 step 5; D-L6-6 | SMS-60 | Coding Agent | Backlog |
+| SMS-62 | README and deployment guide | Documentation | Lab 6 step 6 | SMS-58 | Joint | Backlog |
+| SMS-63 | User guide per role | Documentation | Lab 6 step 7 | SMS-58 | Joint | Backlog |
+| SMS-64 | Documentation check: README run, API docs vs code, user guide vs UI | Verification | Lab 6 steps 8–10 | SMS-61, SMS-62, SMS-63 | Joint | Backlog |
+| SMS-65 | Complete the traceability matrix and audit it automatically | Documentation | Lab 6 steps 11–12 | SMS-64 | Joint | Backlog |
+| SMS-66 | Final verification of the repository | Verification | Lab 6 step 13 | SMS-65 | Coding Agent | Backlog |
+| SMS-67 | Final human validation against the initial concept | Validation | Lab 6 steps 14–15; `spec/DESCRIPTION.md` | SMS-66 | Human | Backlog |
+| SMS-68 | FINAL-GATE (lab 6), final SDD log, tag v1.0.0 | Gate | Lab 6 steps 16–17; D-L6-7, D-L6-8 | SMS-67 | Human | Backlog |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
