@@ -62,12 +62,22 @@ export type PeriodResolution =
 
 const PRESETS: ReadonlySet<string> = new Set(['day', 'week', 'month']);
 
+/**
+ * Marks a parameter given more than once, or not as a plain string. A symbol,
+ * not a string: a string marker would collide with a client who sends that very
+ * word (`?period=repeated` was read as a repeated parameter, SMS-69).
+ */
+const REPEATED: unique symbol = Symbol('repeated');
+
 /** Reads one query value, or `undefined`; a repeated parameter is malformed. */
-function readOne(query: Record<string, unknown>, name: string): string | undefined | 'repeated' {
+function readOne(
+  query: Record<string, unknown>,
+  name: string,
+): string | undefined | typeof REPEATED {
   const value = query[name];
   if (value === undefined) return undefined;
-  if (Array.isArray(value)) return 'repeated';
-  if (typeof value !== 'string') return 'repeated';
+  if (Array.isArray(value)) return REPEATED;
+  if (typeof value !== 'string') return REPEATED;
   return value;
 }
 
@@ -100,7 +110,7 @@ export function resolvePeriod(query: Record<string, unknown>, now: Date): Period
   const from = readOne(query, 'from');
   const to = readOne(query, 'to');
 
-  if (period === 'repeated' || from === 'repeated' || to === 'repeated') {
+  if (period === REPEATED || from === REPEATED || to === REPEATED) {
     return { kind: 'malformed' };
   }
 
