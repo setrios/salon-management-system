@@ -376,6 +376,80 @@
       "sources": ["REQ-F-010", "REQ-F-011"],
       "implementation": ["src/modules/notifications/scheduler.ts"],
       "touches": ["src/index.ts", "tests/manifest.json"]
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/client-booking.spec.ts",
+      "sources": [
+        "REQ-F-001",
+        "REQ-F-002",
+        "REQ-F-003",
+        "REQ-F-004",
+        "REQ-F-031",
+        "SCN-01",
+        "SCN-13"
+      ],
+      "implementation": [
+        "src/modules/web/routes.ts",
+        "src/web/index.html",
+        "src/web/styles.css",
+        "src/web/main.ts",
+        "src/web/api.ts",
+        "src/web/format.ts",
+        "src/web/screens/booking.ts"
+      ],
+      "touches": ["src/app.ts", "package.json", "scripts/copy-contract.mjs"]
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/confirmation.spec.ts",
+      "sources": ["REQ-F-004", "REQ-F-005", "REQ-F-006", "SCN-02"],
+      "implementation": ["src/web/screens/confirmation.ts"],
+      "touches": []
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/reschedule.spec.ts",
+      "sources": ["REQ-F-007", "REQ-F-008", "REQ-F-009", "SCN-03"],
+      "implementation": ["src/web/screens/reschedule.ts"],
+      "touches": []
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/responsive.spec.ts",
+      "sources": ["REQ-NF-002", "REQ-NF-003", "REQ-NF-004", "REQ-NF-007"],
+      "implementation": ["src/web/styles.css"],
+      "touches": []
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/staff-auth.spec.ts",
+      "sources": ["REQ-F-012", "REQ-F-017"],
+      "implementation": ["src/web/staff.ts", "src/web/screens/sign-in.ts"],
+      "touches": []
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/master.spec.ts",
+      "sources": ["REQ-F-013", "REQ-F-014", "REQ-F-015", "REQ-F-016", "REQ-F-026"],
+      "implementation": ["src/web/screens/master.ts", "src/web/screens/notifications.ts"],
+      "touches": []
+    },
+    {
+      "ticket": "SMS-57 (test) \u2192 SMS-36 (implementation)",
+      "test": "tests/ui/admin.spec.ts",
+      "sources": [
+        "REQ-F-018",
+        "REQ-F-019",
+        "REQ-F-020",
+        "REQ-F-021",
+        "REQ-F-022",
+        "REQ-F-024",
+        "REQ-F-025",
+        "REQ-F-027"
+      ],
+      "implementation": ["src/web/screens/admin.ts"],
+      "touches": []
     }
   ]
 }

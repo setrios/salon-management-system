@@ -1,0 +1,11 @@
+{
+  // The browser tests need the DOM library (page.evaluate callbacks run in the
+  // page), which the server code must not see; so they have their own project.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "noEmit": true
+  },
+  "include": ["./**/*.ts", "../../playwright.config.ts"],
+  "exclude": []
+}
