@@ -11,7 +11,7 @@
 import { and, asc, count, eq } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
-import { masters, masterServices } from '../../db/schema.js';
+import { masters, masterServices, services } from '../../db/schema.js';
 
 /** `MasterService` as the contract exposes it: the price is nested `Money`. */
 export interface MasterServiceView {
@@ -104,6 +104,20 @@ export async function isMasterId(masterId: string): Promise<boolean> {
     .select({ id: masters.id })
     .from(masters)
     .where(and(eq(masters.id, masterId), eq(masters.role, 'master')));
+  return row !== undefined;
+}
+
+/**
+ * True when `serviceId` names a service row. R11 checks it before inserting,
+ * like `isMasterId`, so an unknown id is the client's 422 rather than a failed
+ * foreign key answered 500 (SMS-72). An inactive service is a service: whether
+ * it can be booked is the booking path's rule (REQ-F-018), not the link's.
+ */
+export async function isServiceId(serviceId: string): Promise<boolean> {
+  const [row] = await getDb()
+    .select({ id: services.id })
+    .from(services)
+    .where(eq(services.id, serviceId));
   return row !== undefined;
 }
 

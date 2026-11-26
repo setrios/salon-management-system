@@ -31,6 +31,7 @@ import {
 import {
   createLink,
   isMasterId,
+  isServiceId,
   LINK_CONSTRAINT,
   listLinks,
   updateLink,
@@ -76,6 +77,10 @@ async function createLinkHandler(_req: Request, res: Response): Promise<void> {
   // (D4) — an id naming no row and the administrator's id alike.
   if (!(await isMasterId(body.masterId))) {
     throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'masterId names no master.');
+  }
+  // SMS-72: the link's second reference, answered the same way.
+  if (!(await isServiceId(body.serviceId))) {
+    throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'serviceId names no service.');
   }
 
   try {
