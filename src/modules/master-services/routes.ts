@@ -30,6 +30,7 @@ import {
 } from '../reference-data/http.js';
 import {
   createLink,
+  isMasterId,
   LINK_CONSTRAINT,
   listLinks,
   updateLink,
@@ -70,6 +71,12 @@ async function listLinksHandler(_req: Request, res: Response): Promise<void> {
 /** R11 — a second link for the same pair is the one reachable 409 (D-24). */
 async function createLinkHandler(_req: Request, res: Response): Promise<void> {
   const body = res.locals.body as LinkCreateInput;
+
+  // SMS-71: the same answer P8 and R19 give for a master who cannot be booked
+  // (D4) — an id naming no row and the administrator's id alike.
+  if (!(await isMasterId(body.masterId))) {
+    throw new HttpProblem('BUSINESS_RULE_VIOLATION', 'masterId names no master.');
+  }
 
   try {
     sendCreated(res, 'MasterService', await createLink(body), '/admin/master-services');

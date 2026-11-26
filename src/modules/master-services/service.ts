@@ -11,7 +11,7 @@
 import { and, asc, count, eq } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
-import { masterServices } from '../../db/schema.js';
+import { masters, masterServices } from '../../db/schema.js';
 
 /** `MasterService` as the contract exposes it: the price is nested `Money`. */
 export interface MasterServiceView {
@@ -91,6 +91,20 @@ export interface LinkCreateInput {
   readonly serviceId: string;
   readonly price: { amountMinor: number; currency: string };
   readonly active?: boolean;
+}
+
+/**
+ * True when `masterId` names a master — a row of `masters` with
+ * `role = 'master'`, so neither an unknown id nor the administrator's (D10).
+ * R11 checks it before inserting, instead of letting the foreign key fail
+ * with 500 (SMS-71).
+ */
+export async function isMasterId(masterId: string): Promise<boolean> {
+  const [row] = await getDb()
+    .select({ id: masters.id })
+    .from(masters)
+    .where(and(eq(masters.id, masterId), eq(masters.role, 'master')));
+  return row !== undefined;
 }
 
 /** Inserts a link; the caller maps a unique violation to 409. */

@@ -8,7 +8,7 @@
  * constraints are the only 409 triggers); plan §5.1 (`masters` columns).
  */
 
-import { asc, count, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 
 import { getDb } from '../../db/client.js';
 import { masters } from '../../db/schema.js';
@@ -42,6 +42,13 @@ function toMaster(row: MasterRow): MasterView {
   };
 }
 
+/**
+ * The predicate every master operation applies (D10, D-19): the single
+ * administrator is a row of `masters` with `role = 'admin'` and is not a
+ * master, so R1 does not list it and R3/R4 answer 404 for its id (SMS-71).
+ */
+const IS_MASTER = eq(masters.role, 'master');
+
 export interface MasterListFilter {
   readonly active?: boolean;
   readonly limit: number;
@@ -53,7 +60,8 @@ export async function listMasters(
   filter: MasterListFilter,
 ): Promise<{ items: MasterView[]; total: number }> {
   const db = getDb();
-  const where = filter.active === undefined ? undefined : eq(masters.active, filter.active);
+  const where =
+    filter.active === undefined ? IS_MASTER : and(IS_MASTER, eq(masters.active, filter.active));
 
   const rows = await db
     .select()
@@ -92,9 +100,12 @@ export async function createMaster(input: MasterCreateInput): Promise<MasterView
   return toMaster(row);
 }
 
-/** One account, or `undefined` for an unknown id. */
+/** One master, or `undefined` for an unknown id or the administrator's. */
 export async function findMaster(id: string): Promise<MasterView | undefined> {
-  const [row] = await getDb().select().from(masters).where(eq(masters.id, id));
+  const [row] = await getDb()
+    .select()
+    .from(masters)
+    .where(and(eq(masters.id, id), IS_MASTER));
   return row === undefined ? undefined : toMaster(row);
 }
 
@@ -115,7 +126,7 @@ export async function updateMaster(
       ...(patch.active === undefined ? {} : { active: patch.active }),
       updatedAt: new Date(),
     })
-    .where(eq(masters.id, id))
+    .where(and(eq(masters.id, id), IS_MASTER))
     .returning();
 
   return row === undefined ? undefined : toMaster(row);
