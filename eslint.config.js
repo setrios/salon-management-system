@@ -84,10 +84,10 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
       ],
 
-      // §6 Documentation comments (TSDoc). `require-jsdoc` is a warning until
-      // SMS-60 completes the documentation pass; it then becomes an error.
+      // §6 Documentation comments (TSDoc). An error since SMS-60 completed the
+      // documentation pass: a new export without a doc comment fails the lint.
       'jsdoc/require-jsdoc': [
-        'warn',
+        'error',
         {
           publicOnly: true,
           require: {
