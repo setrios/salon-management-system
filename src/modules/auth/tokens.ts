@@ -21,6 +21,7 @@ import { jwtVerify, SignJWT } from 'jose';
 
 import { config } from '../../config.js';
 
+/** The two staff roles; stored in `masters.role` and carried in the token. */
 export type StaffRole = 'master' | 'admin';
 
 /** The authenticated caller: `Principal` minus its transport. */

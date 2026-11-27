@@ -64,6 +64,7 @@ async function recordCategory(name: string): Promise<void> {
     .onConflictDoNothing({ target: categories.name });
 }
 
+/** R5's query: optional `active` and `category` filters, and the page as an offset. */
 export interface ServiceListFilter {
   readonly active?: boolean;
   readonly category?: string;
@@ -95,6 +96,10 @@ export async function listServices(
   return { items: rows.map(toService), total: totalRow?.value ?? 0 };
 }
 
+/**
+ * R6's body after validation. `category` is free-form (REQ-F-024): an unknown one
+ * is recorded with `seeded: false`.
+ */
 export interface ServiceCreateInput {
   readonly name: string;
   readonly category: string;
@@ -126,6 +131,7 @@ export async function findService(id: string): Promise<ServiceView | undefined> 
   return row === undefined ? undefined : toService(row);
 }
 
+/** R8's body after validation; an absent field is left unchanged. */
 export interface ServicePatchInput {
   readonly name?: string;
   readonly category?: string;

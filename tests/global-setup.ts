@@ -21,6 +21,7 @@
 
 import { execFileSync } from 'node:child_process';
 
+/** Regenerates `src/contract/openapi.json` from the contract once, before any test file runs. */
 export default function setup(): void {
   try {
     execFileSync(process.execPath, ['src/contract/convert.mjs'], { stdio: 'pipe' });

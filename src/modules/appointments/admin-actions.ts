@@ -23,7 +23,7 @@
  *     event at all (K6).
  *
  * **What an edit answers.** `AppointmentAdmin`, read back after the commit — the
- * same staff view R20 and `getAppointmentAdmin` serve. It never carries the
+ * same staff view R18 (the list) and R20 (`getAppointmentAdmin`) serve. It never carries the
  * client's access token (D18, REQ-NF-006).
  *
  * **Who gets a message.** A supplied `startAt` or a changed master is a
@@ -40,7 +40,7 @@
  *         updated-details SMS (REQ-F-009) as for a client-initiated
  *         reschedule"), REQ-F-030 ("the administrator does not receive a
  *         notification for that specific event; the assigned master's
- *         notification is unaffected"), REQ-F-001, REQ-F-031, REQ-NF-008,
+ *         notification (REQ-F-016) is unaffected"), REQ-F-001, REQ-F-031, REQ-NF-008,
  *         REQ-NF-006;
  *         `error-model.md` §3, §3.1; `resource-model.md` §5.5 (R21–R23);
  *         `openapi.yaml` updateAppointmentAdmin, cancelAppointmentAdmin,

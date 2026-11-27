@@ -29,7 +29,8 @@
  *         appointment receives no notification for that action, while the
  *         appointment's assigned master still receives their own configured
  *         notification for the same event"),
- *         REQ-F-006 ("The client can cancel any time, without a fee"), REQ-F-009;
+ *         REQ-F-006 ("The client can cancel the appointment via the link, free of
+ *         charge, with no restriction on notice period"), REQ-F-009;
  *         `error-model.md` §3.1 (the state table) and §3 (409 SLOT_UNAVAILABLE,
  *         409 INVALID_STATE_TRANSITION, 422 BUSINESS_RULE_VIOLATION);
  *         `resource-model.md` §5.5 (R21, R22, R23);

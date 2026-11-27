@@ -31,8 +31,10 @@ export const PROBLEM_CATALOG = {
   INTERNAL_ERROR: [500, 'Internal error'],
 } as const satisfies Record<string, readonly [number, string]>;
 
+/** One of the 16 codes of `error-model.md` §3; each maps to one status and title. */
 export type ProblemCode = keyof typeof PROBLEM_CATALOG;
 
+/** Why one field of a 422 body failed (`ValidationErrorItem.code` in the contract). */
 export type ValidationItemCode =
   | 'REQUIRED'
   | 'PATTERN_MISMATCH'
@@ -41,12 +43,18 @@ export type ValidationItemCode =
   | 'OUT_OF_RANGE'
   | 'UNKNOWN_FIELD';
 
+/** One `errors[]` entry of a 422 `Problem`: the field as a dot path, its code, a sentence. */
 export interface ValidationErrorItem {
   field: string;
   code: ValidationItemCode;
   message: string;
 }
 
+/**
+ * The RFC 9457 body every error answer has (`Problem` in the contract). `type`
+ * and `title` follow from `code`; `instance` and `traceId` are filled from the
+ * request, so a log line and an answer can be matched.
+ */
 export interface Problem {
   type: string;
   title: string;

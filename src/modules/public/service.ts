@@ -63,6 +63,7 @@ export interface PublicLinkView {
   updatedAt: string;
 }
 
+/** The page of a public list (P1, P4, P6) as an offset. */
 export interface PublicListFilter {
   readonly limit: number;
   readonly offset: number;

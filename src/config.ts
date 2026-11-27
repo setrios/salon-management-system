@@ -9,8 +9,14 @@
  * Source: logs/2026-11-08-implementation-plan.md §5; .env.example.
  */
 
+/** The three run modes `NODE_ENV` may name; anything else is a configuration error. */
 export type NodeEnv = 'development' | 'test' | 'production';
 
+/**
+ * The process configuration, read once from the environment by `loadConfig`.
+ * Frozen: code that needs another value builds another config, it never edits
+ * this one.
+ */
 export interface AppConfig {
   readonly nodeEnv: NodeEnv;
   readonly port: number;

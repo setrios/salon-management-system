@@ -1,18 +1,21 @@
 /**
- * S5.1a administrator appointments — R19, R20 and getAppointmentAdmin.
+ * S5.1a administrator appointments — R18, R19 and R20.
  *
+ *   R18 GET  /admin/appointments                  listAppointmentsAdmin  → 200 AppointmentAdminPage
  *   R19 POST /admin/appointments                  createAppointmentAdmin → 201 Appointment
- *   R20 GET  /admin/appointments                  listAppointmentsAdmin  → 200 AppointmentAdminPage
- *       GET  /admin/appointments/{appointmentId}  getAppointmentAdmin    → 200 AppointmentAdmin
+ *   R20 GET  /admin/appointments/{appointmentId}  getAppointmentAdmin    → 200 AppointmentAdmin
  *
- * Source: REQ-F-019 ("An administrator can create appointments on behalf of
- *         clients using the same business rules as public booking"),
- *         REQ-F-020 ("An administrator can view the appointment schedule across
- *         all masters, with filtering by date range, master, and status"),
- *         REQ-F-030 ("The acting administrator is not self-notified about
- *         actions they perform, but affected clients and masters receive
- *         notifications");
- *         `resource-model.md` §5.1 (R19, R20), §5.2;
+ * (Operation ids as `spec/api/resource-model.md` §5.1 numbers them; this header
+ * once called the list "R20" — corrected in lab 6, SMS-60.)
+ *
+ * Source: REQ-F-019 ("The administrator can create, edit, and cancel client
+ *         appointments"; AC: "An administrator-created or edited appointment is
+ *         reflected identically to a client-made one"), REQ-F-030 ("the
+ *         administrator does not receive a notification for that specific
+ *         event; the assigned master's notification (REQ-F-016) is
+ *         unaffected"); the list across masters is R18 of `resource-model.md`
+ *         (traced to REQ-F-019);
+ *         `resource-model.md` §5.1 (R18, R19, R20), §5.2;
  *         `openapi.yaml` createAppointmentAdmin, listAppointmentsAdmin,
  *         getAppointmentAdmin.
  * Contract: openapi.yaml#/paths/~1admin~1appointments,
@@ -23,8 +26,8 @@
  *
  * Decisions (S5.1 inventory, K1–K9):
  *
- *   K1  S5.1a covers the read-and-create operations (R19, R20,
- *       getAppointmentAdmin). The acting half (R21, R22, R23, SMS-18) is S5.1b.
+ *   K1  S5.1a covers the read-and-create operations (R18, R19,
+ *       R20 getAppointmentAdmin). The acting half (R21, R22, R23, SMS-18) is S5.1b.
  *   K2  R19 has no business rules of its own: it reuses the path P8 uses
  *       (`offBoundary`, `serviceRejection`, `startInPast`, the booking
  *       transaction with `bookedBlocks`, and 409 `SLOT_UNAVAILABLE`).
@@ -34,7 +37,7 @@
  *   K8  An `appointmentId` that names no appointment (including a malformed or
  *       non-uuid string) answers 404 `NOT_FOUND` on getAppointmentAdmin,
  *       because the operation declares no 400.
- *   K9  The order of R20 is `startAt` then `id` ascending, the same ordering M1
+ *   K9  The order of R18 is `startAt` then `id` ascending, the same ordering M1
  *       uses, so an appointment calendar always reads chronologically forwards.
  */
 
@@ -104,7 +107,7 @@ async function createAppointmentAdminHandler(req: Request, res: Response): Promi
   );
 }
 
-/** R20 — list appointments across all masters. */
+/** R18 — list appointments across all masters. */
 async function listAppointmentsAdminHandler(req: Request, res: Response): Promise<void> {
   const query = res.locals.query as
     { from?: string; to?: string; masterId?: string; status?: string } | undefined;
@@ -134,7 +137,7 @@ async function getAppointmentAdminHandler(req: Request, res: Response): Promise<
   sendJson(res, 200, 'AppointmentAdmin', body);
 }
 
-/** Registers R19, R20 and getAppointmentAdmin on the admin router. */
+/** Registers R18, R19 and R20 on the admin router. */
 export function adminAppointmentRoutes(router: Router): void {
   router.post(
     '/admin/appointments',

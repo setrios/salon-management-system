@@ -43,6 +43,7 @@ function toLink(row: LinkRow): MasterServiceView {
   };
 }
 
+/** R10's query (and M2's fixed `masterId`): which master-service links to list. */
 export interface LinkListFilter {
   readonly masterId?: string;
   readonly serviceId?: string;
@@ -86,6 +87,10 @@ export async function listLinks(
   return { items: rows.map(toLink), total: totalRow?.value ?? 0 };
 }
 
+/**
+ * R11's body after validation. The route has already checked that `masterId`
+ * names a master and `serviceId` a service (SMS-71, SMS-72, CL-14).
+ */
 export interface LinkCreateInput {
   readonly masterId: string;
   readonly serviceId: string;
@@ -138,6 +143,7 @@ export async function createLink(input: LinkCreateInput): Promise<MasterServiceV
   return toLink(row);
 }
 
+/** R12's body: the price and the state only — the pair is fixed once the link exists. */
 export interface LinkPatchInput {
   readonly price?: { amountMinor: number; currency: string };
   readonly active?: boolean;

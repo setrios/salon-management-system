@@ -54,6 +54,7 @@ function toMaterial(row: MaterialRow): MaterialView {
   };
 }
 
+/** R13's query: an optional `active` filter, a name search `q`, and the page as an offset. */
 export interface MaterialListFilter {
   readonly active?: boolean;
   readonly q?: string;
@@ -88,6 +89,10 @@ export async function listMaterials(
   return { items: rows.map(toMaterial), total: totalRow?.value ?? 0 };
 }
 
+/**
+ * R14's body after validation. `unit` is a standard unit or a custom one
+ * (REQ-F-025); `initialStockQuantity` defaults to 0.
+ */
 export interface MaterialCreateInput {
   readonly name: string;
   readonly unit: string;
@@ -118,6 +123,7 @@ export async function findMaterial(id: string): Promise<MaterialView | undefined
   return row === undefined ? undefined : toMaterial(row);
 }
 
+/** R16's body: name, unit and state. The stock is not here — it moves only by R26. */
 export interface MaterialPatchInput {
   readonly name?: string;
   readonly unit?: string;
@@ -180,9 +186,10 @@ function toTransaction(row: MaterialTransactionRow): MaterialTransactionView {
   };
 }
 
+/** R25's query: an optional type, an inclusive date range, and the page as an offset. */
 export interface MaterialTransactionFilter {
   readonly type?: 'receipt' | 'issue';
-  /** Calendar dates, inclusive (M4); `from`/`to` follow R20's reading. */
+  /** Calendar dates, inclusive (M4); `from`/`to` follow R18's reading. */
   readonly from?: string;
   readonly to?: string;
   readonly limit: number;
@@ -241,6 +248,7 @@ export async function listMaterialTransactions(
   return { items: rows.map(toTransaction), total: totalRow?.value ?? 0 };
 }
 
+/** R26's body after validation: a receipt or an issue of `quantity`, at `occurredAt`. */
 export interface MaterialTransactionInput {
   readonly type: 'receipt' | 'issue';
   readonly quantity: number;
@@ -248,6 +256,12 @@ export interface MaterialTransactionInput {
   readonly occurredAt: Date;
   readonly note?: string;
 }
+
+/** What R26 can end in; the route maps each kind to an HTTP answer. */
+export type MaterialTransactionOutcome =
+  | { kind: 'recorded'; transaction: MaterialTransactionView }
+  | { kind: 'not-found' }
+  | { kind: 'insufficient'; requested: number; balance: number; unit: string };
 
 /**
  * Records one movement and moves the balance with it (REQ-F-020, D13).
@@ -262,11 +276,6 @@ export interface MaterialTransactionInput {
  * material's `updatedAt` (M9), while the transaction's own `createdAt` is the
  * row's.
  */
-export type MaterialTransactionOutcome =
-  | { kind: 'recorded'; transaction: MaterialTransactionView }
-  | { kind: 'not-found' }
-  | { kind: 'insufficient'; requested: number; balance: number; unit: string };
-
 export async function recordMaterialTransaction(
   materialId: string,
   input: MaterialTransactionInput,

@@ -47,6 +47,11 @@ import { unitRoutes } from './modules/units/routes.js';
 
 export const API_PREFIX = '/api/v1';
 
+/**
+ * Mounts every operation of the contract under `API_PREFIX`, one router per
+ * module, and publishes the prefix so a create operation can build its
+ * `Location` header from it. Called once by `createApp`.
+ */
 export function registerRoutes(app: Express): void {
   const api = Router();
 

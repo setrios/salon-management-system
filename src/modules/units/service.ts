@@ -16,6 +16,7 @@ import { materials } from '../../db/schema.js';
 /** The fixed five, in the order `openapi.yaml`'s example lists them. */
 export const STANDARD_UNITS = ['ml', 'l', 'g', 'kg', 'pcs'] as const;
 
+/** R17's answer: the five standard units, and the custom ones materials already use (REQ-F-025). */
 export interface UnitList {
   standard: string[];
   custom: string[];

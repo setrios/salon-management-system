@@ -16,8 +16,14 @@ import type { RequestHandler } from 'express';
 import { contractPathFor } from '../contract/paths.js';
 import { getTraceId } from './trace.js';
 
+/** The three levels a JSONL log line can have. */
 export type LogLevel = 'info' | 'warn' | 'error';
 
+/**
+ * Writes one JSONL line: `{ ts, level, event, ...fields }`. `event` is a dotted
+ * name (`server.started`); `fields` must carry no client personal data
+ * (REQ-NF-006, coding convention §7.4).
+ */
 export interface Logger {
   record(level: LogLevel, event: string, fields: Record<string, unknown>): void;
 }

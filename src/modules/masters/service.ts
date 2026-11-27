@@ -49,6 +49,7 @@ function toMaster(row: MasterRow): MasterView {
  */
 const IS_MASTER = eq(masters.role, 'master');
 
+/** R1's query: an optional `active` filter and the page as an offset. */
 export interface MasterListFilter {
   readonly active?: boolean;
   readonly limit: number;
@@ -76,6 +77,10 @@ export async function listMasters(
   return { items: rows.map(toMaster), total: totalRow?.value ?? 0 };
 }
 
+/**
+ * R2's body after validation. `password` is the plain text; it is hashed here
+ * and never stored or logged as given.
+ */
 export interface MasterCreateInput {
   readonly fullName: string;
   readonly username: string;
@@ -109,6 +114,7 @@ export async function findMaster(id: string): Promise<MasterView | undefined> {
   return row === undefined ? undefined : toMaster(row);
 }
 
+/** R4's body: the name and the state; `MasterPatch` has no username or password. */
 export interface MasterPatchInput {
   readonly fullName?: string;
   readonly active?: boolean;

@@ -42,6 +42,17 @@ export interface AppOptions {
   readonly now?: () => Date;
 }
 
+/**
+ * Builds the Express application: middleware chain, the API under `/api/v1`,
+ * the interface's pages, then the terminal 404/405 and error handlers.
+ *
+ * It does no I/O of its own — no socket, no timer, no database connection until
+ * a request needs one — so tests build as many apps as they like, each with its
+ * own clock. The process entry (`index.ts`) owns the socket and the reminder
+ * scheduler.
+ *
+ * @param options - `now` replaces the clock every handler reads (D9); defaults to the wall clock.
+ */
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
 

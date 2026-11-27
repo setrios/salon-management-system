@@ -476,10 +476,16 @@ export async function findPayment(
   };
 }
 
+/**
+ * The appointment an access token opens (P9–P11), or `undefined` for a token
+ * that names none — which the route answers 404 without saying whether the
+ * token was ever valid (REQ-NF-001).
+ */
 export async function findByToken(token: string): Promise<StoredAppointment | undefined> {
   return fetchAppointment(eq(appointments.accessToken, token));
 }
 
+/** The appointment with this id (R20–R23, R27), or `undefined` when there is none. */
 export async function findById(id: string): Promise<StoredAppointment | undefined> {
   return fetchAppointment(eq(appointments.id, id));
 }
@@ -921,6 +927,10 @@ export interface MyAppointmentFilters {
   readonly status?: string;
 }
 
+/**
+ * The filters of R18 and M1: an optional master, an inclusive range of salon
+ * dates on `startAt`, and a status.
+ */
 export interface AdminAppointmentFilters {
   readonly masterId?: string;
   readonly from?: string;
@@ -931,8 +941,8 @@ export interface AdminAppointmentFilters {
 /**
  * Lists appointments with filters across all masters or for a specific master.
  *
- * S5.1a R20 and S4.2 M1 share this implementation: M1 locks `masterId` to the
- * authenticated caller, while R20 accepts an optional `masterId` query filter.
+ * S5.1a R18 and S4.2 M1 share this implementation: M1 locks `masterId` to the
+ * authenticated caller, while R18 accepts an optional `masterId` query filter.
  * Ordering is `startAt` then `id` ascending (J4, K9).
  */
 export async function listAppointmentsAdmin(
@@ -1062,6 +1072,7 @@ export type RecordPaymentOutcome =
   | { readonly kind: 'not-completed' }
   | { readonly kind: 'already-recorded' };
 
+/** R27's body, already split: the amount in minor units with its currency, method and status. */
 export interface RecordPaymentInput {
   readonly amountMinor: number;
   readonly currency: string;

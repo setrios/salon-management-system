@@ -18,8 +18,13 @@ import type { RequestHandler } from 'express';
 import { verifyAccessToken, type StaffRole } from '../modules/auth/tokens.js';
 import { HttpProblem } from './error-handler.js';
 
+/** The role a bearer token carries: `master` or `admin` (REQ-F-012, REQ-F-017). */
 export type PrincipalRole = StaffRole;
 
+/**
+ * The authenticated caller, as `authenticate` puts it on `res.locals.principal`
+ * and as A2 returns it. `id` is the caller's row in `masters`.
+ */
 export interface Principal {
   id: string;
   role: PrincipalRole;

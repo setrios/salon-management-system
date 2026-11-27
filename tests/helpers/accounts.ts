@@ -37,8 +37,10 @@ const SCRYPT_P = 1;
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
+/** The role of a seeded staff account — the same two values as `masters.role`. */
 export type StaffRole = 'master' | 'admin';
 
+/** What a test chooses about a staff account it seeds; the password is given in plain text. */
 export interface AccountInput {
   readonly role: StaffRole;
   readonly username: string;
@@ -46,6 +48,7 @@ export interface AccountInput {
   readonly fullName: string;
 }
 
+/** A seeded account: the input, plus the id the database gave it. */
 export interface SeededAccount extends AccountInput {
   readonly id: string;
 }

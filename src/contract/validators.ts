@@ -37,6 +37,7 @@ export interface ConvertedContract {
   operations: ConvertedOperation[];
 }
 
+/** One operation of the converted contract (`src/contract/openapi.json`), as the validators need it. */
 export interface ConvertedOperation {
   operationId: string;
   method: string;
@@ -47,6 +48,7 @@ export interface ConvertedOperation {
   responseCodes: number[];
 }
 
+/** One declared parameter of an operation; `schema` is compiled by AJV on first use. */
 export interface ConvertedParameter {
   name: string;
   in: 'path' | 'query' | 'header' | 'cookie';

@@ -27,6 +27,7 @@ export function getTraceId(res: Response): string | undefined {
   return typeof res.locals.traceId === 'string' ? res.locals.traceId : undefined;
 }
 
+/** Gives every request a fresh trace id, which the log line and the `Problem` both carry. */
 export const traceMiddleware: RequestHandler = (_req, res, next) => {
   res.locals.traceId = randomUUID();
   next();

@@ -24,6 +24,11 @@ import type { RequestHandler } from 'express';
 import { contractPathFor } from '../contract/paths.js';
 import { HttpProblem } from './error-handler.js';
 
+/**
+ * The terminal handler for a request nothing answered: 405 `METHOD_NOT_ALLOWED`
+ * when the path exists in the contract with other methods, otherwise 404
+ * `NOT_FOUND`. Registered after the API and the interface's pages.
+ */
 export const notFound: RequestHandler = (req, _res, next) => {
   const match = contractPathFor(req.path);
 

@@ -52,6 +52,13 @@ const ROLE_DETAIL: Record<PrincipalRole, string> = {
   master: 'This operation requires the master role.',
 };
 
+/**
+ * Lets a request through only for the given role.
+ *
+ * Runs after `authenticate`: no principal is 401 `UNAUTHENTICATED` (the order
+ * the contract implies — who you are before what you may do), another role is
+ * 403 `FORBIDDEN` with a sentence naming the role required.
+ */
 export function requireRole(role: PrincipalRole): RequestHandler {
   return (_req, res, next) => {
     const principal = res.locals.principal as { role?: PrincipalRole } | undefined;
