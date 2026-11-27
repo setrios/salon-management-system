@@ -6,7 +6,7 @@
 | Matrix | `spec/traceability-matrix.md` (`92201a3`) |
 | Generator and audit | `scripts/traceability.mjs`; `npm run check:traceability` (`a0cd5cb`) |
 | Date | 2026-11-27 |
-| Approved by | _awaiting the developer_ |
+| Approved by | setrios, 2026-11-27 — T-1, T-2, T-3 accepted (recorded by the coding agent at the developer's instruction) |
 
 ## 1. How the matrix is built
 
@@ -69,10 +69,12 @@ exit: 1
 
 Both files restored: 0 findings, exit 0.
 
-## 5. For the developer
+## 5. The developer's decisions
 
-1. T-1: accept the line added to screen A3.
-2. T-2, T-3: accept the two tests as tracing to the error model and the
-   logging requirement of the lab task, not to an SRS requirement.
-3. Review the matrix itself — the rows of the requirements that matter most
-   to you.
+| # | Decision |
+|---|---|
+| T-1 | **Accepted**: screen A3 lists REQ-F-034 |
+| T-2 | **Accepted**: `structural.test.ts` traces to the error model and the HTTP plumbing, recorded in the script |
+| T-3 | **Accepted**: `error-log.test.ts` traces to the logging requirement of lab 5, recorded in the script |
+
+With them the matrix has no open finding: `npm run check:traceability` exits 0.
