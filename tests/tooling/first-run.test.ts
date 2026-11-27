@@ -101,6 +101,11 @@ describe('SMS-74 F13 — scripts/create-admin.mjs', () => {
     });
   }
 
+  /** Each case sets the administrator rows it needs, so the order of cases does not matter. */
+  async function removeAdmins(): Promise<void> {
+    await getPool().query("delete from masters where role = 'admin'");
+  }
+
   async function adminCount(): Promise<number> {
     const { rows } = await getPool().query<{ n: string }>(
       "select count(*) as n from masters where role = 'admin'",
@@ -109,6 +114,7 @@ describe('SMS-74 F13 — scripts/create-admin.mjs', () => {
   }
 
   it('C1 creates the administrator, and a password with $ signs in', async () => {
+    await removeAdmins();
     const { stdout } = await createAdmin(['--username', 'owner', '--full-name', 'Salon Owner'], {
       ADMIN_PASSWORD: password,
     });
@@ -122,6 +128,10 @@ describe('SMS-74 F13 — scripts/create-admin.mjs', () => {
   });
 
   it('C2 refuses a second administrator', async () => {
+    await removeAdmins();
+    await createAdmin(['--username', 'first', '--full-name', 'First'], {
+      ADMIN_PASSWORD: 'first-password',
+    });
     await expect(
       createAdmin(['--username', 'second', '--full-name', 'Second'], {
         ADMIN_PASSWORD: 'x-password',
