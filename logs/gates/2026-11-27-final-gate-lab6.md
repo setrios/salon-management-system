@@ -6,8 +6,8 @@
 | Version | **1.0.0** |
 | Commit verified | `ad31041` (`chore: set the version to 1.0.0`); records added after it change no code |
 | Date | 2026-11-27 |
-| Signed by | _awaiting the developer_ |
-| Decision | _pending_ |
+| Signed by | setrios |
+| Decision | **GO** |
 
 ---
 
@@ -64,4 +64,4 @@ signed, and this paragraph is its correction.
 
 ## 6. Decision
 
-_To be recorded by the developer: GO / REVISE / STOP._
+**GO.** The SDD cycle of the Salon Management System closes at version 1.0.0, tagged `v1.0.0` on the commit that signs this record. SMS-80 opens the next cycle. Signed by setrios on 2026-11-27, recorded by the coding agent at the developer's instruction.

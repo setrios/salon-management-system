@@ -66,23 +66,23 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-49 | Second refactoring: one due-reminder statement (step 6) | Refactoring | Plan §9; task step 6 | SMS-45, SMS-46 | Coding Agent | Done |
 | SMS-50 | Local setup instructions in the README | Documentation | Plan §9; the setup gap in the README | — | Joint | Done |
 | SMS-51 | curl examples for the operation families | Documentation | Plan §9; the README | SMS-50 | Joint | Done |
-| SMS-52 | Lab 6 preparation: plan, commit prefixes, lockfile, SRS v1.3 PDF, tracker alignment | Documentation | Lab 6; `logs/2026-11-26-lab6-plan.md` | — | Joint | In progress |
-| SMS-53 | Coding convention document and linter/formatter configuration | Documentation | Lab 6 step 1; D-L6-5 | SMS-52 | Joint | Backlog |
-| SMS-54 | Convention analysis of the existing code: lint report, formatting, fixes | Verification | Lab 6 step 2 | SMS-53 | Coding Agent | Backlog |
-| SMS-55 | UI screen specification (screens ↔ REQ-IDs ↔ API operations) | Specification | SRS v1.3 §User Interface; REQ-NF-002…007; D-L6-3 | SMS-52 | Joint | Backlog |
-| SMS-56 | UI-GATE: approve the screen specification | Gate | D-L6-3 | SMS-55 | Human | Backlog |
-| SMS-57 | Test the UI end to end (SCN-01…16 flows, REQ-NF-002/003/004/006/007) | Test | `spec/ui/screens.md`; D-L6-4 | SMS-54, SMS-56 | Coding Agent | Backlog |
-| SMS-58 | G5: approve stage S6 (user interface) exit | Gate | Lab 6 plan §4 | SMS-36 | Human | Backlog |
-| SMS-59 | Terminology audit: glossary ↔ code ↔ API ↔ UI | Verification | Lab 6 step 3; SRS v1.3 glossary | SMS-58 | Joint | Backlog |
-| SMS-60 | Docstrings: audit and complete TSDoc for public exports | Documentation | Lab 6 step 4 | SMS-59 | Coding Agent | Backlog |
-| SMS-61 | API reference (Redocly), code reference (TypeDoc), architecture | Documentation | Lab 6 step 5; D-L6-6 | SMS-60 | Coding Agent | Backlog |
-| SMS-62 | README and deployment guide | Documentation | Lab 6 step 6 | SMS-58 | Joint | Backlog |
-| SMS-63 | User guide per role | Documentation | Lab 6 step 7 | SMS-58 | Joint | Backlog |
-| SMS-64 | Documentation check: README run, API docs vs code, user guide vs UI | Verification | Lab 6 steps 8–10 | SMS-61, SMS-62, SMS-63 | Joint | Backlog |
-| SMS-65 | Complete the traceability matrix and audit it automatically | Documentation | Lab 6 steps 11–12 | SMS-64 | Joint | Backlog |
-| SMS-66 | Final verification of the repository | Verification | Lab 6 step 13 | SMS-65 | Coding Agent | Backlog |
-| SMS-67 | Final human validation against the initial concept | Validation | Lab 6 steps 14–15; `spec/DESCRIPTION.md` | SMS-66 | Human | Backlog |
-| SMS-68 | FINAL-GATE (lab 6), final SDD log, tag v1.0.0 | Gate | Lab 6 steps 16–17; D-L6-7, D-L6-8 | SMS-67 | Human | Backlog |
+| SMS-52 | Lab 6 preparation: plan, commit prefixes, lockfile, SRS v1.3 PDF, tracker alignment | Documentation | Lab 6; `logs/2026-11-26-lab6-plan.md` | — | Joint | Done |
+| SMS-53 | Coding convention document and linter/formatter configuration | Documentation | Lab 6 step 1; D-L6-5 | SMS-52 | Joint | Done |
+| SMS-54 | Convention analysis of the existing code: lint report, formatting, fixes | Verification | Lab 6 step 2 | SMS-53 | Coding Agent | Done |
+| SMS-55 | UI screen specification (screens ↔ REQ-IDs ↔ API operations) | Specification | SRS v1.3 §User Interface; REQ-NF-002…007; D-L6-3 | SMS-52 | Joint | Done |
+| SMS-56 | UI-GATE: approve the screen specification | Gate | D-L6-3 | SMS-55 | Human | Done |
+| SMS-57 | Test the UI end to end (SCN-01…16 flows, REQ-NF-002/003/004/006/007) | Test | `spec/ui/screens.md`; D-L6-4 | SMS-54, SMS-56 | Coding Agent | Done |
+| SMS-58 | G5: approve stage S6 (user interface) exit | Gate | Lab 6 plan §4 | SMS-36 | Human | Done |
+| SMS-59 | Terminology audit: glossary ↔ code ↔ API ↔ UI | Verification | Lab 6 step 3; SRS v1.3 glossary | SMS-58 | Joint | Done |
+| SMS-60 | Docstrings: audit and complete TSDoc for public exports | Documentation | Lab 6 step 4 | SMS-59 | Coding Agent | Done |
+| SMS-61 | API reference (Redocly), code reference (TypeDoc), architecture | Documentation | Lab 6 step 5; D-L6-6 | SMS-60 | Coding Agent | Done |
+| SMS-62 | README and deployment guide | Documentation | Lab 6 step 6 | SMS-58 | Joint | Done |
+| SMS-63 | User guide per role | Documentation | Lab 6 step 7 | SMS-58 | Joint | Done |
+| SMS-64 | Documentation check: README run, API docs vs code, user guide vs UI | Verification | Lab 6 steps 8–10 | SMS-61, SMS-62, SMS-63 | Joint | Done |
+| SMS-65 | Complete the traceability matrix and audit it automatically | Documentation | Lab 6 steps 11–12 | SMS-64 | Joint | Done |
+| SMS-66 | Final verification of the repository | Verification | Lab 6 step 13 | SMS-65 | Coding Agent | Done |
+| SMS-67 | Final human validation against the initial concept | Validation | Lab 6 steps 14–15; `spec/DESCRIPTION.md` | SMS-66 | Human | Done |
+| SMS-68 | FINAL-GATE (lab 6), final SDD log, tag v1.0.0 | Gate | Lab 6 steps 16–17; D-L6-7, D-L6-8 | SMS-67 | Human | Done |
 | SMS-69 | Fix: period=repeated answers 400 instead of 422 INVALID_PERIOD | Feature | REQ-F-022; Q1; found by SMS-54 | SMS-54 | Coding Agent | Done |
 | SMS-70 | Fix: confirmationUrl points to a placeholder host instead of this deployment | Feature | REQ-F-004, 005; UI-GATE U-1 | SMS-56 | Coding Agent | Done |
 | SMS-71 | Fix: the administrator is listed, read and changed as a master (R1, R3, R4, R11) | Feature | REQ-F-017, 018; D10, D-19; found by SMS-57 (S3) | SMS-57 | Coding Agent | Done |
