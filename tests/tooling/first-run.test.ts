@@ -22,6 +22,10 @@
  *       signs in through A1
  *   C2  a second run refuses: there is one administrator (REQ-F-017)
  *   C3  without --username it writes nothing and prints its usage
+ *   E4  `npm run db:migrate` says so when it succeeds (SMS-78): drizzle-kit's own
+ *       success line is drawn by its spinner and did not appear on the
+ *       developer's terminal under npm 12 — a successful run looked like F11's
+ *       silent one
  *
  * Source: lab 6 step 8 (README checked by running it); README "Quick start",
  *         "The first administrator"; REQ-F-012, REQ-F-017; findings F11, F13.
@@ -85,6 +89,16 @@ describe('SMS-74 F11 — drizzle.config.ts reads .env', () => {
   it('E3 fails with a message naming DATABASE_URL when neither has it', async () => {
     rmSync(join(dir, '.env'), { force: true });
     await expect(configUrlIn(dir, cleanEnv())).rejects.toThrow(/DATABASE_URL/);
+  });
+});
+
+describe('SMS-78 — db:migrate reports success in its own words', () => {
+  it('E4 prints a line of its own after a successful migration', async () => {
+    const { stdout } = await run('npm', ['run', '--silent', 'db:migrate'], {
+      cwd: ROOT,
+      env: cleanEnv({ DATABASE_URL: process.env.DATABASE_URL ?? '' }),
+    });
+    expect(stdout).toContain('db:migrate: the database is up to date.');
   });
 });
 
