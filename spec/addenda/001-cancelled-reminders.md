@@ -92,7 +92,7 @@ schema count stays 58.
 |---|---|
 | `src/modules/notifications/reminders.ts` | `ReminderStatus` gains the value; a pure function settles the rows |
 | `src/modules/appointments/service.ts` | both cancellation paths write the settlement with the state transition |
-| `src/db/schema.ts`, migration | `notifications_status_check` gains `'cancelled'` (migration 0009) |
+| `src/db/schema.ts`, migration | `notifications_status_check` gains `'cancelled'` (migration `0008_cancelled_reminders.sql`; this row first said 0009 — erratum recorded at SMS-64, 2026-11-27) |
 | `src/contract/openapi.json` | regenerated from the amended `openapi.yaml` |
 | `tests/api/reminders.test.ts` | **R9 changes**: it asserts the rows after cancellation, and after this addendum their status is `cancelled`. The comment explaining why it asserted nothing is replaced by the assertion. |
 | `tests/api/cancellation.test.ts` | F2's "not asserted" note is replaced by a pointer to the addendum; no behaviour changes there |

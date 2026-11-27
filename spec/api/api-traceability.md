@@ -362,8 +362,8 @@ over appointments.
 | Operation | Test | Code |
 |---|---|---|
 | `createAppointmentAdmin` (R19) | `tests/api/admin-appointments.test.ts` — C1–C4 | `src/modules/appointments/admin.ts` (`createAppointmentAdminHandler`), `src/modules/appointments/routes.ts` (`bookAppointment`), `src/modules/appointments/service.ts` (`createAppointment`) |
-| `listAppointmentsAdmin` (R20) | `tests/api/admin-appointments.test.ts` — L1–L4 | `src/modules/appointments/admin.ts` (`listAppointmentsAdminHandler`), `src/modules/appointments/service.ts` (`listAppointmentsAdmin`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
-| `getAppointmentAdmin` | `tests/api/admin-appointments.test.ts` — G1–G2 | `src/modules/appointments/admin.ts` (`getAppointmentAdminHandler`, `loadAppointmentAdmin`), `src/modules/appointments/service.ts` (`loadAppointmentById`, `findById`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
+| `listAppointmentsAdmin` (R18) | `tests/api/admin-appointments.test.ts` — L1–L4 | `src/modules/appointments/admin.ts` (`listAppointmentsAdminHandler`), `src/modules/appointments/service.ts` (`listAppointmentsAdmin`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
+| `getAppointmentAdmin` (R20) | `tests/api/admin-appointments.test.ts` — G1–G2 | `src/modules/appointments/admin.ts` (`getAppointmentAdminHandler`, `loadAppointmentAdmin`), `src/modules/appointments/service.ts` (`loadAppointmentById`, `findById`), `src/modules/appointments/staff-view.ts` (`staffBody`) |
 
 **REQ-F-019 is delivered by this stage.** R19 reuses P8's booking machinery with
 no own rules (K2); R20 provides the cross-master schedule with date, master, and
@@ -504,7 +504,7 @@ declared response set, which has no 422.
 
 | NFR | Evidence | Where |
 |---|---|---|
-| REQ-NF-001 — unguessable token | `tests/api/appointments.test.ts` (S2.2), `tests/api/cancellation.test.ts` (S2.3); restated by N1 | SMS-26 |
+| REQ-NF-001 — unguessable token | `tests/api/booking.test.ts` (S2.1, the token is a UUID v4), `tests/api/confirmation.test.ts` (S2.2), `tests/api/cancellation.test.ts` (S2.3); restated by N1 | SMS-26 |
 | REQ-NF-005 — no automatic deletion | N4 + the artifact scan in `logs/runs/runs-17.md` §2 | SMS-20 |
 | REQ-NF-006 — client data only to authorised parties | N2 + the same three-party/one-stranger matrix in `runs-17.md` | SMS-20 |
 | REQ-NF-007 — no location or time-zone selector | N3, N3b + the scan of the shipped contract in `runs-17.md` | SMS-20 |

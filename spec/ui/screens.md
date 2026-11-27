@@ -34,7 +34,7 @@ screen for it.
 | # | Constraint |
 |---|---|
 | 2.1 | Static pages served by the same Express process; the API stays under `/api/v1`, the interface takes the paths of §3. No server-side rendering, no new runtime dependency. |
-| 2.2 | Browser code is TypeScript without a framework, compiled by the project's `tsc` (a separate `tsconfig.web.json`, because the browser needs the DOM library and the server must not have it). |
+| 2.2 | Browser code is TypeScript without a framework, compiled by the project's `tsc` (a separate project, `src/web/tsconfig.json` as built — the draft said `tsconfig.web.json`; corrected at SMS-64 — because the browser needs the DOM library and the server must not have it). |
 | 2.3 | The interface calls the API only through `fetch` to `/api/v1/…` and renders the contract's own fields; it computes nothing the server already answers, except what C1 needs before a booking exists: the preview sums (C1-1 duration, C1-3 price) and the union of several masters' free slots (C1-2). After booking, the totals shown are the server's (`totalDurationMinutes`, `totalPrice`). |
 | 2.4 | An API error is shown from the RFC 9457 `Problem` (`title`, `detail`, `errors[]` for field messages), never as a raw status code. |
 | 2.5 | No paths other than those in §3 are served as pages; an unknown path still answers the API's 404 `Problem`. |
