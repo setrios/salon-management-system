@@ -79,7 +79,19 @@ measure* (REQ-F-025, `unit`, A7 **Unit**). All consistent.
 | T4 | `spec/addenda/001-cancelled-reminders.md` §impact says "migration 0009"; the migration is `0008_cancelled_reminders.sql` (README and `components.md` say 0000–0008, correctly). | Not terminology — a document that disagrees with the code. **Carried to SMS-64** (documentation against code). |
 | T5 | R11's answer for a reference that names nothing was a decision made at a gate but absent from `error-model.md`. | **Clarification CL-14**, so the decision is found where error codes are looked up. |
 
-## 5. Result
+## 5. The developer's decisions (2026-11-27)
+
+| Finding | Decision |
+|---|---|
+| T1 | Clarification CL-13 accepted. Asked whether five statuses are too many: the code was checked — `scheduled`, `sent`, `skipped`, `cancelled` are each produced and mean different things (REQ-F-029 depends on `skipped` ≠ `cancelled`); `failed` is never produced because delivery is simulated. **Keep `failed` as reserved and document it** (option a), rather than removing it through an addendum (option b). The N1 Status filter keeps its "Failed" option. |
+| T2 | No rename. |
+| T3 | Keep the interface labels; the user guide gives both names at first mention. |
+| T4 | Carried to SMS-64. |
+| T5 | Clarification CL-14 accepted. |
+
+Approved by setrios, 2026-11-27; recorded by the coding agent at the developer's instruction.
+
+## 6. Result
 
 No identifier in the server, the interface or the tests uses a term the
 glossary does not define in place of one it does, and no glossary term is
