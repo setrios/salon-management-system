@@ -91,6 +91,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-74 | Fix: the README's first run fails in a clean environment (F11, F13) | Documentation | Lab 6 step 8; the developer's run | SMS-62 | Joint | Done |
 | SMS-75 | Fix: the unhandled-error log omits the cause the database gave (F12) | Feature | Lab 5 step 1 (logging); the developer's run | SMS-36 | Coding Agent | Done |
 | SMS-76 | Fix: three usability findings of the developer's review before G5 | Feature | the developer's review; REQ-F-022; REQ-NF-002; K2, K10 | SMS-36 | Coding Agent | Done |
+| SMS-77 | Fix: create-admin shows the password while it is typed | Feature | README (typing is not shown); the developer's README re-run | SMS-74 | Coding Agent | In progress |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
