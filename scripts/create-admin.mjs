@@ -17,7 +17,6 @@
  * Exit codes: 0 created, 1 refused or failed, 2 usage.
  */
 
-import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 
 import pg from 'pg';
@@ -34,18 +33,45 @@ function fail(message, code = 1) {
   process.exit(code);
 }
 
-/** Asks for the password on an interactive terminal, without echoing it. */
-async function askPassword() {
+/**
+ * Asks for the password on an interactive terminal, without echoing it.
+ *
+ * The terminal is put in raw mode and the characters are collected one by one,
+ * so nothing typed is written back (SMS-77: readline echoed it). Enter ends the
+ * input, Backspace removes the last character, Ctrl-C and Ctrl-D cancel. The
+ * terminal's mode is restored on every way out.
+ */
+function askPassword() {
   if (!process.stdin.isTTY) fail('set ADMIN_PASSWORD, or run in a terminal to be asked.', 2);
-  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-  const write = rl._writeToOutput?.bind(rl);
-  rl._writeToOutput = (text) => {
-    if (write !== undefined && text.includes('Password')) write(text);
-  };
-  const answer = await rl.question('Password for the administrator: ');
-  rl.close();
-  process.stdout.write('\n');
-  return answer;
+  process.stdout.write('Password for the administrator: ');
+  return new Promise((resolvePassword) => {
+    let password = '';
+    const stdin = process.stdin;
+    const finish = () => {
+      stdin.setRawMode(false);
+      stdin.pause();
+      stdin.removeListener('data', onData);
+      process.stdout.write('\n');
+    };
+    const onData = (chunk) => {
+      for (const char of chunk.toString('utf8')) {
+        if (char === '\r' || char === '\n') {
+          finish();
+          resolvePassword(password);
+          return;
+        }
+        if (char === '\u0003' || char === '\u0004') {
+          finish();
+          fail('cancelled; nothing was written.', 1);
+        }
+        if (char === '\u007f' || char === '\b') password = password.slice(0, -1);
+        else if (char >= ' ') password += char;
+      }
+    };
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.on('data', onData);
+  });
 }
 
 const { values } = parseArgs({
