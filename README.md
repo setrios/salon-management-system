@@ -24,6 +24,7 @@ approved interface — and the tests are derived from them, not from the code.
 | Node.js | 24.18 or later (`engines` in `package.json`) | runs the server and the scripts |
 | Docker with Compose v2 | any current | the PostgreSQL 16 container of `docker-compose.yml` |
 | A browser | any current | the interface |
+| `curl` and `jq` | any current | only for "Checking endpoints with curl" (`jq` pulls ids and tokens out of the answers): `sudo apt install jq`, `sudo dnf install jq`, `sudo pacman -S jq` or `brew install jq` |
 
 Everything else is an npm dependency, installed by `npm ci`.
 
@@ -122,7 +123,7 @@ again. Each comment states the status the request answers with.
 
 ```bash
 BASE=http://localhost:3000/api/v1
-ADMIN_PASSWORD='the password you gave create-admin'
+ADMIN_PASSWORD='the password you gave create-admin'   # replace with your administrator's password
 TOKEN=$(curl -s -X POST $BASE/auth/login -H 'content-type: application/json' \
   -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{username:"admin",password:$p}')" | jq -r .accessToken)
 SUFFIX=$(node -e "console.log(require('node:crypto').randomBytes(3).toString('hex'))")
