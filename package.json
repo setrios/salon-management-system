@@ -23,7 +23,9 @@
     "test:ui": "playwright test",
     "docs:api": "npm --prefix spec/api exec -- redocly build-docs spec/api/openapi.yaml --config spec/api/redocly.yaml -o docs/api/index.html --title \"Salon Management System API\"",
     "docs:code": "typedoc && cd src/web && typedoc",
-    "docs": "npm run docs:api && npm run docs:code"
+    "docs": "npm run docs:api && npm run docs:code",
+    "create-admin": "node --env-file-if-exists=.env scripts/create-admin.mjs",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "ajv": "^8.0.0",
