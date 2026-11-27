@@ -25,7 +25,7 @@
     "docs:code": "typedoc && cd src/web && typedoc",
     "docs": "npm run docs:api && npm run docs:code",
     "create-admin": "node --env-file-if-exists=.env scripts/create-admin.mjs",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "drizzle-kit migrate && node -e \"console.log('db:migrate: the database is up to date.')\"",
     "check:user-guide": "node scripts/check-user-guide.mjs"
   },
   "dependencies": {
