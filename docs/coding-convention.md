@@ -116,13 +116,14 @@ therefore does not check object-literal and type properties.
 | Rule | Enforced by |
 |---|---|
 | Every module starts with a `/** … */` block: what the module is, which operations or requirements it serves (`Source:` line with REQ-IDs) | review (all 61 `src/` files already do) |
-| Every exported function, class, interface, type alias and enum has a doc comment | `jsdoc/require-jsdoc` (warning until SMS-60, then error) |
+| Every exported function, class, interface, type alias and enum has a doc comment | `jsdoc/require-jsdoc` (an error since SMS-60) |
 | Comments state purpose, parameters, result, constraints and failure modes — **not** what the next line obviously does | review |
 | Types live in the TypeScript signature, never in the comment (`@param name text`, not `@param {string} name`) | `jsdoc/no-types` |
 | `@param` names match the signature | `jsdoc/check-param-names` |
 | `@param` / `@returns` only when they add information the name and type do not | review |
 | Tags are TSDoc / JSDoc tags (`@param`, `@returns`, `@throws`, `@remarks`, `@see`, `@example`, `@typeParam`) | `jsdoc/check-tag-names` |
 | A decision or a requirement is cited by its ID (`REQ-F-018`, `D-27`, `SCN-08`), so the comment stays traceable | review |
+| A requirement put in quotation marks is the SRS's (or an addendum's) exact words — a paraphrase is not quoted | review; checked for every quote by SMS-60 |
 
 ## 7. Project-specific rules
 
@@ -163,3 +164,4 @@ and the contract checks prove behaviour-neutral (SMS-54).
 |---|---|---|
 | 2026-11-26 | First version. | SMS-53 |
 | 2026-11-27 | §4.1: the audit reference and the catalog / catalogue rule. | SMS-59 |
+| 2026-11-27 | §6: `require-jsdoc` is an error; a quotation of a requirement in a comment is the SRS's own words. | SMS-60 |
