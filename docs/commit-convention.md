@@ -1,7 +1,7 @@
 # Commit Message Convention (SDD)
 
 Source of truth for commit message style in this repository.
-Linked from `AGENTS.md`. When asked to suggest a commit message,
+Linked from `CLAUDE.md`. When asked to suggest a commit message,
 the agent must follow this document.
 
 ## 1. Format
