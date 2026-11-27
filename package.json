@@ -1,6 +1,6 @@
 {
   "name": "salon-management-system",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "REST API for the Salon Management System, implemented against the OpenAPI contract approved at API-GATE (2026-10-26).",
   "license": "UNLICENSED",
