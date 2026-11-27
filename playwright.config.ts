@@ -43,6 +43,10 @@ export default defineConfig({
     actionTimeout: 5_000,
     navigationTimeout: 10_000,
     ...devices['Desktop Chrome'],
+    // A 24-hour browser by default (SMS-79): times follow the browser's hour
+    // cycle, and the suites name slot buttons `10:00`. tests/ui/time-format.spec.ts
+    // overrides this with en-US to cover the 12-hour cycle.
+    locale: 'en-GB',
   },
   webServer: {
     command: 'npm run build && node dist/src/index.js',
