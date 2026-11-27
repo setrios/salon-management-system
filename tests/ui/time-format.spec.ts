@@ -17,7 +17,8 @@
  * nothing was stored. H4 guards that case in the interface itself.
  *
  *   H1  C1's slot buttons read `10:00 AM`, `2:30 PM`
- *   H2  C2's When reads `…, 10:00 AM–10:45 AM`
+ *   H2  C2's When reads `…, 10:00 AM–11:00 AM` — the end is the contract's
+ *       `endAt`, the 30-minute block a 45-minute service occupies (REQ-F-031)
  *   H3  M3's From / To are time controls, and a time chosen there is stored as
  *       the contract's `HH:MM` (`09:00`, `18:30`)
  *   H4  a row whose To is not after its From is marked with "The end time must
@@ -86,9 +87,16 @@ test('H2 the confirmation page shows When in the 12-hour cycle', async ({ page, 
     serviceIds: [haircut.id],
     startAt: salonInstant(DAY, '10:00'),
   });
+  // The end shown is the contract's `endAt`, as P1 of confirmation.spec.ts
+  // reads it: 10:00 plus the 60-minute block a 45-minute service occupies.
+  const read = await getJson<{ endAt: string }>(
+    request,
+    `/api/v1/appointments/${booked.accessToken}`,
+  );
+  expect(read.endAt.slice(11, 16)).toBe('11:00');
   await page.goto(booked.confirmationUrl);
 
-  await expect(page.getByText(`${dateLabel(DAY)}, 10:00 AM–10:45 AM`)).toBeVisible();
+  await expect(page.getByText(`${dateLabel(DAY)}, 10:00 AM–11:00 AM`)).toBeVisible();
 });
 
 test('H3 M3 uses time controls and stores HH:MM', async ({ page, request }) => {
