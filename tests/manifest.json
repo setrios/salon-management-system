@@ -450,6 +450,13 @@
       ],
       "implementation": ["src/web/screens/admin.ts"],
       "touches": []
+    },
+    {
+      "ticket": "SMS-74 (test and fix)",
+      "test": "tests/tooling/first-run.test.ts",
+      "sources": ["REQ-F-012", "REQ-F-017"],
+      "implementation": ["scripts/create-admin.mjs"],
+      "touches": ["drizzle.config.ts", "package.json", "README.md"]
     }
   ]
 }
