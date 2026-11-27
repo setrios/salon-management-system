@@ -36,7 +36,7 @@ cp .env.example .env                    # then set JWT_SECRET to a long random s
 npm ci                                  # the exact dependencies of package-lock.json
 docker compose up -d --wait postgres    # returns once the database is healthy
 npm run db:migrate                      # creates the tables (reads DATABASE_URL from .env)
-npm run create-admin -- --username admin --full-name "Administrator"   # asks for a password
+npm run create-admin -- --username admin --full-name "Administrator"   # asks for a password, 8–128 characters
 npm run build                           # contract → validators → server → interface → dist/
 npm start                               # http://localhost:3000/
 ```
@@ -60,11 +60,15 @@ runs `dist/src/index.js`.
 | # | Command | What you should see |
 |---|---|---|
 | 1 | `docker compose up -d --wait postgres` | the command returns once the container is healthy; `docker compose ps` shows `(healthy)` |
-| 2 | `npm run db:migrate` | `[✓] migrations applied successfully!` |
-| 3 | `npm run create-admin -- --username admin --full-name "Administrator"` | `Password for the administrator:` (typing is not shown), then `create-admin: created the administrator "admin" (Administrator).` |
+| 2 | `npm run db:migrate` | `db:migrate: the database is up to date.` (drizzle-kit's own `[✓] …` line may or may not show, depending on the terminal) |
+| 3 | `npm run create-admin -- --username admin --full-name "Administrator"` | `Password for the administrator:` — type 8–128 characters; nothing is shown as you type — then `create-admin: created the administrator "admin" (Administrator).` |
 | 4 | `npm run build` | ends with `copy-web: src/web/styles.css -> dist/src/web/assets/styles.css` |
 | 5 | `npm start` | `curl -s localhost:3000/health` answers `{"status":"ok"}` |
 | 6 | open `http://localhost:3000/staff/login` | sign in as `admin`; the **Appointments** screen opens |
+
+To start again from an empty database, `docker compose down -v` removes the
+container and its data; then begin at step 1. (Two clones in directories of
+the same name share one Compose project, and so one database.)
 
 Before clients can book, the administrator adds at least one master, one
 service and that master's price for it (**Masters**, **Services**, **Prices**),
@@ -98,8 +102,9 @@ so the first one is created with a command:
 npm run create-admin -- --username admin --full-name "Administrator"
 ```
 
-It asks for the password (8–128 characters), hashes it the way the server
-does, and writes the account. It refuses a second administrator and a taken
+It asks for the password (8–128 characters; nothing is shown as you type,
+Backspace works, Ctrl-C cancels), hashes it the way the server does, and
+writes the account. It refuses a second administrator and a taken
 username. For a non-interactive run, pass the password in the environment:
 `ADMIN_PASSWORD='…' npm run create-admin -- --username admin`.
 
