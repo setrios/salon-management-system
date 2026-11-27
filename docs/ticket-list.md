@@ -50,7 +50,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-33 | Feature: material transactions | Feature | REQ-F-020 | SMS-21, SMS-23 | Coding Agent | Done |
 | SMS-34 | Feature: mark completed → payment recording | Feature | REQ-F-027, 021 | SMS-13, SMS-32 | Coding Agent | Done |
 | SMS-35 | Feature: reports (revenue periods/custom range, popular services, stock) | Feature | REQ-F-022, 032, 033 | SMS-16, SMS-34 | Coding Agent | Done |
-| SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26, SMS-57 | Coding Agent | Backlog (lab 6 stage S6) |
+| SMS-36 | Feature: UI constraints (responsive, English, UAH, privacy, no tz selector) | Feature | REQ-NF-002, 003, 004, 006, 007 | SMS-20, SMS-26, SMS-57 | Coding Agent | Done (lab 6 stage S6, G5 GO) |
 | SMS-37 | Feature: retention & no-gateway constraints | Feature | REQ-NF-005, 009 | SMS-20, SMS-34 | Coding Agent | Done (absence constraints, evidence SMS-20) |
 | SMS-38 | Define REST resource model and URI/method conventions | Specification | Plan §5; SRS §4–5 | — | Joint | Done |
 | SMS-39 | Define component schemas and unified error model | Specification | Plan §6–7; SRS §6–7 | SMS-38 | Joint | Done |
