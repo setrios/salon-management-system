@@ -101,6 +101,33 @@ function isBodyParseError(error: unknown): boolean {
   );
 }
 
+/** How deep `describeError` follows a chain of causes; a cycle stops here too. */
+const MAX_CAUSES = 5;
+
+/**
+ * An error for the log: its stack, then each `cause` in order as
+ * `caused by: <name>: <message>`.
+ *
+ * Drizzle reports a failed statement as `Failed query: <sql>` and puts the
+ * PostgreSQL reason (`relation "masters" does not exist`, `ECONNREFUSED`, …)
+ * in `cause`; without the chain the log says that a query failed but not why
+ * (SMS-75). The text goes to the log only, never to the client (error-model
+ * §4).
+ */
+function describeError(error: unknown): string {
+  const lines = [error instanceof Error ? (error.stack ?? error.message) : String(error)];
+  let cause = error instanceof Error ? error.cause : undefined;
+  for (let depth = 0; cause !== undefined && depth < MAX_CAUSES; depth += 1) {
+    lines.push(
+      cause instanceof Error
+        ? `caused by: ${cause.name}: ${cause.message}`
+        : `caused by: ${typeof cause === 'string' ? cause : JSON.stringify(cause)}`,
+    );
+    cause = cause instanceof Error ? cause.cause : undefined;
+  }
+  return lines.join('\n');
+}
+
 /**
  * Terminal error handler, registered last.
  *
@@ -124,8 +151,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
     known?.detail ?? (parseFailure ? 'The request body is not valid JSON.' : undefined);
 
   if (known === undefined && !parseFailure) {
-    const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
-    process.stderr.write(`[${traceId ?? 'no-trace'}] unhandled error: ${message}\n`);
+    process.stderr.write(`[${traceId ?? 'no-trace'}] unhandled error: ${describeError(error)}\n`);
   }
 
   sendProblem(res, {
