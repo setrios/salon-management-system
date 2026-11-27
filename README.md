@@ -14,7 +14,7 @@ approved interface — and the tests are derived from them, not from the code.
 | Interface | 19 page routes: client C1–C3, staff S1, M1–M3, N1–N2, A1–A9 |
 | Runtime | Node.js ≥ 24.18, TypeScript (ESM), Express 5 |
 | Storage | PostgreSQL 16, Drizzle ORM, migrations 0000–0008 |
-| Tests | Vitest + Supertest, **418 cases**; Playwright (Chromium), **51 cases** |
+| Tests | Vitest + Supertest, **420 cases**; Playwright (Chromium), **52 cases** |
 | Evidence | signed gate records in `logs/gates/`, one control run per lab 5 stage in `logs/runs/` |
 
 ## Requirements
@@ -266,12 +266,15 @@ each operation against the same server. The requests write rows — the names
 ## Tests and checks
 
 ```bash
-npm test                                  # API and acceptance tests (Vitest, 418)
+npm test                                  # API and acceptance tests (Vitest, 420)
 npx vitest run --sequence.shuffle         # the same, in a random order
-npm run test:ui                           # the interface in Chromium (Playwright, 51)
+npm run test:ui                           # the interface in Chromium (Playwright, 52)
 npm run check:test-first                  # every test file was committed before its implementation
 npm run lint                              # ESLint: the coding convention (docs/coding-convention.md)
 npm run format:check                      # Prettier: the layout
+npm run lint:contract                     # Redocly: the contract is valid OpenAPI 3.0.3
+npm run verify:contract                   # the contract has its 50 operations
+npm run check:user-guide                  # every label and message of the user guide exists in src/web/
 npm run docs                              # rebuilds docs/api and docs/reference
 npm run check:traceability                # regenerates spec/traceability-matrix.md and audits it
 ```

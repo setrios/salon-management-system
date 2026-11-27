@@ -5,7 +5,7 @@
 | Tickets | SMS-47 (first version), SMS-61 (lab 6: the interface, the operation map from the code, the references) |
 | Sources of truth | `spec/api/openapi.yaml` (50 operations, 58 schemas, 16 error codes); `spec/ui/screens.md` (19 page routes) |
 | Implementation | `src/` — one module per component; `src/web/` — the interface |
-| Tests | `tests/api/*` and `tests/acceptance/*` (Vitest, 412 cases), `tests/ui/*` (Playwright, 51 cases) |
+| Tests | `tests/api/*` and `tests/acceptance/*` (Vitest, 420 cases), `tests/ui/*` (Playwright, 52 cases) |
 | References | `docs/api/index.html` (the contract, Redocly), `docs/reference/server/` and `docs/reference/web/` (the code, TypeDoc) — §6 |
 
 The system is one Node process. "Component" here means a module with a stated
@@ -76,7 +76,7 @@ The operations column is derived from the code: each id is the
 | D-9 — the clock is injected | `createApp({ now })`, `nowOf(req)` in `src/lib/clock.ts` |
 | D-7 — tests truncate a `_test` database | `tests/setup.ts` refuses a database name without the suffix |
 | One error model — `Problem` for every failure | `src/middleware/error-handler.ts`; no handler writes its own error body |
-| Instants leave the API in salon time | `salonDateTime` from `src/lib/time.ts`, used by the view mappers |
+| Instants leave the API in salon time | `salonDateTime` from `src/lib/occupancy.ts`, used by the view mappers; the calendar and wall-clock helpers are in `src/lib/time.ts` |
 
 ## 5. Where each component is tested
 
@@ -115,3 +115,4 @@ or constant without a doc comment fails the build, as `npm run lint` does.
 |---|---|---|
 | 2026-11-13 | First version | SMS-47 |
 | 2026-11-27 | The interface (components 14–15); the operations column derived from the code, which corrected the authentication row ("A1–A4: login, refresh, logout, me" — the contract has A1 and A2) and the ranges of five other rows; the availability and public-catalogue modules listed; two paths that did not exist (`scripts/convert.*`, `tests/structural`) replaced; §6 references | SMS-61 |
+| 2026-11-27 | Test counts 420 / 52; `salonDateTime` located in `src/lib/occupancy.ts` (final re-check, F17, F18) | SMS-81 |
