@@ -2,7 +2,8 @@
  * Display formats of the interface (UI-GATE U-4).
  *
  * Money is `1250.00 UAH` (REQ-NF-004); a date is `Mon 16 Nov 2026`; a time is
- * `10:00`, 24-hour. Times are the salon's wall clock exactly as the contract
+ * in the browser's hour cycle — `10:00` or `10:00 AM` (U-4 as amended,
+ * SMS-79). Times are the salon's wall clock exactly as the contract
  * writes them (`2026-11-16T10:00:00+02:00` → `10:00`): the interface never
  * converts to the browser's zone and shows no zone label (REQ-NF-007).
  *
@@ -56,7 +57,35 @@ export function dateOf(instant: string): string {
 
 /** The wall-clock time of a contract instant: `…T10:00:00+02:00` → `10:00`. */
 export function formatTime(instant: string): string {
-  return instant.slice(11, 16);
+  return formatClock(instant.slice(11, 16));
+}
+
+let twelveHour: boolean | undefined;
+
+/**
+ * True when the browser writes times in 12 hours (UI-GATE U-4 as amended,
+ * SMS-79). Only the hour cycle is taken from the browser — never its language,
+ * so the text stays English (REQ-NF-003).
+ */
+export function usesTwelveHourClock(): boolean {
+  twelveHour ??= ['h11', 'h12'].includes(
+    new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle ?? '',
+  );
+  return twelveHour;
+}
+
+/**
+ * A wall-clock `HH:MM` in the browser's hour cycle: `14:30` stays `14:30` in a
+ * 24-hour browser and becomes `2:30 PM` in a 12-hour one. Built by hand rather
+ * than with `Intl`, whose 12-hour output puts a narrow no-break space before
+ * AM/PM in some versions — the text would differ between browsers.
+ */
+export function formatClock(time: string): string {
+  if (!usesTwelveHourClock()) return time;
+  const [hours, minutes] = time.split(':').map(Number);
+  if (hours === undefined || minutes === undefined) return time;
+  const hour = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hour}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'AM' : 'PM'}`;
 }
 
 /** `Mon 16 Nov 2026, 10:00` — a start. */

@@ -15,13 +15,11 @@ import {
   clearInvalid,
   field,
   h,
-  halfHours,
   markInvalid,
   notice,
   region,
   replace,
   select,
-  suggestions,
   table,
   TIME_24H,
   timeInput,
@@ -175,7 +173,6 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
   const weeklyRows = h('div', { class: 'rows' });
   const dateRows = h('div', { class: 'rows' });
   const message = h('div', { class: 'messages' });
-  const times = suggestions(halfHours());
 
   function removable(row: HTMLElement): HTMLElement {
     row.append(
@@ -190,8 +187,8 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
       { 'data-part': 'day' },
     );
     if (rule !== undefined) day.value = String(rule.dayOfWeek);
-    const start = timeInput(rule?.startTime ?? '', times.id, { 'data-part': 'start' });
-    const end = timeInput(rule?.endTime ?? '', times.id, { 'data-part': 'end' });
+    const start = timeInput(rule?.startTime ?? '', { 'data-part': 'start' });
+    const end = timeInput(rule?.endTime ?? '', { 'data-part': 'end' });
     return removable(
       h('div', { class: 'row' }, field('Day', day), field('From', start), field('To', end)),
     );
@@ -199,8 +196,8 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
 
   function dateRow(rule?: DateRule): HTMLElement {
     const date = h('input', { type: 'date', 'data-part': 'date', value: rule?.date ?? '' });
-    const start = timeInput(rule?.startTime ?? '', times.id, { 'data-part': 'start' });
-    const end = timeInput(rule?.endTime ?? '', times.id, { 'data-part': 'end' });
+    const start = timeInput(rule?.startTime ?? '', { 'data-part': 'start' });
+    const end = timeInput(rule?.endTime ?? '', { 'data-part': 'end' });
     return removable(
       h('div', { class: 'row' }, field('Date', date), field('From', start), field('To', end)),
     );
@@ -212,15 +209,26 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
   const part = (row: Element, name: string): string =>
     row.querySelector<HTMLInputElement | HTMLSelectElement>(`[data-part="${name}"]`)?.value ?? '';
 
-  /** Marks every time that is not `HH:MM` in 24 hours (K7); true when all are. */
+  /**
+   * Marks (K7) a row with a missing time, or whose end is not after its start
+   * (SMS-79 H4) — the case that once left a master with no working hours
+   * saved. True when every row is complete and in order.
+   */
   function timesValid(): boolean {
     let valid = true;
-    for (const input of [weeklyRows, dateRows].flatMap((rows) => [
-      ...rows.querySelectorAll<HTMLInputElement>('[data-part="start"], [data-part="end"]'),
-    ])) {
-      if (TIME_24H.test(input.value.trim())) continue;
-      markInvalid(input, 'Use the 24-hour format, for example 09:00 or 18:30.');
-      valid = false;
+    for (const row of [...weeklyRows.children, ...dateRows.children]) {
+      const start = row.querySelector<HTMLInputElement>('[data-part="start"]');
+      const end = row.querySelector<HTMLInputElement>('[data-part="end"]');
+      if (start === null || end === null) continue;
+      for (const input of [start, end]) {
+        if (TIME_24H.test(input.value)) continue;
+        markInvalid(input, 'Choose a time.');
+        valid = false;
+      }
+      if (TIME_24H.test(start.value) && TIME_24H.test(end.value) && end.value <= start.value) {
+        markInvalid(end, 'The end time must be after the start time.');
+        valid = false;
+      }
     }
     return valid;
   }
@@ -279,7 +287,6 @@ export async function renderAvailability(context: StaffContext): Promise<void> {
         'Add',
       ),
     ),
-    times,
     message,
     // The one action that stores the rules, apart from the ones that edit the
     // form (SMS-76 V3): the only filled button, in its own bar.

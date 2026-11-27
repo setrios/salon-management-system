@@ -151,33 +151,13 @@ export function table(
 /** A time of day, `HH:MM` in 24 hours (UI-GATE U-4). */
 export const TIME_24H = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-/** The 48 half-hour times `00:00 … 23:30` (REQ-NF-008 schedules on half hours). */
-export function halfHours(): string[] {
-  return Array.from({ length: 48 }, (_, index) => {
-    const hours = String(Math.floor(index / 2)).padStart(2, '0');
-    return `${hours}:${index % 2 === 0 ? '00' : '30'}`;
-  });
-}
-
 /**
- * A 24-hour time field (U-4). Not `<input type="time">`: a browser draws that
- * control in its own locale (AM/PM under `en-US`), which the interface cannot
- * override (SMS-73). A text field with the `HH:MM` placeholder and the
- * half-hour suggestions shows the same format in every browser; the screen
- * checks the value with `TIME_24H` before sending it.
+ * A time field: the browser's own time control (UI-GATE U-4 as amended,
+ * SMS-79), drawn in the browser's hour cycle. Whatever it shows, its value is
+ * `HH:MM` in 24 hours — the contract's form — or `''` while incomplete.
  *
  * @param value - the stored time, or `''` for a new row.
- * @param listId - the id of a `suggestions(halfHours())` list on the page.
  */
-export function timeInput(value: string, listId: string, props: Props = {}): HTMLInputElement {
-  return h('input', {
-    type: 'text',
-    inputmode: 'numeric',
-    autocomplete: 'off',
-    placeholder: 'HH:MM',
-    maxlength: 5,
-    list: listId,
-    value,
-    ...props,
-  });
+export function timeInput(value: string, props: Props = {}): HTMLInputElement {
+  return h('input', { type: 'time', value, ...props });
 }
