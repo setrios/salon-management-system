@@ -91,7 +91,7 @@ asks P7 once per eligible master and shows the union of their free slots.
 | Step | Heading | Elements | Data |
 |---|---|---|---|
 | C1-1 | **Choose services** | a checkbox per service that at least one active master offers: name and duration ("45 min"), grouped by category; below them **Total duration** | P1 `active=true` joined with the P6 links of the P4 masters; **Total duration** is the sum of the ticked services' base durations (REQ-F-001) |
-| C1-2 | **Choose a date and time** | a date field; then one button per slot (`10:00`, `10:30`, …) | P7 `date`, `serviceIds`, once per eligible master; a slot is shown when it is `available: true` for at least one of them (REQ-F-002); starts are on 30-minute boundaries because the server answers only those (REQ-F-031, REQ-NF-008) |
+| C1-2 | **Choose a date and time** | a date field; then one button per slot (`10:00`, `10:30`, … — or `10:00 AM`, `10:30 AM` in a 12-hour browser, U-4) | P7 `date`, `serviceIds`, once per eligible master; a slot is shown when it is `available: true` for at least one of them (REQ-F-002); starts are on 30-minute boundaries because the server answers only those (REQ-F-031, REQ-NF-008) |
 | C1-3 | **Choose a master** | one choice per eligible master who is free at the chosen slot: full name and that master's **Total price** ("900.00 UAH") | the master's P6 prices summed over the ticked services (REQ-F-001); a master not free at the slot is not listed |
 | C1-4 | **Your details** | **Name**, **Phone** (`+380…`), button **Book**; above the button the summary **Total duration** and **Total price** | P8 body `client`, `masterId`, `serviceIds`, `startAt` |
 
@@ -123,7 +123,7 @@ the API writes them (REQ-NF-007).
 | Element | Content |
 |---|---|
 | **Status** | `Confirmed` / `Completed` / `Cancelled` from `status` |
-| **When** | date and start–end time (`Mon 16 Nov 2026, 10:00–11:30`) |
+| **When** | date and start–end time (`Mon 16 Nov 2026, 10:00–11:30`, or `10:00 AM–11:30 AM` in a 12-hour browser) |
 | **Master** | `master.fullName` |
 | **Services** | one line per service: name and price in UAH |
 | **Total duration**, **Total price** | `totalDurationMinutes`, `totalPrice` in UAH |
@@ -182,7 +182,7 @@ counter and no deadline.
 |---|---|---|---|
 | **M1 My calendar** `/staff/me/calendar` | REQ-F-013; REQ-NF-006 | M1 `listMyAppointments` | **From** / **To** (default: the current week), a list grouped by day: time, client name and phone, services, status. Only the master's own appointments exist in the answer (REQ-F-013). |
 | **M2 My services** `/staff/me/services` | REQ-F-014; REQ-NF-004 | M2 `listMyServices` | table **Service**, **Category**, **Duration**, **Price** (UAH). Read-only: prices are set by the administrator (REQ-F-018). |
-| **M3 My availability** `/staff/me/availability` | REQ-F-015 | M3, M4 | **Weekly hours**: rows of **Day**, **From**, **To**, with **Add** / **Remove**. **Specific dates**: rows of **Date**, **From**, **To**, with **Add** / **Remove**. Button **Save** sends the whole set with M4 (replace). 422 → field messages. |
+| **M3 My availability** `/staff/me/availability` | REQ-F-015 | M3, M4 | **Weekly hours**: rows of **Day**, **From**, **To**, with **Add** / **Remove**. **Specific dates**: rows of **Date**, **From**, **To**, with **Add** / **Remove**. **From** / **To** are the browser's time control (U-4 as amended). A row whose **To** is not after its **From** is marked (K7) with **The end time must be after the start time.** and nothing is sent. Button **Save** sends the whole set with M4 (replace). 422 → field messages. |
 
 ### 5.3 Administrator (menu: Appointments · Masters · Services · Prices · Materials · Reports · Notifications · Notification settings)
 
@@ -235,7 +235,7 @@ Every other operation of the 50 is called by at least one screen above.
 | U-1 | `confirmationUrl` points to `https://salon.example/…`, a placeholder, so the SMS link of REQ-F-005 is not "a valid link" and the contract's description "Reachable confirmation page" is not met. | Make the origin configurable (`PUBLIC_BASE_URL`, default `http://localhost:<PORT>`), path unchanged (`/appointments/{token}`). A defect fix, done **before** the UI tests as its own ticket (SMS-70): failing test, TEST-GATE, fix. The contract is unchanged — its schema says `format: uri`, the example host stays an example. | The confirmation page this document specifies must be the page the SMS points to. |
 | U-2 | Order of the client's steps | **services → date and time → master → details** (decided by the developer at UI-GATE; the draft proposed master first) | The client starts from what they want done and when; the master is chosen among those free at that time. The price, which belongs to a master (MasterService), is shown at the master step, next to each master. |
 | U-3 | Staff session | token in `sessionStorage`, gone when the tab closes; no refresh (the contract has none); a 401 returns to S1 | No client data and no long-lived credential in the browser (REQ-NF-006). |
-| U-4 | Formats | money `1250.00 UAH`; date `Mon 16 Nov 2026`; time `10:00` (24-hour), the salon's wall clock, no zone label | English, UAH, one zone (REQ-NF-003, 004, 007). |
+| U-4 | Formats | money `1250.00 UAH`; date `Mon 16 Nov 2026`; time `10:00` (24-hour), the salon's wall clock, no zone label | English, UAH, one zone (REQ-NF-003, 004, 007). **Amended 2026-11-27 (SMS-79, the developer's decision at the final validation — easier to choose):** a time is shown in the **browser's own hour cycle** — `10:00 AM` where the browser uses 12 hours, `10:00` where it uses 24 — always in English (REQ-NF-003) and always the salon's wall clock; M3's time fields are the browser's own time control. The date format is unchanged. |
 | U-5 | Where REQ-NF-002 is tested | the mobile viewport for C1–C3, which are the screens its acceptance criterion names; staff screens are tested at a desktop viewport | The AC lists client controls only; the staff dashboard is not required to be mobile-first. |
 | U-6 | Test tool | Playwright (`@playwright/test`, Chromium) against the real server on the test database, as a separate `npm run test:ui` | REQ-NF-002 needs a real layout engine; HTTP tests cannot measure scrolling. |
 
