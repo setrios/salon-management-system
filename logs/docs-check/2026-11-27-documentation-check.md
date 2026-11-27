@@ -135,4 +135,20 @@ without a newline) was noted and left: both messages read.
 
 ### 5.2 User guide walk-through
 
-_To be recorded._
+The developer followed `docs/user-guide.md` §2–§5 on the running system of
+run 2 — as a client (book, the appointment's page, reschedule, cancel), at
+sign-in, as a master (calendar, services, working hours, notifications) and as
+the administrator (the first-day set-up, appointments, the appointment's
+details with completion and payment, materials, reports) — and reported:
+**"everything matches"** (2026-11-27). No label, message or step differed from
+the screen.
+
+## 6. Result
+
+| Step | Result |
+|---|---|
+| 8 — README run | passes in the agent's controlled run and in the developer's clean run (22 / 22 curl outputs); findings F11, F13, F14, F15, SMS-77, SMS-78 fixed on the way |
+| 9 — API documentation against the code | 50 / 50 operations; references generated, regeneration stable; 293 identifiers, 0 real misses; D1–D5 and F9 corrected |
+| 10 — user guide against the interface | 133 / 133 labels and messages found in the interface's code; 51 browser tests; the developer's walk-through matches |
+
+No known deviation between the documentation and the system remains open.
