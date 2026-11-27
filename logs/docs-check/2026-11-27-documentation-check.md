@@ -121,4 +121,18 @@ Their result is recorded below and closes SMS-64.
 
 ## 5. The developer's result
 
+### 5.1 README — run three times by the developer (2026-11-27)
+
+| Run | What happened | Outcome |
+|---|---|---|
+| 1 — a clone in `/tmp`, without `docker compose down -v` | `npm run db:migrate` printed nothing after "Using 'pg' driver"; `create-admin` **showed the typed password** (`Password for the administrator: tomi`) and refused it as too short | two defects: **SMS-77** (the prompt echoed — fixed `933c41e`) and **SMS-78** (drizzle-kit's spinner line did not show under npm 12; diagnosis: exit 0, 13 tables — the success looked silent; fixed `0355586`, `db:migrate` prints its own line). The run reused the previous database: two clones in directories of the same name share one Compose project — now stated in the README |
+| 2 — a fresh clone, `docker compose down -v` first | `docker compose up --wait` → `Healthy`; `db:migrate` → `[✓] migrations applied successfully!db:migrate: the database is up to date.`; `create-admin` showed nothing as the password was typed; `tomi` refused (8–128); build, start | the corrected README works; the length rule, now next to the command, was applied as documented. With an 8+ character password the administrator was created and signed in at `/staff/login` |
+| 2, curl section | first block: `bash: jq: command not found` | **F15**: the section needs `jq`, which the README's requirements did not list — added, with the install command per system (`e5640a6`); the password placeholder line now says to replace it |
+| 2, curl section after installing `jq` | every block, in order | **22 / 22 outputs equal to the README's comments** |
+
+The cosmetic join `…successfully!db:migrate: …` (drizzle-kit ends its line
+without a newline) was noted and left: both messages read.
+
+### 5.2 User guide walk-through
+
 _To be recorded._
