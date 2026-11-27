@@ -94,6 +94,7 @@ one-time setup script is `docs/github-issues-setup.sh`.
 | SMS-77 | Fix: create-admin shows the password while it is typed | Feature | README (typing is not shown); the developer's README re-run | SMS-74 | Coding Agent | Done |
 | SMS-78 | Fix: a successful db:migrate can look silent | Feature | README First run; the developer's README re-run | SMS-74 | Coding Agent | Done |
 | SMS-79 | Change: times in the browser's own hour cycle, entered with its time control | Feature | the developer's decision at the final validation (U-4 amended); REQ-NF-003; REQ-F-015 | SMS-73 | Coding Agent | Done |
+| SMS-80 | Next cycle: find a client's appointments by name or phone | Specification | final validation SMS-67, P2; DESCRIPTION.md §2 | SMS-67 | Human | Backlog (next SDD cycle, not v1.0.0) |
 
 Verification and Validation tickets are created per stage at stage start
 (agent drafts Verification evidence; Validation is executed and closed by the
