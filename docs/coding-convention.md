@@ -70,7 +70,13 @@ An identifier that names a domain concept uses the term of the SRS v1.3
 glossary, in its singular English form: `appointment`, `master`, `service`,
 `material`, `reminder`. A synonym is not introduced for variety (`booking` is
 the client's action of creating an appointment, not a second name for it).
-The term-by-term audit is SMS-59.
+The term-by-term audit is SMS-59 (`logs/2026-11-27-terminology-audit.md`).
+
+Words outside the glossary keep one spelling per layer: identifiers use US
+spelling (`src/modules/catalog/`, `catalogRoutes`), prose follows the
+contract's UK "catalogue". A directory is not renamed for spelling alone —
+`tests/manifest.json` records source paths, and `check:test-first` proves the
+order of the files it names (audit finding T2).
 
 ### 4.2 Contract names are fixed
 
@@ -156,3 +162,4 @@ and the contract checks prove behaviour-neutral (SMS-54).
 | Date | Change | Ticket |
 |---|---|---|
 | 2026-11-26 | First version. | SMS-53 |
+| 2026-11-27 | §4.1: the audit reference and the catalog / catalogue rule. | SMS-59 |
