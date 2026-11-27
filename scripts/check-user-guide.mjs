@@ -32,7 +32,7 @@ const NOT_LABELS = new Map([
   ['No SMS is actually sent.', "the guide's own heading of a limit"],
   ['No online payment.', "the guide's own heading of a limit"],
   ['No client accounts and no password reset.', "the guide's own heading of a limit"],
-  ['Date fields', "the guide's own heading of a limit"],
+  ['Date and time fields', "the guide's own heading of a limit"],
   ['The staff dashboard', "the guide's own heading of a limit"],
   ['Custom range', 'the option of the Period select, written in italics as a value'],
   ['Total:', 'the start of a rendered line `Total: … UAH`'],
