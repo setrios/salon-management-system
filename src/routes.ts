@@ -45,6 +45,7 @@ import { notificationRoutes } from './modules/notifications/routes.js';
 import { publicRoutes } from './modules/public/routes.js';
 import { unitRoutes } from './modules/units/routes.js';
 
+/** The versioned prefix of every contract operation (`servers` in `openapi.yaml`). */
 export const API_PREFIX = '/api/v1';
 
 /**

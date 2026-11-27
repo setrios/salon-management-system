@@ -114,4 +114,5 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   });
 }
 
+/** The configuration of this process, read from `process.env` when the module loads. */
 export const config: AppConfig = loadConfig();

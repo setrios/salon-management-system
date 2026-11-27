@@ -63,6 +63,7 @@ const getCurrentPrincipal: RequestHandler = (_req, res) => {
   res.status(200).json(principal);
 };
 
+/** A1 `login` and A2 `getCurrentPrincipal`. A1 is the one staff operation that needs no token. */
 export const authRoutes = Router();
 
 authRoutes.post('/auth/login', validateBody('login'), login);

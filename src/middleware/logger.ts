@@ -25,6 +25,11 @@ export type LogLevel = 'info' | 'warn' | 'error';
  * (REQ-NF-006, coding convention §7.4).
  */
 export interface Logger {
+  /**
+   * Appends one line to the day's file. A file that cannot be opened or
+   * written is ignored, so a failing log does not fail the request it
+   * describes.
+   */
   record(level: LogLevel, event: string, fields: Record<string, unknown>): void;
 }
 

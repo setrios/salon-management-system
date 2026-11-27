@@ -58,6 +58,7 @@ export interface MinuteInterval {
   readonly end: number;
 }
 
+/** Minutes in a calendar day: the upper bound of a wall-clock minute (24:00). */
 const MINUTES_PER_DAY = 24 * 60;
 
 /**
