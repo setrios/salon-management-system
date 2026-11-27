@@ -378,9 +378,11 @@ change log; `docs/commit-convention.md` is the format.
 - **The `failed` notification status is reserved.** Delivery is simulated, so
   handing a message to the channel cannot fail; no record is ever `failed`
   (clarification CL-13).
-- **Date fields use the browser's own calendar**, so their display format
-  (`mm/dd/yyyy`, `dd.mm.yyyy`) follows the browser's language; the date sent
-  and every date shown elsewhere are the same in every browser.
+- **Dates and times follow the browser.** Date and time fields are the
+  browser's own pickers, and times are shown in its hour cycle (`2:30 PM` or
+  `14:30`) — always in English, always the salon's clock (UI-GATE U-4 as
+  amended by SMS-79). What is sent to the API is the same in every browser,
+  and dates shown elsewhere are written `Mon 16 Nov 2026`.
 - **The staff dashboard is designed for a desktop width.** The client screens
   are tested on a 375 px phone width (REQ-NF-002); the dashboard works on a
   phone but is not tested there.

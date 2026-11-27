@@ -17,7 +17,8 @@ The system has two parts in one website:
 On a local installation the salon address is `localhost:3000`.
 
 **Everywhere:** the interface is in English; times are the salon's own time
-(Kyiv), written in 24 hours — `09:00`, `18:30`; amounts are in hryvnias —
+(Kyiv), written the way your browser writes times — `2:30 PM` or `14:30`;
+amounts are in hryvnias —
 `450.00 UAH`; dates are written `Mon 16 Nov 2026`. There is no time-zone or
 location choice: the salon has one address and one clock.
 
@@ -161,10 +162,11 @@ Clients can book you only inside these hours.
   Two rows for the same day are two separate periods.
 - **Specific dates** — one-off hours for a single **Date**, in the same way.
 
-Times are written in 24 hours, `HH:MM`; the field suggests the half hours.
-Press **Save** when done — nothing is stored before. *Saved.* confirms it;
-*Use the 24-hour format, for example 09:00 or 18:30.* marks a time written
-another way (`6:30 PM`), and nothing is saved until it is corrected.
+**From** and **To** are your browser's own time picker. Press **Save** when
+done — nothing is stored before. *Saved.* confirms it. A row whose end is not
+after its start is marked *The end time must be after the start time.*, and
+a row left half-filled *Choose a time.*; nothing is saved until they are
+corrected.
 
 ### 4.4 Notifications and Notification settings
 
@@ -286,8 +288,9 @@ the dates.
 - **No online payment.** Payments are recorded by the administrator after the
   visit.
 - **No client accounts and no password reset.**
-- **Date fields** use your browser's calendar, so their format follows your
-  browser's language (`mm/dd/yyyy` or `dd.mm.yyyy`); every date the system
-  shows is written `Mon 16 Nov 2026`.
+- **Date and time fields** use your browser's own pickers, so their format
+  follows your browser (`mm/dd/yyyy` or `dd.mm.yyyy`; 12 or 24 hours). Times
+  shown follow your browser's 12- or 24-hour choice too, always in English;
+  every date shown is written `Mon 16 Nov 2026`.
 - **The staff dashboard** is made for a computer screen; the client website
   works on a phone.
