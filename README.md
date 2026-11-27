@@ -273,6 +273,7 @@ npm run check:test-first                  # every test file was committed before
 npm run lint                              # ESLint: the coding convention (docs/coding-convention.md)
 npm run format:check                      # Prettier: the layout
 npm run docs                              # rebuilds docs/api and docs/reference
+npm run check:traceability                # regenerates spec/traceability-matrix.md and audits it
 ```
 
 Both test suites need their own database, created once:
@@ -348,6 +349,7 @@ regenerates it.
 | `docs/coding-convention.md` | the coding convention and how it is checked |
 | `spec/api/openapi.yaml` | the contract |
 | `spec/ui/screens.md` | the interface's screens, labels and conventions |
+| `spec/traceability-matrix.md` | every requirement → criterion → scenario → ticket → test → code → screen → documentation, generated and audited by `npm run check:traceability` |
 | `spec/api/api-traceability.md` | every requirement → operation → test → control run |
 | `spec/api/error-model.md` | the error codes, their triggers and the state table |
 | `spec/api/resource-model.md` | the resources and their operations |
