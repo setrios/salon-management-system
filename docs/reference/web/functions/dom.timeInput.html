@@ -14,13 +14,11 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="timeinput"><span class="tsd-kind-call-signature">timeInput</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">listId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">props</span><span class="tsd-signature-symbol">?:</span> <a href="../types/dom.Props.html" class="tsd-signature-type tsd-kind-type-alias">Props</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">HTMLInputElement</span><a href="#timeinput" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="timeinput"><span class="tsd-kind-call-signature">timeInput</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">props</span><span class="tsd-signature-symbol">?:</span> <a href="../types/dom.Props.html" class="tsd-signature-type tsd-kind-type-alias">Props</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">HTMLInputElement</span><a href="#timeinput" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>A 24-hour time field (U-4). Not <code>&lt;input type=&quot;time&quot;&gt;</code>: a browser draws that
-control in its own locale (AM/PM under <code>en-US</code>), which the interface cannot
-override (SMS-73). A text field with the <code>HH:MM</code> placeholder and the
-half-hour suggestions shows the same format in every browser; the screen
-checks the value with <code>TIME_24H</code> before sending it.</p>
+<div class="tsd-comment tsd-typography"><p>A time field: the browser's own time control (UI-GATE U-4 as amended,
+SMS-79), drawn in the browser's hour cycle. Whatever it shows, its value is
+<code>HH:MM</code> in 24 hours — the contract's form — or <code>''</code> while incomplete.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -28,13 +26,10 @@ checks the value with <code>TIME_24H</code> before sending it.</p>
 <li><span><span class="tsd-kind-parameter">value</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>the stored time, or <code>''</code> for a new row.</p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">listId</span>: <span class="tsd-signature-type">string</span></span>
-<div class="tsd-comment tsd-typography"><p>the id of a <code>suggestions(halfHours())</code> list on the page.</p>
-</div></li>
 <li><span><span class="tsd-kind-parameter">props</span>: <a href="../types/dom.Props.html" class="tsd-signature-type tsd-kind-type-alias">Props</a><span class="tsd-signature-symbol"> = {}</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">HTMLInputElement</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/setrios/salon-management-system/blob/main/src/web/dom.ts#L172">src/web/dom.ts:172</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/setrios/salon-management-system/blob/main/src/web/dom.ts#L161">src/web/dom.ts:161</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
