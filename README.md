@@ -108,18 +108,44 @@ master**), not with this command.
 
 ## Checking endpoints with curl
 
-The examples below run against the server from the quick start and need `jq`
-only for the lines that pull a value out of a response. Each comment states the
-status the request answers with.
+The examples below run against the server from the quick start, in order, in
+one shell. They need `curl` and `jq`, and start from a fresh installation: the
+first block creates what they use — a master, a service, a price and working
+hours — the way the administrator and the master would in the dashboard (user
+guide §5.1). A random suffix keeps the names unique, so the section can be run
+again. Each comment states the status the request answers with.
 
 ```bash
 BASE=http://localhost:3000/api/v1
 ADMIN_PASSWORD='the password you gave create-admin'
 TOKEN=$(curl -s -X POST $BASE/auth/login -H 'content-type: application/json' \
   -d "$(jq -n --arg p "$ADMIN_PASSWORD" '{username:"admin",password:$p}')" | jq -r .accessToken)
+SUFFIX=$(node -e "console.log(require('node:crypto').randomBytes(3).toString('hex'))")
+DATE=$(node -e "console.log(new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10))")   # a week ahead
 ```
 
 The token stops working after `JWT_EXPIRES_IN` seconds (an hour by default).
+
+### What the examples use
+
+```bash
+MASTER=$(curl -s -X POST $BASE/admin/masters -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d "{\"fullName\":\"Curl Master\",\"username\":\"curl-$SUFFIX\",\"password\":\"curl-master-password\"}" \
+  | jq -r .id)                                                              # 201
+SERVICE=$(curl -s -X POST $BASE/admin/services -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d "{\"name\":\"Curl haircut $SUFFIX\",\"category\":\"Hair\",\"baseDurationMinutes\":30}" \
+  | jq -r .id)                                                              # 201
+curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/admin/master-services \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d "{\"masterId\":\"$MASTER\",\"serviceId\":\"$SERVICE\",\"price\":{\"amountMinor\":40000,\"currency\":\"UAH\"}}"   # 201
+MASTER_TOKEN=$(curl -s -X POST $BASE/auth/login -H 'content-type: application/json' \
+  -d "{\"username\":\"curl-$SUFFIX\",\"password\":\"curl-master-password\"}" | jq -r .accessToken)
+curl -s -o /dev/null -w '%{http_code}\n' -X PUT $BASE/me/availability \
+  -H "authorization: Bearer $MASTER_TOKEN" -H 'content-type: application/json' \
+  -d "{\"weekly\":$(jq -nc '[range(1;8) | {dayOfWeek:., startTime:"09:00", endTime:"18:00"}]'),\"dates\":[]}"   # 200
+```
 
 ### Authentication
 
@@ -131,9 +157,9 @@ curl -s -o /dev/null -w '%{http_code}\n' $BASE/auth/me         # 401, no token
 ### Public reads
 
 ```bash
-curl -s $BASE/services                                    # 200
-curl -s $BASE/masters                                     # 200
-curl -s $BASE/categories                                  # 200
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/services        # 200
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/masters         # 200
+curl -s $BASE/categories | jq -c '[.[].name]'                   # 200, the three seeds at least
 ```
 
 An availability read needs a date and the services: it answers the slots that
@@ -141,17 +167,11 @@ fit them. The two free slots below drive the lifecycle section, so nothing
 depends on a start that happens to be taken.
 
 ```bash
-MASTER=$(curl -s "$BASE/masters" | jq -r '.items[0].id')
-SERVICE=$(curl -s "$BASE/masters/$MASTER/services" | jq -r '.items[0].serviceId')
-DATE=2026-11-16                    # any day inside the master's weekly windows
 SLOTS=$(curl -s "$BASE/masters/$MASTER/availability?date=$DATE&serviceIds=$SERVICE")
-echo "$SLOTS" | jq -c '[.slots[] | select(.available)] | length'   # 200, free slots
+echo "$SLOTS" | jq -c '[.slots[] | select(.available)] | length'   # 200, 18 free slots
 START=$(echo "$SLOTS" | jq -r '[.slots[] | select(.available)][0].startAt')
 LATER=$(echo "$SLOTS" | jq -r '[.slots[] | select(.available)][1].startAt')
 ```
-
-If the first master offers no services, `$SERVICE` is `null`: pick another id
-from `$BASE/masters`. With fewer than two free slots, choose another `$DATE`.
 
 ### The booking lifecycle
 
@@ -160,7 +180,7 @@ APPOINTMENT=$(curl -s -X POST $BASE/appointments \
   -H 'content-type: application/json' \
   -d "{\"client\":{\"name\":\"curl-example\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER\",\"serviceIds\":[\"$SERVICE\"],\"startAt\":\"$START\"}")
 APPT_TOKEN=$(echo "$APPOINTMENT" | jq -r .accessToken)                    # 201
-curl -s $BASE/appointments/$APPT_TOKEN                                    # 200
+curl -s $BASE/appointments/$APPT_TOKEN | jq -r .status                    # 200, confirmed
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/appointments/$APPT_TOKEN/reschedule \
   -H 'content-type: application/json' -d "{\"startAt\":\"$LATER\"}"     # 200
 ```
@@ -185,7 +205,8 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/appointments/$APPT_TOKEN/
 ### Administrator operations
 
 ```bash
-curl -s "$BASE/admin/appointments?from=$DATE&to=$DATE" -H "authorization: Bearer $TOKEN"   # 200
+curl -s -o /dev/null -w '%{http_code}\n' "$BASE/admin/appointments?from=$DATE&to=$DATE" \
+  -H "authorization: Bearer $TOKEN"                      # 200
 ID=$(curl -s -X POST $BASE/appointments \
   -H 'content-type: application/json' \
   -d "{\"client\":{\"name\":\"curl-example\",\"phone\":\"+380501112233\"},\"masterId\":\"$MASTER\",\"serviceIds\":[\"$SERVICE\"],\"startAt\":\"$LATER\"}" \
@@ -209,30 +230,32 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/admin/appointments/$ID/pa
 ### Reports
 
 ```bash
-curl -s -o /dev/null -w 'revenue: %{http_code}\n' "$BASE/admin/reports/revenue?period=week" -H "authorization: Bearer $TOKEN"
-curl -s -o /dev/null -w 'popular: %{http_code}\n' "$BASE/admin/reports/popular-services?period=week" -H "authorization: Bearer $TOKEN"
-curl -s -o /dev/null -w 'stock: %{http_code}\n' "$BASE/admin/reports/stock-levels" -H "authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w 'revenue: %{http_code}\n' "$BASE/admin/reports/revenue?period=week" -H "authorization: Bearer $TOKEN"            # 200
+curl -s -o /dev/null -w 'popular: %{http_code}\n' "$BASE/admin/reports/popular-services?period=week" -H "authorization: Bearer $TOKEN"   # 200
+curl -s -o /dev/null -w 'stock: %{http_code}\n' "$BASE/admin/reports/stock-levels" -H "authorization: Bearer $TOKEN"                    # 200
 ```
 
 ### Stock, and the refusals
 
 ```bash
-MATERIAL=$(curl -s "$BASE/admin/materials" -H "authorization: Bearer $TOKEN" | jq -r '.items[0].id')
+MATERIAL=$(curl -s -X POST $BASE/admin/materials -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d "{\"name\":\"Curl dye $SUFFIX\",\"unit\":\"ml\",\"initialStockQuantity\":10}" | jq -r .id)   # 201
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/admin/materials/$MATERIAL/transactions \
   -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
-  -d '{"type":"receipt","quantity":1,"occurredAt":"2026-11-14T10:00:00+02:00"}'   # 201
+  -d "{\"type\":\"receipt\",\"quantity\":1,\"occurredAt\":\"${DATE}T10:00:00+02:00\"}"   # 201
 curl -s -X POST $BASE/admin/materials/$MATERIAL/transactions \
   -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
-  -d '{"type":"issue","quantity":9999,"occurredAt":"2026-11-14T10:00:00+02:00"}' \
+  -d "{\"type\":\"issue\",\"quantity\":9999,\"occurredAt\":\"${DATE}T10:00:00+02:00\"}" \
   | jq -r .code                                          # MATERIAL_STOCK_INSUFFICIENT
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $BASE/appointments \
   -H 'content-type: application/json' -d '{"client":{"name":"x"}}'   # 422
 ```
 
 These cover the operation families, not all 50 operations: the contract is
-`spec/api/openapi.yaml`, and `tests/api/**` proves each operation against the
-same server. The requests above write rows — the client name `curl-example`
-marks them.
+`spec/api/openapi.yaml` (and `docs/api/index.html`), and `tests/api/**` proves
+each operation against the same server. The requests write rows — the names
+`curl-…`, `Curl …` and `curl-example` mark them.
 
 ## Tests and checks
 
