@@ -1,0 +1,23 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Salon Management System \u2014 interface code",
+  "entryPoints": ["."],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.html", "**/*.css"],
+  "tsconfig": "tsconfig.json",
+  "out": "../../docs/reference/web",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "sort": ["source-order"],
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": ["Function", "Class", "Interface", "TypeAlias", "Enum", "Variable"],
+  "treatValidationWarningsAsErrors": true,
+  "githubPages": false,
+  "hideGenerator": true,
+  "gitRevision": "main"
+}

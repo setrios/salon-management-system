@@ -20,7 +20,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "docs:api": "npm --prefix spec/api exec -- redocly build-docs spec/api/openapi.yaml --config spec/api/redocly.yaml -o docs/api/index.html --title \"Salon Management System API\"",
+    "docs:code": "typedoc && cd src/web && typedoc",
+    "docs": "npm run docs:api && npm run docs:code"
   },
   "dependencies": {
     "ajv": "^8.0.0",
@@ -45,6 +48,7 @@
     "globals": "17.14.0",
     "prettier": "3.10.0",
     "supertest": "^7.0.0",
+    "typedoc": "0.28.20",
     "typescript": "^5.9.0",
     "typescript-eslint": "8.72.2",
     "vitest": "^4.1.12"

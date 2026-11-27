@@ -1,0 +1,23 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Salon Management System \u2014 server code",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "exclude": ["src/web/**", "src/**/*.mjs", "src/contract/openapi.json"],
+  "tsconfig": "tsconfig.json",
+  "out": "docs/reference/server",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "sort": ["source-order"],
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": ["Function", "Class", "Interface", "TypeAlias", "Enum", "Variable"],
+  "treatValidationWarningsAsErrors": true,
+  "githubPages": false,
+  "hideGenerator": true,
+  "gitRevision": "main"
+}

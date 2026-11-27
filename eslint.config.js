@@ -14,7 +14,18 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     // Generated or third-party; not code this project writes by hand.
-    ignores: ['dist/**', 'coverage/**', 'logs/**', 'spec/**', 'src/contract/openapi.json'],
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'logs/**',
+      'spec/**',
+      'src/contract/openapi.json',
+      // Generated references (SMS-61): docs/api by Redocly, docs/reference by TypeDoc.
+      'docs/api/**',
+      'docs/reference/**',
+      'test-results/**',
+      'playwright-report/**',
+    ],
   },
 
   js.configs.recommended,
@@ -96,7 +107,14 @@ export default tseslint.config(
             MethodDefinition: false,
             ArrowFunctionExpression: true,
           },
-          contexts: ['TSInterfaceDeclaration', 'TSTypeAliasDeclaration', 'TSEnumDeclaration'],
+          contexts: [
+            'TSInterfaceDeclaration',
+            'TSTypeAliasDeclaration',
+            'TSEnumDeclaration',
+            // Exported constants too (config, API_PREFIX, routers): TypeDoc's
+            // validation found five the rule did not ask for (SMS-61).
+            'ExportNamedDeclaration > VariableDeclaration',
+          ],
         },
       ],
       'jsdoc/no-types': 'error',
