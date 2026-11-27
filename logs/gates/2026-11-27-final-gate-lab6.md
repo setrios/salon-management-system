@@ -65,3 +65,26 @@ signed, and this paragraph is its correction.
 ## 6. Decision
 
 **GO.** The SDD cycle of the Salon Management System closes at version 1.0.0, tagged `v1.0.0` on the commit that signs this record. SMS-80 opens the next cycle. Signed by setrios on 2026-11-27, recorded by the coding agent at the developer's instruction.
+
+## 7. After the gate: the final re-check (SMS-81, 2026-11-27)
+
+The developer asked for one more check of the whole work against the lab 6
+task after this gate was signed. Every check of §2 was run again on
+`907c167` and passed (420 / 420, shuffled 420 / 420, 52 / 52, `check:test-first`
+30 / 30, user guide 134 / 134, traceability 0 findings, contract valid, lint and
+format clean, `tsc` × 3 clean, `npm run docs` 0 files changed, production
+`npm audit` 0). A new check of step 9 — every code identifier a document names
+together with a file, looked up in that file — and a re-read of the documents'
+numbers found four documentation details out of date:
+
+| # | Finding | Correction |
+|---|---|---|
+| F16 | README: 418 Vitest and 51 Playwright cases; the suite has 420 and 52 | `a1642a8` |
+| F17 | `docs/components.md`: 412 and 51 cases | `a1642a8` |
+| F18 | `docs/components.md` §4: `salonDateTime` placed in `src/lib/time.ts`; it is exported by `src/lib/occupancy.ts` | `a1642a8` |
+| F19 | README "Tests and checks" omitted `check:user-guide`, `lint:contract`, `verify:contract` | `a1642a8` |
+
+None changes code, tests, the contract or the decision: the condition
+"the documentation matches the implementation" now holds for these details too.
+`v1.0.0` stays where it was pushed. The corrected version is tagged
+**`v1.0.1`** on the commit that adds this section; it is the version submitted.

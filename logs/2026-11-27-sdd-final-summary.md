@@ -46,6 +46,7 @@
 | CL-01 … CL-14 | clarifications (no new behaviour) | decided; CL-13 (the status set, `failed` reserved) and CL-14 (R11's 422) in lab 6 |
 | U-4 amended (SMS-79) | interface decision changed at the final validation | implemented |
 | SMS-80 — find a client's appointments | **next SDD cycle**, decided at the final validation | backlog; not in 1.0.0 |
+| SMS-81 — documentation details found by the final re-check (F16–F19) | documentation fix after FINAL-GATE, no behaviour change | done; tagged `v1.0.1` (FINAL-GATE §7) |
 
 No addendum 002: lab 6 changed no requirement. Its fixes either made the
 system meet an approved requirement it did not (REQ-F-005's link, REQ-NF-002's
